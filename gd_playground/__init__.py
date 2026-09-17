@@ -61,7 +61,6 @@ from gd_playground.workflow import (
     run_history,
 )
 
-
 __all__ = [
     "Defaults",
     "active_param_names",

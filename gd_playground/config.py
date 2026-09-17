@@ -4,7 +4,6 @@ from dataclasses import dataclass
 
 import pandas as pd
 
-
 DATA_DISTRIBUTIONS = ("Linear", "Quadratic", "Cubic", "Sine")
 MODEL_TYPES = ("Linear", "Quadratic", "Cubic")
 OPTIMIZERS = ("Batch GD", "SGD", "Mini-batch SGD")

@@ -9,7 +9,6 @@ from gd_playground.config import (
     LEARNING_RATE_OPTIONS,
     MODEL_TYPES,
     OPTIMIZERS,
-    Defaults,
 )
 from gd_playground.data import clamp_batch_size, normalized_feature_text
 from gd_playground.model import active_param_names, degree_for_model, equation_text

@@ -2,7 +2,14 @@ import numpy as np
 import pytest
 
 from gd_playground.data import feature_transform_from_data, generate_data
-from gd_playground.model import active_param_names, degree_for_model, design_matrix, equation_text, param_index, predict_values
+from gd_playground.model import (
+    active_param_names,
+    degree_for_model,
+    design_matrix,
+    equation_text,
+    param_index,
+    predict_values,
+)
 from gd_playground.training import (
     convergence_iteration,
     full_dataset_metrics,

@@ -19,7 +19,6 @@ def build_state():
 
 
 def test_run_history_returns_stable_history_and_divergence_marker():
-    state = build_state()
     data = generate_data(20, "Linear", 0.2, 3)
 
     history, divergence_iteration = run_history(

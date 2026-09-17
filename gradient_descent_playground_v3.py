@@ -51,7 +51,6 @@ from gd_playground import (
     write_params,
 )
 
-
 __all__ = [
     "Defaults",
     "active_param_names",

@@ -11,7 +11,6 @@ from gd_playground.data import feature_transform_from_data, normalized_feature_t
 from gd_playground.model import equation_text, param_index, predict_values
 from gd_playground.training import (
     convergence_iteration,
-    full_dataset_metrics,
     loss_axis_title,
     optimization_loss,
     optimization_loss_label,
@@ -82,7 +81,7 @@ def model_figure(data, params, degree: int, title_suffix: str = "") -> go.Figure
     )
 
     point_predictions = predict_values(data["x"].to_numpy(dtype=float), params, degree, transform)
-    for x_value, observed, predicted in zip(data["x"], data["y"], point_predictions):
+    for x_value, observed, predicted in zip(data["x"], data["y"], point_predictions, strict=True):
         figure.add_trace(
             go.Scatter(
                 x=[x_value, x_value],
