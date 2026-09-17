@@ -17,28 +17,101 @@
 
 Установить зависимости:
 
-```powershell
-pip install streamlit numpy pandas plotly pytest
+```bash
+pip install -r requirements-dev.txt
 ```
 
 Запустить приложение из папки с программой:
 
-```powershell
+```bash
 streamlit run gradient_descent_playground_v3.py
 ```
 
-Запустить тесты:
+Запустить тесты и линтер:
 
-```powershell
-pytest -q
+```bash
+pytest
 ```
+
+```bash
+ruff check .
+```
+
+## Развёртывание на GitHub Pages
+
+GitHub Pages отдаёт только статические файлы, а `Streamlit` обычно требует
+Python-сервер. Поэтому сайт собирается через
+[stlite](https://github.com/whitphx/stlite): он запускает CPython (Pyodide) и
+`Streamlit` прямо в браузере через WebAssembly. Сервер не нужен, весь расчёт
+идёт на стороне пользователя.
+
+Собрать статический сайт локально:
+
+```bash
+python scripts/build_site.py --output dist
+```
+
+Посмотреть результат:
+
+```bash
+python -m http.server 8000 --directory dist
+```
+
+Что происходит при сборке:
+
+- исходники (`gradient_descent_playground_v3.py` и пакет `gd_playground`)
+  копируются в `dist/` без изменений — развёрнутое приложение всегда совпадает
+  с репозиторием;
+- из шаблона `web/index.template.html` генерируется `index.html` с манифестом
+  `stlite` (список файлов, точка входа, зависимости);
+- создаётся `.nojekyll`, чтобы GitHub Pages не пропускал файлы через Jekyll.
+
+Версия `stlite` и зависимости для браузера закреплены в
+`scripts/build_site.py`. `numpy` и `pandas` берутся из готовых сборок Pyodide,
+`plotly` ставится через `micropip`.
+
+### Первичная настройка репозитория
+
+1. Репозиторий должен быть на **GitHub** — `GitHub Actions` и `GitHub Pages`
+   не работают с других хостингов (например, с GitFlic).
+2. В `Settings` → `Pages` → `Build and deployment` выбрать источник
+   **GitHub Actions**.
+3. Отправить коммит в `main` — пайплайн задеплоит сайт автоматически.
+
+Адрес сайта: `https://<пользователь>.github.io/<репозиторий>/`.
+
+## CI/CD
+
+`.github/workflows/ci.yml` — запускается на каждый push в `main` и на каждый
+pull request:
+
+| Job | Что делает |
+| --- | --- |
+| `lint` | `ruff check` по всему репозиторию |
+| `test` | `pytest` на Python 3.10, 3.11, 3.12 и 3.13 |
+| `build` | собирает статический сайт и выгружает его как артефакт Pages |
+
+`.github/workflows/deploy-pages.yml` — запускается на push в `main` и вручную
+(`workflow_dispatch`). Он переиспользует пайплайн `ci.yml`, поэтому деплой
+происходит только после успешных линтера, тестов и сборки.
 
 ## Структура проекта
 
 ```text
-N:\gd_learn
+gd_learn
 ├── gradient_descent_playground_v3.py
 ├── README.md
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── .github
+│   └── workflows
+│       ├── ci.yml
+│       └── deploy-pages.yml
+├── scripts
+│   └── build_site.py
+├── web
+│   └── index.template.html
 ├── gd_playground
 │   ├── __init__.py
 │   ├── app.py
@@ -55,6 +128,7 @@ N:\gd_learn
     ├── test_data_and_state.py
     ├── test_model_and_training.py
     ├── test_plotting.py
+    ├── test_site_build.py
     └── test_workflow_and_api.py
 ```
 

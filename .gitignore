@@ -18,6 +18,7 @@ ENV/
 
 # Build and packaging artifacts
 build/
+# generated static site (scripts/build_site.py)
 dist/
 *.egg-info/
 .eggs/

@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Gradient Descent Playground</title>
+    <meta
+      name="description"
+      content="Interactive playground for batch gradient descent, SGD and mini-batch SGD on synthetic data. Runs entirely in your browser."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%89%3C/text%3E%3C/svg%3E" />
+    <link
+      rel="stylesheet"
+      href="https://cdn.jsdelivr.net/npm/@stlite/browser@__STLITE_VERSION__/build/stlite.css"
+    />
+    <style>
+      html,
+      body {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+      }
+      #root {
+        height: 100%;
+      }
+      #boot {
+        position: fixed;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 1rem;
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        color: #31333f;
+        background: #fff;
+        z-index: 10;
+      }
+      #boot .spinner {
+        width: 2.5rem;
+        height: 2.5rem;
+        border: 3px solid #e6e9ef;
+        border-top-color: #ff4b4b;
+        border-radius: 50%;
+        animation: spin 0.9s linear infinite;
+      }
+      #boot p {
+        margin: 0;
+        font-size: 0.9rem;
+        max-width: 30rem;
+        text-align: center;
+        line-height: 1.5;
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+      @media (prefers-color-scheme: dark) {
+        #boot {
+          background: #0e1117;
+          color: #fafafa;
+        }
+        #boot .spinner {
+          border-color: #262730;
+          border-top-color: #ff4b4b;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div id="boot">
+      <div class="spinner"></div>
+      <p>
+        <strong>Gradient Descent Playground</strong><br />
+        Starting Python in your browser &mdash; the first load downloads the
+        runtime and may take up to a minute.
+      </p>
+    </div>
+    <div id="root"></div>
+    <script type="module">
+      import { mount } from "https://cdn.jsdelivr.net/npm/@stlite/browser@__STLITE_VERSION__/build/stlite.js";
+
+      const boot = document.getElementById("boot");
+      const root = document.getElementById("root");
+
+      try {
+        mount(
+          {
+            entrypoint: "__ENTRYPOINT__",
+            requirements: __REQUIREMENTS__,
+            files: __FILES__,
+            streamlitConfig: {
+              "client.toolbarMode": "minimal",
+            },
+          },
+          root,
+        );
+        // stlite renders asynchronously; hide the placeholder once it paints.
+        new MutationObserver((_, observer) => {
+          if (root.childElementCount > 0) {
+            boot.remove();
+            observer.disconnect();
+          }
+        }).observe(root, { childList: true });
+      } catch (error) {
+        boot.innerHTML =
+          "<p><strong>Failed to start the app.</strong><br />" +
+          String(error) +
+          "</p>";
+      }
+    </script>
+  </body>
+</html>
