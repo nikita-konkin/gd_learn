@@ -31,13 +31,50 @@ from gd_playground.workflow import (
 )
 
 
-def _render_sidebar_controls():
-    with st.sidebar:
-        st.header("Data")
+def _render_actions(container):
+    """Кнопки запуска.
+
+    Рисуются в контейнере, который создан первым, поэтому оказываются наверху
+    сайдбара: до правки они лежали под пятнадцатью ползунками, и до них нужно
+    было каждый раз прокручивать.
+    """
+    with container:
+        st.subheader("Действия")
+        col_a, col_b = st.columns(2)
+        run_clicked = col_a.button(
+            "Run",
+            type="primary",
+            use_container_width=True,
+            help="Прогнать выбранное число итераций и показать итог.",
+        )
+        step_clicked = col_b.button(
+            "Step",
+            use_container_width=True,
+            help="Один шаг градиентного спуска — видно, куда сдвинулись параметры.",
+        )
+
+        col_c, col_d = st.columns(2)
+        animation_clicked = col_c.button(
+            "Build animation",
+            use_container_width=True,
+            help="Собрать анимацию спуска с ползунком по итерациям.",
+        )
+        reset_clicked = col_d.button(
+            "Reset",
+            use_container_width=True,
+            help="Вернуть все параметры и историю к значениям по умолчанию.",
+        )
+
+    return run_clicked, step_clicked, animation_clicked, reset_clicked
+
+
+def _render_data_controls():
+    with st.expander("Данные", expanded=True):
         st.session_state.distribution = st.selectbox(
             "Data point distribution",
             DATA_DISTRIBUTIONS,
             index=DATA_DISTRIBUTIONS.index(st.session_state.distribution),
+            help="Форма зависимости, из которой генерируются точки.",
         )
         st.session_state.n_points = st.slider(
             "Number of data points",
@@ -52,6 +89,7 @@ def _render_sidebar_controls():
             5.0,
             float(st.session_state.noise),
             0.1,
+            help="Разброс точек вокруг истинной зависимости.",
         )
         st.session_state.seed = st.number_input(
             "Random seed",
@@ -61,12 +99,16 @@ def _render_sidebar_controls():
             step=1,
         )
         shuffle_now = st.button("Shuffle / regenerate data", use_container_width=True)
+    return shuffle_now
 
-        st.header("Model")
+
+def _render_model_controls():
+    with st.expander("Модель", expanded=True):
         st.session_state.model_type = st.selectbox(
             "Model",
             MODEL_TYPES,
             index=MODEL_TYPES.index(st.session_state.model_type),
+            help="Степень полинома, которым приближаем данные.",
         )
         degree = degree_for_model(st.session_state.model_type)
         st.session_state.w0 = st.slider("Bias / w0", -20.0, 30.0, float(st.session_state.w0), 0.01)
@@ -81,12 +123,16 @@ def _render_sidebar_controls():
             st.session_state.w3 = st.slider("w3", -2.0, 2.0, float(st.session_state.w3), 0.01)
         else:
             st.session_state.w3 = 0.0
+    return degree
 
-        st.header("Optimizer")
+
+def _render_optimizer_controls():
+    with st.expander("Оптимизатор", expanded=True):
         st.session_state.optimizer = st.selectbox(
             "Gradient descent type",
             OPTIMIZERS,
             index=OPTIMIZERS.index(st.session_state.optimizer),
+            help="Сколько точек участвует в одном обновлении параметров.",
         )
         losses = loss_function_options()
         st.session_state.loss_function = st.selectbox(
@@ -99,6 +145,7 @@ def _render_sidebar_controls():
             options=LEARNING_RATE_OPTIONS,
             value=float(st.session_state.learning_rate),
             format_func=lambda value: f"{value:.0e}" if value < 0.001 else f"{value:g}",
+            help="Слишком большой шаг — расходимость, слишком маленький — медленно.",
         )
 
         if st.session_state.optimizer == "Mini-batch SGD":
@@ -113,6 +160,11 @@ def _render_sidebar_controls():
             st.session_state.batch_size = 1
 
         shuffle_each_epoch = st.checkbox("Shuffle points during SGD/mini-batch", value=True)
+    return shuffle_each_epoch
+
+
+def _render_run_length_controls():
+    with st.expander("Длительность и сходимость", expanded=False):
         st.session_state.iterations_run = st.slider(
             "Iterations (Run)",
             1,
@@ -132,15 +184,25 @@ def _render_sidebar_controls():
             options=CONVERGENCE_OPTIONS,
             value=float(st.session_state.convergence_tolerance),
             format_func=lambda value: f"{value:.0e}",
+            help="Насколько мало должно меняться значение потерь, чтобы считать это сходимостью.",
         )
 
-        col_a, col_b = st.columns(2)
-        run_clicked = col_a.button("Run", type="primary", use_container_width=True)
-        step_clicked = col_b.button("Step", use_container_width=True)
 
-        col_c, col_d = st.columns(2)
-        animation_clicked = col_c.button("Build animation", use_container_width=True)
-        reset_clicked = col_d.button("Reset", use_container_width=True)
+def _render_sidebar_controls():
+    with st.sidebar:
+        # Контейнер создаётся первым, а заполняется последним: кнопки видны
+        # сразу, но знают про значения всех остальных виджетов.
+        actions = st.container()
+
+        shuffle_now = _render_data_controls()
+        degree = _render_model_controls()
+        shuffle_each_epoch = _render_optimizer_controls()
+        _render_run_length_controls()
+
+        run_clicked, step_clicked, animation_clicked, reset_clicked = _render_actions(actions)
+
+        st.divider()
+        st.caption("Другой playground: [метрики машинного перевода](mt/)")
 
     return {
         "degree": degree,
@@ -153,56 +215,70 @@ def _render_sidebar_controls():
     }
 
 
+def _render_training_status(summary):
+    """Итог обучения — до таблицы чисел, а не после неё."""
+    if summary is None:
+        st.info("Нажмите **Run**, **Step** или **Build animation**, чтобы начать обучение.")
+        return
+
+    if st.session_state.divergence_iteration is not None:
+        st.error(
+            f"Обучение разошлось на итерации {st.session_state.divergence_iteration}. "
+            f"Показана последняя устойчивая итерация: {summary['max_iteration']}. "
+            "Уменьшите learning rate."
+        )
+    elif summary["convergence_iteration"] is None:
+        st.warning(f"Сходимость не достигнута за {summary['max_iteration']} итераций.")
+    else:
+        st.success(f"Сошлось примерно за {summary['convergence_iteration']} итераций.")
+
+
 def _render_metrics_panel(data, degree: int):
     metrics, transform = current_metrics(st.session_state, data, degree)
-    st.subheader("Current metrics")
-    st.metric(
-        optimization_loss_label(st.session_state.loss_function),
-        f"{metrics['optimization_loss']:.6f}",
-    )
-    st.metric(
-        optimization_loss_label(st.session_state.loss_function, "True-function"),
-        f"{metrics['true_optimization_loss']:.6f}",
-    )
-    st.metric("Observed MSE", f"{metrics['mse']:.6f}")
-    st.metric("True MSE", f"{metrics['true_mse']:.6f}")
-    st.metric("RMSE", f"{metrics['rmse']:.6f}")
-    st.metric("MAE", f"{metrics['mae']:.6f}")
-    st.metric("Gradient norm", f"{metrics['grad_norm']:.6f}")
-    st.metric("Model", st.session_state.model_type)
-    st.metric("Optimizer", st.session_state.optimizer)
-    st.metric("Loss", st.session_state.loss_function)
-
     summary = history_summary(st.session_state.history, st.session_state.convergence_tolerance)
-    if summary is not None:
-        if st.session_state.divergence_iteration is not None:
-            st.error(
-                f"Training diverged at iteration {st.session_state.divergence_iteration}. "
-                f"Showing the last stable iteration: {summary['max_iteration']}."
-            )
-        elif summary["convergence_iteration"] is None:
-            st.warning(f"No convergence detected within {summary['max_iteration']} iterations.")
-        else:
-            st.success(
-                f"Estimated iterations before convergence: {summary['convergence_iteration']}"
-            )
 
-        loss_caption = (
-            f"Last stable plotted {st.session_state.loss_function}"
-            if st.session_state.divergence_iteration is not None
-            else f"Loss graph final {st.session_state.loss_function}"
+    st.subheader("Что происходит")
+    _render_training_status(summary)
+
+    # Три числа, за которыми следят в первую очередь. Остальные семь лежали
+    # тут же сплошным столбцом и тонули — теперь они под раскрывашкой.
+    loss_label = optimization_loss_label(st.session_state.loss_function)
+    top_left, top_right = st.columns(2)
+    top_left.metric(loss_label, f"{metrics['optimization_loss']:.6f}")
+    top_right.metric("Gradient norm", f"{metrics['grad_norm']:.6f}")
+    st.caption(
+        f"{st.session_state.model_type} · {st.session_state.optimizer} · "
+        f"{st.session_state.loss_function}"
+    )
+
+    with st.expander("Все метрики", expanded=False):
+        st.metric(
+            optimization_loss_label(st.session_state.loss_function, "True-function"),
+            f"{metrics['true_optimization_loss']:.6f}",
         )
-        st.caption(f"{loss_caption}: {summary['last_optimization_loss']:.6f}")
-        st.caption(
-            f"Best {st.session_state.loss_function} in history: "
-            f"{summary['best_optimization_loss']:.6f}"
-        )
-        st.caption(
-            f"Best true-function {st.session_state.loss_function} in history: "
-            f"{summary['best_true_optimization_loss']:.6f}"
-        )
-        st.caption(f"Best observed MSE in history: {summary['best_observed_mse']:.6f}")
-        st.caption(f"Best true-function MSE in history: {summary['best_true_mse']:.6f}")
+        st.metric("Observed MSE", f"{metrics['mse']:.6f}")
+        st.metric("True MSE", f"{metrics['true_mse']:.6f}")
+        st.metric("RMSE", f"{metrics['rmse']:.6f}")
+        st.metric("MAE", f"{metrics['mae']:.6f}")
+
+    if summary is not None:
+        with st.expander("Лучшее за историю обучения", expanded=False):
+            loss_caption = (
+                f"Last stable plotted {st.session_state.loss_function}"
+                if st.session_state.divergence_iteration is not None
+                else f"Loss graph final {st.session_state.loss_function}"
+            )
+            st.caption(f"{loss_caption}: {summary['last_optimization_loss']:.6f}")
+            st.caption(
+                f"Best {st.session_state.loss_function} in history: "
+                f"{summary['best_optimization_loss']:.6f}"
+            )
+            st.caption(
+                f"Best true-function {st.session_state.loss_function} in history: "
+                f"{summary['best_true_optimization_loss']:.6f}"
+            )
+            st.caption(f"Best observed MSE in history: {summary['best_observed_mse']:.6f}")
+            st.caption(f"Best true-function MSE in history: {summary['best_true_mse']:.6f}")
 
     params = params_vector(st.session_state)
     st.code(
@@ -210,13 +286,13 @@ def _render_metrics_panel(data, degree: int):
         language="text",
     )
 
-    st.subheader("Optimizer meaning")
     if st.session_state.optimizer == "Batch GD":
-        st.write("Uses all data points for every parameter update.")
+        meaning = "Использует все точки для каждого обновления параметров."
     elif st.session_state.optimizer == "SGD":
-        st.write("Uses one data point for each parameter update.")
+        meaning = "Использует одну точку для каждого обновления параметров."
     else:
-        st.write(f"Uses {st.session_state.batch_size} data points for each parameter update.")
+        meaning = f"Использует {st.session_state.batch_size} точек для каждого обновления параметров."
+    st.caption(meaning)
 
 
 def _render_visual_panel(data, degree: int):
@@ -234,8 +310,8 @@ def _render_visual_panel(data, degree: int):
             config={"displayModeBar": True},
         )
         st.info(
-            "Press Play inside the chart. The animation uses the selected optimizer "
-            "loss and keeps metrics outside the plot area."
+            "Нажмите Play внутри графика. Анимация использует выбранную функцию "
+            "потерь и держит метрики вне области построения."
         )
         return
 
@@ -268,7 +344,7 @@ def _render_tabs(data, degree: int):
         if st.session_state.history:
             st.dataframe(pd.DataFrame(st.session_state.history), use_container_width=True)
         else:
-            st.info("Click Run, Step, or Build animation.")
+            st.info("Нажмите Run, Step или Build animation.")
 
     with tab_surface:
         active_params = active_param_names(degree)
@@ -298,8 +374,8 @@ def _render_tabs(data, degree: int):
             key="surface_resolution",
         )
         st.caption(
-            "For quadratic and cubic models this is a 2D slice of a higher-dimensional "
-            "loss landscape; all non-selected parameters are held fixed at the current values."
+            "Для квадратичной и кубической модели это 2D-срез многомерной "
+            "поверхности потерь: все невыбранные параметры зафиксированы на текущих значениях."
         )
         st.plotly_chart(
             loss_surface_figure(
@@ -327,8 +403,9 @@ def main():
 
     st.title("Interactive Exercise: Gradient Descent Playground")
     st.caption(
-        "Batch GD, SGD, mini-batch SGD, nonlinear models, generated data distributions, "
-        "animated loss marker, and convergence estimate."
+        "Слева задайте данные, модель и оптимизатор, затем нажмите **Run**. "
+        "Batch GD, SGD и mini-batch SGD, нелинейные модели, анимация спуска "
+        "и оценка числа итераций до сходимости."
     )
 
     controls = _render_sidebar_controls()
