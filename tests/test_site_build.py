@@ -1,52 +1,80 @@
 import json
 from pathlib import Path
 
-from scripts.build_site import (
-    ENTRYPOINT,
-    WEB_REQUIREMENTS,
-    build,
-    collect_sources,
-    render_index,
-    site_manifest,
-)
+import pytest
+
+from scripts.build_site import APPS, build, collect_sources, render_index, site_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
-PLACEHOLDERS = ("__STLITE_VERSION__", "__ENTRYPOINT__", "__REQUIREMENTS__", "__FILES__")
+PLACEHOLDERS = ("__STLITE_VERSION__", "__TITLE__", "__ENTRYPOINT__", "__REQUIREMENTS__", "__FILES__")
+
+GD_APP = next(app for app in APPS if app.slug == "")
+MT_APP = next(app for app in APPS if app.slug == "mt")
 
 
-def test_collect_sources_includes_entrypoint_and_package():
-    sources = collect_sources()
+@pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
+def test_collect_sources_includes_entrypoint_and_package(app):
+    sources = collect_sources(app)
 
-    assert ENTRYPOINT in sources
-    assert "gd_playground/app.py" in sources
-    assert "gd_playground/__init__.py" in sources
+    assert app.entrypoint in sources
+    assert f"{app.package}/__init__.py" in sources
+    assert f"{app.package}/app.py" in sources
 
 
-def test_manifest_maps_every_source_to_a_relative_url():
-    manifest = site_manifest()
+def test_mt_app_ships_its_data_files():
+    sources = collect_sources(MT_APP)
 
-    assert set(manifest) == set(collect_sources())
+    assert "mt_playground/data/loc_corpus.csv" in sources
+    assert "mt_playground/data/semantic_ru_mt.csv" in sources
+
+
+def test_gd_app_ships_no_data_files():
+    assert all(not path.endswith(".csv") for path in collect_sources(GD_APP))
+
+
+@pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
+def test_manifest_maps_every_source_to_a_relative_url(app):
+    manifest = site_manifest(app)
+
+    assert set(manifest) == set(collect_sources(app))
     for relative, entry in manifest.items():
         assert entry == {"url": f"./{relative}"}
 
 
-def test_index_html_is_fully_rendered():
-    html = render_index()
+@pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
+def test_index_html_is_fully_rendered(app):
+    html = render_index(app)
 
     for placeholder in PLACEHOLDERS:
         assert placeholder not in html
-    assert f'entrypoint: "{ENTRYPOINT}"' in html
-    assert json.dumps(site_manifest(), indent=2) in html
-    assert json.dumps(WEB_REQUIREMENTS) in html
+    assert f'entrypoint: "{app.entrypoint}"' in html
+    assert json.dumps(site_manifest(app), indent=2) in html
+    assert json.dumps(list(app.requirements)) in html
+    assert f"<title>{app.title}</title>" in html
 
 
-def test_build_copies_every_source_and_adds_nojekyll(tmp_path):
-    output_dir = build(tmp_path / "dist")
+def test_apps_have_distinct_slugs_and_one_root():
+    slugs = [app.slug for app in APPS]
 
-    assert (output_dir / ".nojekyll").exists()
-    assert (output_dir / "index.html").read_text(encoding="utf-8") == render_index()
-    for relative in collect_sources():
-        copied = output_dir / relative
+    assert len(slugs) == len(set(slugs))
+    assert slugs.count("") == 1, "ровно одно приложение живёт в корне сайта"
+
+
+def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
+    site = build(tmp_path / "dist")
+
+    assert (site / ".nojekyll").exists()
+    assert (site / "index.html").read_text(encoding="utf-8") == render_index(GD_APP)
+    assert (site / "mt" / "index.html").read_text(encoding="utf-8") == render_index(MT_APP)
+
+
+@pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
+def test_build_copies_every_source_byte_for_byte(tmp_path, app):
+    site = build(tmp_path / "dist")
+    app_dir = site / app.slug if app.slug else site
+
+    for relative in collect_sources(app):
+        copied = app_dir / relative
         assert copied.exists(), f"{relative} was not copied into the site"
         assert copied.read_bytes() == (ROOT / relative).read_bytes()
 
@@ -68,4 +96,5 @@ def test_web_plotly_pin_matches_requirements():
         if line.strip().startswith("plotly")
     )
 
-    assert requirement in WEB_REQUIREMENTS
+    for app in APPS:
+        assert requirement in app.requirements
