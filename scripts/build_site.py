@@ -57,6 +57,13 @@ APPS = (
         title="Метрики машинного перевода",
         data_globs=("data/*.csv",),
     ),
+    App(
+        slug="lm",
+        entrypoint="lm_text_playground.py",
+        package="lm_playground",
+        title="Языковая модель и температура",
+        data_globs=("data/*.csv",),
+    ),
 )
 
 

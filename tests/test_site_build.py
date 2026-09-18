@@ -10,6 +10,7 @@ PLACEHOLDERS = ("__STLITE_VERSION__", "__TITLE__", "__ENTRYPOINT__", "__REQUIREM
 
 GD_APP = next(app for app in APPS if app.slug == "")
 MT_APP = next(app for app in APPS if app.slug == "mt")
+LM_APP = next(app for app in APPS if app.slug == "lm")
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
@@ -26,6 +27,10 @@ def test_mt_app_ships_its_data_files():
 
     assert "mt_playground/data/loc_corpus.csv" in sources
     assert "mt_playground/data/semantic_ru_mt.csv" in sources
+
+
+def test_lm_app_ships_its_training_corpus():
+    assert "lm_playground/data/corpus_ru.csv" in collect_sources(LM_APP)
 
 
 def test_gd_app_ships_no_data_files():
@@ -66,6 +71,16 @@ def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
     assert (site / ".nojekyll").exists()
     assert (site / "index.html").read_text(encoding="utf-8") == render_index(GD_APP)
     assert (site / "mt" / "index.html").read_text(encoding="utf-8") == render_index(MT_APP)
+    assert (site / "lm" / "index.html").read_text(encoding="utf-8") == render_index(LM_APP)
+
+
+def test_apps_do_not_leak_each_others_files(tmp_path):
+    """Каждое приложение получает только свой пакет."""
+    site = build(tmp_path / "dist")
+
+    assert not (site / "mt" / "lm_playground").exists()
+    assert not (site / "lm" / "mt_playground").exists()
+    assert not (site / "gd_playground" / "data").exists()
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")

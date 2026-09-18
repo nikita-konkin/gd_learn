@@ -52,6 +52,7 @@ class FakeStreamlit:
         self.sidebar = FakeContext(self)
         self.figures = []
         self.expanders = []
+        self.metrics = []
         self.warnings = []
         self.infos = []
         self.errors = []
@@ -126,6 +127,9 @@ class FakeStreamlit:
     def text_area(self, label, value=None, key=None, **kwargs):
         return self.overrides.get(label, value if value is not None else "")
 
+    def text_input(self, label, value="", **kwargs):
+        return self.overrides.get(label, value)
+
     def radio(self, label, options, index=0, **kwargs):
         return self.overrides.get(label, options[index])
 
@@ -150,7 +154,8 @@ class FakeStreamlit:
     def write(self, *args, **kwargs):
         return None
 
-    def metric(self, *args, **kwargs):
+    def metric(self, label="", value=None, *args, **kwargs):
+        self.metrics.append((str(label), value))
         return None
 
     def code(self, *args, **kwargs):
