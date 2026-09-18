@@ -10,9 +10,22 @@ import types
 
 import numpy as np
 import pytest
-from sklearn.utils._dataframe import is_pyarrow_data
 
 from vec_playground.compat import PYARROW_TYPES, patch_pyarrow_stub
+
+
+def _is_pyarrow_data():
+    """Функция sklearn, которая и спотыкается о заглушку.
+
+    Лежит в приватном модуле и появилась не во всех версиях: на
+    scikit-learn 1.7 её ещё нет, и проверять там нечего. Импортируем лениво,
+    чтобы тесты собирались на любой версии.
+    """
+    dataframe = pytest.importorskip(
+        "sklearn.utils._dataframe",
+        reason="в этой версии scikit-learn проверки на pyarrow ещё нет",
+    )
+    return dataframe.is_pyarrow_data
 
 
 @pytest.fixture
@@ -25,12 +38,15 @@ def stub_pyarrow(monkeypatch):
 
 def test_sklearn_breaks_on_the_bare_stub(stub_pyarrow):
     """Сначала показываем саму поломку, иначе заплатка проверяет пустоту."""
+    is_pyarrow_data = _is_pyarrow_data()
+
     with pytest.raises(AttributeError, match="|".join(PYARROW_TYPES)):
         is_pyarrow_data(np.zeros(3))
 
 
 def test_sklearn_breaks_on_the_stlite_stub(stub_pyarrow):
     """У stlite `Table` есть — его использует сам Streamlit, — а остальных нет."""
+    is_pyarrow_data = _is_pyarrow_data()
     stub_pyarrow.Table = type("Table", (), {})
 
     with pytest.raises(AttributeError, match="RecordBatch"):
@@ -45,6 +61,7 @@ def test_patch_adds_every_missing_type(stub_pyarrow):
 
 
 def test_sklearn_works_after_the_patch(stub_pyarrow):
+    is_pyarrow_data = _is_pyarrow_data()
     patch_pyarrow_stub()
 
     assert is_pyarrow_data(np.zeros(3)) is False
