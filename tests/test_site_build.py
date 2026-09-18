@@ -11,6 +11,7 @@ PLACEHOLDERS = ("__STLITE_VERSION__", "__TITLE__", "__ENTRYPOINT__", "__REQUIREM
 GD_APP = next(app for app in APPS if app.slug == "")
 MT_APP = next(app for app in APPS if app.slug == "mt")
 LM_APP = next(app for app in APPS if app.slug == "lm")
+VEC_APP = next(app for app in APPS if app.slug == "vec")
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
@@ -31,6 +32,18 @@ def test_mt_app_ships_its_data_files():
 
 def test_lm_app_ships_its_training_corpus():
     assert "lm_playground/data/corpus_ru.csv" in collect_sources(LM_APP)
+
+
+def test_vec_app_ships_its_corpus_and_declares_scikit_learn():
+    assert "vec_playground/data/corpus_ru.csv" in collect_sources(VEC_APP)
+    assert any(r.startswith("scikit-learn") for r in VEC_APP.requirements)
+    assert any(r.startswith("nltk") for r in VEC_APP.requirements)
+
+
+def test_apps_that_do_not_need_scikit_learn_do_not_ship_it():
+    """Каждое лишнее колесо — это секунды загрузки в браузере."""
+    for app in (GD_APP, MT_APP, LM_APP):
+        assert not any(r.startswith("scikit-learn") for r in app.requirements)
 
 
 def test_gd_app_ships_no_data_files():
@@ -72,6 +85,7 @@ def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
     assert (site / "index.html").read_text(encoding="utf-8") == render_index(GD_APP)
     assert (site / "mt" / "index.html").read_text(encoding="utf-8") == render_index(MT_APP)
     assert (site / "lm" / "index.html").read_text(encoding="utf-8") == render_index(LM_APP)
+    assert (site / "vec" / "index.html").read_text(encoding="utf-8") == render_index(VEC_APP)
 
 
 def test_apps_do_not_leak_each_others_files(tmp_path):
@@ -80,6 +94,7 @@ def test_apps_do_not_leak_each_others_files(tmp_path):
 
     assert not (site / "mt" / "lm_playground").exists()
     assert not (site / "lm" / "mt_playground").exists()
+    assert not (site / "vec" / "lm_playground").exists()
     assert not (site / "gd_playground" / "data").exists()
 
 

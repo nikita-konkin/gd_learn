@@ -64,6 +64,15 @@ APPS = (
         title="Языковая модель и температура",
         data_globs=("data/*.csv",),
     ),
+    App(
+        slug="vec",
+        entrypoint="text_features_playground.py",
+        package="vec_playground",
+        title="Векторизация текста",
+        # scikit-learn и nltk есть в сборке Pyodide готовыми колёсами.
+        requirements=("numpy", "pandas", "plotly>=5.20,<8", "scikit-learn>=1.5", "nltk>=3.9"),
+        data_globs=("data/*.csv",),
+    ),
 )
 
 
