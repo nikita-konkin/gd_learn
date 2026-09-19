@@ -69,9 +69,19 @@ APPS = (
         entrypoint="text_features_playground.py",
         package="vec_playground",
         title="Векторизация текста",
-        # scikit-learn и nltk есть в сборке Pyodide готовыми колёсами.
+        # scikit-learn and nltk both ship as prebuilt wheels in the Pyodide build.
         requirements=("numpy", "pandas", "plotly>=5.20,<8", "scikit-learn>=1.5", "nltk>=3.9"),
         data_globs=("data/*.csv",),
+    ),
+    App(
+        slug="tm",
+        entrypoint="tm_search_playground.py",
+        package="tm_playground",
+        title="Память переводов",
+        requirements=("numpy", "pandas", "plotly>=5.20,<8", "scikit-learn>=1.5"),
+        # The .npy files are the pretrained embeddings: they cannot be recomputed
+        # in the browser, so they travel with the app as data.
+        data_globs=("data/*.csv", "data/*.npy"),
     ),
 )
 

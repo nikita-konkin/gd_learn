@@ -12,6 +12,7 @@ GD_APP = next(app for app in APPS if app.slug == "")
 MT_APP = next(app for app in APPS if app.slug == "mt")
 LM_APP = next(app for app in APPS if app.slug == "lm")
 VEC_APP = next(app for app in APPS if app.slug == "vec")
+TM_APP = next(app for app in APPS if app.slug == "tm")
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
@@ -38,6 +39,22 @@ def test_vec_app_ships_its_corpus_and_declares_scikit_learn():
     assert "vec_playground/data/corpus_ru.csv" in collect_sources(VEC_APP)
     assert any(r.startswith("scikit-learn") for r in VEC_APP.requirements)
     assert any(r.startswith("nltk") for r in VEC_APP.requirements)
+
+
+def test_tm_app_ships_its_corpus_and_its_pretrained_vectors():
+    """The .npy files cannot be recomputed in the browser, so they must travel."""
+    sources = collect_sources(TM_APP)
+
+    assert "tm_playground/data/tm_corpus.csv" in sources
+    assert "tm_playground/data/queries.csv" in sources
+    assert "tm_playground/data/emb_tm.npy" in sources
+    assert "tm_playground/data/emb_queries.npy" in sources
+    assert any(r.startswith("scikit-learn") for r in TM_APP.requirements)
+
+
+def test_tm_app_does_not_ship_nltk():
+    """It does no stemming; every extra wheel is seconds of load time."""
+    assert not any(r.startswith("nltk") for r in TM_APP.requirements)
 
 
 def test_apps_that_do_not_need_scikit_learn_do_not_ship_it():
@@ -86,6 +103,7 @@ def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
     assert (site / "mt" / "index.html").read_text(encoding="utf-8") == render_index(MT_APP)
     assert (site / "lm" / "index.html").read_text(encoding="utf-8") == render_index(LM_APP)
     assert (site / "vec" / "index.html").read_text(encoding="utf-8") == render_index(VEC_APP)
+    assert (site / "tm" / "index.html").read_text(encoding="utf-8") == render_index(TM_APP)
 
 
 def test_apps_do_not_leak_each_others_files(tmp_path):
@@ -95,6 +113,8 @@ def test_apps_do_not_leak_each_others_files(tmp_path):
     assert not (site / "mt" / "lm_playground").exists()
     assert not (site / "lm" / "mt_playground").exists()
     assert not (site / "vec" / "lm_playground").exists()
+    assert not (site / "tm" / "vec_playground").exists()
+    assert not (site / "vec" / "tm_playground").exists()
     assert not (site / "gd_playground" / "data").exists()
 
 

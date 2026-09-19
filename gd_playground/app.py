@@ -202,7 +202,11 @@ def _render_sidebar_controls():
         run_clicked, step_clicked, animation_clicked, reset_clicked = _render_actions(actions)
 
         st.divider()
-        st.caption("Другой playground: [метрики машинного перевода](mt/)")
+        st.caption(
+            "Другие playground'ы: [метрики перевода](mt/) · "
+            "[языковая модель](lm/) · [векторизация](vec/) · "
+            "[память переводов](tm/)"
+        )
 
     return {
         "degree": degree,

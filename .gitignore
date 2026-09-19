@@ -44,3 +44,6 @@ Thumbs.db
 
 # Streamlit local state
 .streamlit/secrets.toml
+
+# Local dev server config for the preview pane
+.claude/

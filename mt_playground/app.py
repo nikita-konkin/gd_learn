@@ -111,7 +111,11 @@ def _render_sidebar(corpus: pd.DataFrame):
             "`ru_mt` — настоящий выход модели Helsinki-NLP/opus-mt-en-ru."
         )
         st.divider()
-        st.caption("Другой playground: [градиентный спуск](../)")
+        st.caption(
+            "Другие playground'ы: [градиентный спуск](../) · "
+            "[языковая модель](../lm/) · [векторизация](../vec/) · "
+            "[память переводов](../tm/)"
+        )
 
     return segment_id, bleu_threshold, semantic_threshold, fix_morphology
 

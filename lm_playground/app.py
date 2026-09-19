@@ -112,7 +112,11 @@ def _render_sidebar():
         )
 
         st.divider()
-        st.caption("Другие playground'ы: [градиентный спуск](../) · [метрики перевода](../mt/)")
+        st.caption(
+            "Другие playground'ы: [градиентный спуск](../) · "
+            "[метрики перевода](../mt/) · [векторизация](../vec/) · "
+            "[память переводов](../tm/)"
+        )
 
     return {
         "content_types": tuple(chosen_types) if chosen_types else CONTENT_TYPES,
