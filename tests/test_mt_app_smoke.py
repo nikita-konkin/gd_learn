@@ -16,7 +16,7 @@ def test_main_renders_without_errors(monkeypatch):
     mt_app.main()
 
     assert fake_st.page_config["page_title"] == "Метрики машинного перевода"
-    # сравнение метрик + четыре вкладки корпуса
+    # metric comparison plus the corpus's four tabs
     assert len(fake_st.figures) >= 2
 
 
@@ -31,10 +31,10 @@ def test_first_render_seeds_the_editor_with_the_model_output(monkeypatch):
 
 
 def test_set_hypothesis_bumps_the_editor_revision(monkeypatch):
-    """Ключ поля ввода обязан меняться вместе с текстом.
+    """The input field's key has to change along with the text.
 
-    Иначе Streamlit оставляет в поле старое значение — или, если виджет не
-    отрисовался из-за `st.rerun()`, вообще стирает его.
+    Otherwise Streamlit keeps the old value in the field — or, if the widget
+    did not render because of ``st.rerun()``, wipes it entirely.
     """
     fake_st = _render()
     monkeypatch.setattr(mt_app, "st", fake_st)
@@ -49,13 +49,13 @@ def test_set_hypothesis_bumps_the_editor_revision(monkeypatch):
 
 
 def test_editor_never_relies_on_bare_widget_state(monkeypatch):
-    """Регрессия: текст пропадал, потому что источником правды был ключ виджета."""
+    """Regression: the text vanished when the widget key was the source of truth."""
     fake_st = _render()
     monkeypatch.setattr(mt_app, "st", fake_st)
     mt_app.main()
 
-    # Имитируем то, что делает Streamlit, когда виджет не отрисовался:
-    # удаляет его ключ из состояния.
+    # Imitate what Streamlit does when a widget does not render: it drops the
+    # widget's key from the session state.
     for key in [k for k in fake_st.session_state if k.startswith("hypothesis_editor_")]:
         del fake_st.session_state[key]
 
@@ -75,7 +75,7 @@ def test_scores_are_computed_against_the_reference(monkeypatch):
     assert scores["TER"] == pytest.approx(0.0)
 
 
-# --- вывод про слепую зону -------------------------------------------------
+# --- the blind-spot callout ------------------------------------------------
 
 
 def _verdict(monkeypatch, segment_id, hypothesis, bleu_threshold=0.45):
@@ -96,7 +96,7 @@ def _verdict(monkeypatch, segment_id, hypothesis, bleu_threshold=0.45):
 
 
 def test_broken_placeholder_raises_the_blind_spot_warning(monkeypatch):
-    """Сломанный плейсхолдер при высоком BLEU — главный вывод работы."""
+    """A broken placeholder at a high BLEU — the lab's main point."""
     fake_st = _verdict(monkeypatch, "s002", 'Удалить файл «(name}»?')
 
     assert any("Вот оно" in message for message in fake_st.warnings)
@@ -104,10 +104,10 @@ def test_broken_placeholder_raises_the_blind_spot_warning(monkeypatch):
 
 
 def test_warning_fires_even_when_the_model_output_was_already_broken(monkeypatch):
-    """Регрессия: сравнение с выходом модели глушило вывод на s002.
+    """Regression: comparing against the model output muted the callout on s002.
 
-    Выход модели на этом сегменте сам сломан, поэтому «стало хуже» не
-    наступало никогда и подсказка не появлялась.
+    The model's own output on that segment is broken, so "it got worse" never
+    happened and the callout never appeared.
     """
     fake_st = _verdict(monkeypatch, "s002", 'Удалить файл "(имя}"?')
 
@@ -115,7 +115,7 @@ def test_warning_fires_even_when_the_model_output_was_already_broken(monkeypatch
 
 
 def test_synonym_swap_raises_the_opposite_notice(monkeypatch):
-    """Смысл сохранён, BLEU ниже порога, проверки молчат."""
+    """Meaning preserved, BLEU below the threshold, checks silent."""
     fake_st = _verdict(monkeypatch, "s001", "Записать изменения", bleu_threshold=0.8)
 
     assert any("И наоборот" in message for message in fake_st.infos)

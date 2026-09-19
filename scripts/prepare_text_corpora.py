@@ -1,12 +1,13 @@
-"""Собрать текстовые корпуса playground'ов из корпуса локализации.
+"""Build the playgrounds' text corpora from the localisation corpus.
 
-Читает корпус, который уже лежит в репозитории, и выписывает русские эталонные
-переводы со столбцами `type` и `text`: языковой модели нужен чистый текст, а
-классификатору — текст и метка класса. Формат один и тот же, поэтому файл
-пишется сразу в оба пакета — каждое приложение на сайте получает отдельный
-каталог, так что общий файл всё равно уехал бы туда дважды.
+Reads the corpus already in the repository and writes out the Russian reference
+translations with a ``type`` and a ``text`` column: the language model needs
+plain text, the classifier needs text and a class label. The format is the
+same for both, so the file goes straight into both packages — each app on the
+site gets its own directory, so a shared file would be copied there twice
+anyway.
 
-Запускается вручную после правки корпуса:
+Run by hand after editing the corpus:
 
     python scripts/prepare_text_corpora.py
 """

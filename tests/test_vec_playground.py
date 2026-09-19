@@ -29,7 +29,7 @@ def lab_table(data):
     return lab_comparison(*data, LOGISTIC)
 
 
-# --- корпус ----------------------------------------------------------------
+# --- corpus ----------------------------------------------------------------
 
 
 def test_corpus_is_balanced(data):
@@ -44,7 +44,7 @@ def test_baseline_is_one_class_in_four(data):
     assert baseline_accuracy(data[1]) == pytest.approx(0.25, abs=0.01)
 
 
-# --- признаки --------------------------------------------------------------
+# --- features --------------------------------------------------------------
 
 
 def test_tokenizer_lowercases_and_splits_on_punctuation():
@@ -54,11 +54,11 @@ def test_tokenizer_lowercases_and_splits_on_punctuation():
 def test_stemming_merges_inflected_forms():
     stems = tokenize_and_stem("Сохранить сохранены сохранение")
 
-    assert len(set(stems)) < 3, "формы одного слова обязаны схлопнуться"
+    assert len(set(stems)) < 3, "forms of one word have to collapse together"
 
 
 def test_stemming_is_ignored_for_character_ngrams():
-    """Токенизатор к символьным n-граммам неприменим, и ручка не должна врать."""
+    """A tokenizer does not apply to character n-grams, and the knob must not lie."""
     settings = FeatureSettings(analyzer="символы внутри слов", ngram_min=2, ngram_max=4, stemming=True)
 
     assert build_vectorizer(settings).tokenizer is None
@@ -69,7 +69,7 @@ def test_stemming_reaches_the_vectorizer_for_words():
 
 
 def test_ngram_range_is_never_inverted():
-    """Ползунок не должен позволить min > max."""
+    """The slider must not allow min > max."""
     settings = FeatureSettings(ngram_min=3, ngram_max=1)
 
     assert build_vectorizer(settings).ngram_range == (3, 3)
@@ -83,21 +83,21 @@ def test_describe_mentions_the_active_switches():
     assert "счётчики" in described
 
 
-# --- воспроизведение чисел лабораторной работы -----------------------------
+# --- reproducing the lab's numbers -----------------------------------------
 
 
 def test_default_tfidf_matches_the_lab(data):
-    """ЛР № 1 документирует 0.53 для словарного TF-IDF."""
+    """Lab 1 documents 0.53 for word TF-IDF."""
     assert evaluate(*data, FeatureSettings(), LOGISTIC).accuracy == pytest.approx(0.53, abs=0.006)
 
 
 def test_stemming_matches_the_lab(data):
-    """ЛР № 1: со стеммингом 0.60."""
+    """Lab 1: 0.60 with stemming."""
     assert evaluate(*data, FeatureSettings(stemming=True), LOGISTIC).accuracy == pytest.approx(0.60, abs=0.006)
 
 
 def test_character_ngrams_match_the_lab(data):
-    """ЛР № 1: символьные n-граммы 0.74 — лучший результат работы."""
+    """Lab 1: character n-grams reach 0.74, the best result in the lab."""
     settings = FeatureSettings(analyzer="символы внутри слов", ngram_min=2, ngram_max=4)
 
     assert evaluate(*data, settings, LOGISTIC).accuracy == pytest.approx(0.74, abs=0.006)
@@ -107,7 +107,7 @@ def test_lab_table_covers_every_documented_configuration(lab_table):
     names = set(lab_table["конфигурация"])
 
     assert {"TF-IDF по умолчанию", "стемминг", "символьные 2-4"} <= names
-    assert (lab_table["точность"] > 0.25).all(), "каждая конфигурация обязана бить baseline"
+    assert (lab_table["точность"] > 0.25).all(), "every configuration has to beat the baseline"
 
 
 def test_character_ngrams_win_the_comparison(lab_table):
@@ -122,7 +122,7 @@ def test_character_ngrams_cost_far_more_features(lab_table):
     assert by_name["символьные 2-4"] > 5 * by_name["TF-IDF по умолчанию"]
 
 
-# --- кривая по n-граммам ---------------------------------------------------
+# --- the n-gram curve ------------------------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -135,7 +135,7 @@ def test_sweep_covers_both_analyzers(sweep):
 
 
 def test_characters_beat_words_at_their_best(sweep):
-    """Главный результат работы: символьные признаки проходят выше словарных."""
+    """The lab's headline result: character features pass above word features."""
     words = max(point.accuracy for point in sweep if point.analyzer == "слова")
     characters = max(point.accuracy for point in sweep if point.analyzer == "символы внутри слов")
 
@@ -149,7 +149,7 @@ def test_feature_count_grows_with_ngram_length(sweep):
     assert counts == sorted(counts)
 
 
-# --- разбор ошибок ---------------------------------------------------------
+# --- looking at the mistakes -----------------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -176,7 +176,7 @@ def test_flipped_reports_what_changed_and_how(data, predicted):
     after = predictions(*data, characters, LOGISTIC)
 
     changed = flipped(data[0], data[1], predicted, after)
-    assert not changed.empty, "смена признаков обязана что-то переставить"
+    assert not changed.empty, "changing the features has to move something"
     assert set(changed["итог"]) <= {"исправлено", "испорчено", "всё ещё неверно"}
     assert (changed["было"] != changed["стало"]).all()
 
@@ -189,7 +189,7 @@ def test_switching_to_character_ngrams_fixes_more_than_it_breaks(data, predicted
     assert counts.get("исправлено", 0) > counts.get("испорчено", 0)
 
 
-# --- прочее ----------------------------------------------------------------
+# --- everything else -------------------------------------------------------
 
 
 def test_top_features_returns_one_row_per_class(data):

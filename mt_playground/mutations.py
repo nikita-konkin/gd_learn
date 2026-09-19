@@ -1,9 +1,9 @@
-"""Готовые правки перевода — кнопки «сломай это» для интерфейса.
+"""Ready-made edits — the "break it" buttons in the interface.
 
-Смысл кнопок в контрасте. Одни правки ломают строку так, что продукт не
-соберётся, почти не задев BLEU. Другие сохраняют смысл полностью, но роняют
-BLEU вдвое. Пока студент правит текст руками, он этот контраст ищет; кнопка
-показывает его за один клик.
+The point of the buttons is the contrast. Some edits break the string so badly
+the product will not build, and barely move BLEU. Others preserve the meaning
+completely and halve BLEU. Editing by hand, a student goes looking for that
+contrast; a button shows it in one click.
 """
 
 from __future__ import annotations
@@ -12,7 +12,8 @@ import re
 
 from mt_playground.checks import PLACEHOLDER
 
-# Синонимы из словаря локализации: замена сохраняет смысл, но меняет форму.
+# Synonyms from the localisation glossary: swapping one keeps the meaning and
+# changes the form.
 SYNONYMS = {
     "сохранить": "записать",
     "удалить": "стереть",
@@ -35,8 +36,10 @@ SENTENCE_SPLIT = re.compile(r"(?<=[.!?])\s+")
 
 
 def break_placeholder(text: str) -> tuple[str, str] | None:
-    """Ломает первую открывающую скобку плейсхолдера — ровно та ошибка,
-    которую модель `opus-mt-en-ru` сделала сама в сегменте s002."""
+    """Break the first opening brace of a placeholder.
+
+    Exactly the mistake ``opus-mt-en-ru`` made by itself on segment s002.
+    """
     match = PLACEHOLDER.search(text)
     if match is None or not match.group().startswith("{"):
         return None
@@ -45,7 +48,7 @@ def break_placeholder(text: str) -> tuple[str, str] | None:
 
 
 def drop_negation(text: str) -> tuple[str, str] | None:
-    """Убирает первое «не» — смысл меняется на противоположный."""
+    """Drop the first «не», which reverses the meaning."""
     replaced, count = re.subn(r"\bне\s+", "", text, count=1, flags=re.IGNORECASE)
     if count == 0:
         return None
@@ -53,7 +56,7 @@ def drop_negation(text: str) -> tuple[str, str] | None:
 
 
 def drop_last_sentence(text: str) -> tuple[str, str] | None:
-    """Выбрасывает последнее предложение — так модель потеряла s083."""
+    """Drop the last sentence — this is how the model lost s083."""
     sentences = [s for s in SENTENCE_SPLIT.split(text.strip()) if s]
     if len(sentences) < 2:
         return None
@@ -61,7 +64,7 @@ def drop_last_sentence(text: str) -> tuple[str, str] | None:
 
 
 def swap_synonym(text: str) -> tuple[str, str] | None:
-    """Меняет одно слово на синоним: смысл сохранён, форма другая."""
+    """Swap one word for a synonym: meaning kept, form changed."""
     for word, synonym in SYNONYMS.items():
         pattern = re.compile(rf"\b{word}\b", re.IGNORECASE)
         match = pattern.search(text)
@@ -73,7 +76,7 @@ def swap_synonym(text: str) -> tuple[str, str] | None:
 
 
 def shuffle_words(text: str) -> tuple[str, str] | None:
-    """Переставляет два соседних слова: те же слова, другой порядок."""
+    """Swap two neighbouring words: the same words in a different order."""
     words = text.split()
     if len(words) < 2:
         return None
@@ -82,7 +85,7 @@ def shuffle_words(text: str) -> tuple[str, str] | None:
     return " ".join(words), "два слова переставлены"
 
 
-# Порядок задаёт порядок кнопок в интерфейсе.
+# This order is the order of the buttons in the interface.
 MUTATIONS = (
     ("Сломать плейсхолдер", break_placeholder, "критическая поломка, почти незаметная для BLEU"),
     ("Убрать отрицание", drop_negation, "смысл на противоположный"),

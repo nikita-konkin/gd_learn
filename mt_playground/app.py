@@ -1,4 +1,4 @@
-"""Streamlit-интерфейс playground'а по метрикам машинного перевода."""
+"""Streamlit interface for the machine-translation metrics playground."""
 
 from __future__ import annotations
 
@@ -32,12 +32,13 @@ def _score(hypothesis: str, reference: str) -> dict[str, float]:
 
 
 def _set_hypothesis(text: str, action: str | None) -> None:
-    """Записывает новый текст и заставляет поле ввода перечитать его.
+    """Store new text and make the input field read it back.
 
-    Источник правды — `hypothesis_text`, а не ключ виджета: Streamlit удаляет
-    состояние виджета, если тот не отрисовался, а `st.rerun()` после нажатия
-    кнопки как раз до поля ввода не доходит — текст молча пропадал. Ключ поля
-    меняется вместе с ревизией, поэтому виджет перечитывает `value`.
+    The source of truth is ``hypothesis_text``, not the widget key: Streamlit
+    discards a widget's state when the widget does not render, and the
+    ``st.rerun()`` after a button press never reaches the input — the text used
+    to vanish silently. The field's key carries the revision number, so the
+    widget re-reads ``value``.
     """
     st.session_state.hypothesis_text = text
     st.session_state.editor_revision = st.session_state.get("editor_revision", 0) + 1
@@ -45,7 +46,7 @@ def _set_hypothesis(text: str, action: str | None) -> None:
 
 
 def _ensure_segment_state(segment: pd.Series) -> None:
-    """Сбрасывает редактируемый текст при смене сегмента."""
+    """Reset the editable text when the segment changes."""
     if st.session_state.get("segment_id") != segment["id"]:
         st.session_state.segment_id = segment["id"]
         _set_hypothesis(segment["ru_mt"], None)
@@ -177,7 +178,7 @@ def _render_verdict(
     columns = st.columns(3)
     for column, name in zip(columns, ["BLEU", "chrF", "TER"], strict=True):
         delta = current[name] - baseline[name]
-        # У TER меньше — лучше, поэтому зелёным должно гореть падение.
+        # Lower is better for TER, so a drop is what should light up green.
         colour = "inverse" if name == "TER" else "normal"
         column.metric(
             name,
@@ -193,9 +194,9 @@ def _render_verdict(
     else:
         st.success("Все проверки молчат.")
 
-    # Сравнивать с выходом модели нельзя: на части сегментов он сам сломан, и
-    # тогда «стало хуже» не наступает никогда. Считаем по текущему состоянию
-    # относительно того порога, который выставлен в сайдбаре.
+    # Comparing against the model output will not do: on some segments it is
+    # broken itself, and then "it got worse" never happens. Judge the current
+    # state against the threshold set in the sidebar instead.
     if fired and current["BLEU"] >= bleu_threshold:
         st.warning(
             f"**Вот оно.** Проверки сработали ({', '.join(fired)}), "

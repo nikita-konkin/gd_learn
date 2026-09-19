@@ -58,7 +58,7 @@ def test_tm_app_does_not_ship_nltk():
 
 
 def test_apps_that_do_not_need_scikit_learn_do_not_ship_it():
-    """Каждое лишнее колесо — это секунды загрузки в браузере."""
+    """Every extra wheel is seconds of load time in the browser."""
     for app in (GD_APP, MT_APP, LM_APP):
         assert not any(r.startswith("scikit-learn") for r in app.requirements)
 
@@ -92,7 +92,7 @@ def test_apps_have_distinct_slugs_and_one_root():
     slugs = [app.slug for app in APPS]
 
     assert len(slugs) == len(set(slugs))
-    assert slugs.count("") == 1, "ровно одно приложение живёт в корне сайта"
+    assert slugs.count("") == 1, "exactly one app lives at the site root"
 
 
 def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
@@ -107,7 +107,7 @@ def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
 
 
 def test_apps_do_not_leak_each_others_files(tmp_path):
-    """Каждое приложение получает только свой пакет."""
+    """Each app gets only its own package."""
     site = build(tmp_path / "dist")
 
     assert not (site / "mt" / "lm_playground").exists()

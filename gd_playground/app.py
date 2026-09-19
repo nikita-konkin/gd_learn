@@ -32,11 +32,11 @@ from gd_playground.workflow import (
 
 
 def _render_actions(container):
-    """Кнопки запуска.
+    """The run buttons.
 
-    Рисуются в контейнере, который создан первым, поэтому оказываются наверху
-    сайдбара: до правки они лежали под пятнадцатью ползунками, и до них нужно
-    было каждый раз прокручивать.
+    Drawn into a container created first, so they land at the top of the
+    sidebar. Before this they sat below fifteen sliders and had to be scrolled
+    to every single time.
     """
     with container:
         st.subheader("Действия")
@@ -190,8 +190,8 @@ def _render_run_length_controls():
 
 def _render_sidebar_controls():
     with st.sidebar:
-        # Контейнер создаётся первым, а заполняется последним: кнопки видны
-        # сразу, но знают про значения всех остальных виджетов.
+        # The container is created first and filled last: the buttons are
+        # visible straight away but still know every other widget's value.
         actions = st.container()
 
         shuffle_now = _render_data_controls()
@@ -220,7 +220,7 @@ def _render_sidebar_controls():
 
 
 def _render_training_status(summary):
-    """Итог обучения — до таблицы чисел, а не после неё."""
+    """The verdict on the run — above the table of numbers, not below it."""
     if summary is None:
         st.info("Нажмите **Run**, **Step** или **Build animation**, чтобы начать обучение.")
         return
@@ -244,8 +244,8 @@ def _render_metrics_panel(data, degree: int):
     st.subheader("Что происходит")
     _render_training_status(summary)
 
-    # Три числа, за которыми следят в первую очередь. Остальные семь лежали
-    # тут же сплошным столбцом и тонули — теперь они под раскрывашкой.
+    # The three numbers people watch first. The other seven used to sit here
+    # in one solid column and drown; they live under an expander now.
     loss_label = optimization_loss_label(st.session_state.loss_function)
     top_left, top_right = st.columns(2)
     top_left.metric(loss_label, f"{metrics['optimization_loss']:.6f}")

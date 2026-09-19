@@ -1,8 +1,8 @@
-"""Совместимость с заглушкой `pyarrow`, которую подсовывает stlite.
+"""Compatibility with the ``pyarrow`` stub stlite substitutes.
 
-Без этой заплатки в браузере падает любой вызов `sklearn`, а не только наш:
-`sklearn.utils._dataframe.is_pyarrow_data` обращается к `pa.RecordBatch` при
-разборе входных данных.
+Without this shim every ``sklearn`` call in the browser fails, not only ours:
+``sklearn.utils._dataframe.is_pyarrow_data`` reaches for ``pa.RecordBatch``
+while inspecting its input.
 """
 
 import sys
@@ -15,29 +15,29 @@ from vec_playground.compat import PYARROW_TYPES, patch_pyarrow_stub
 
 
 def _is_pyarrow_data():
-    """Функция sklearn, которая и спотыкается о заглушку.
+    """The sklearn function that trips over the stub.
 
-    Лежит в приватном модуле и появилась не во всех версиях: на
-    scikit-learn 1.7 её ещё нет, и проверять там нечего. Импортируем лениво,
-    чтобы тесты собирались на любой версии.
+    It lives in a private module and is not in every version — scikit-learn 1.7
+    does not have it yet, and there is nothing to check there. Imported lazily
+    so the tests collect on any version.
     """
     dataframe = pytest.importorskip(
         "sklearn.utils._dataframe",
-        reason="в этой версии scikit-learn проверки на pyarrow ещё нет",
+        reason="this version of scikit-learn has no pyarrow check yet",
     )
     return dataframe.is_pyarrow_data
 
 
 @pytest.fixture
 def stub_pyarrow(monkeypatch):
-    """Подменить `pyarrow` заглушкой без нужных классов — как в stlite."""
+    """Replace ``pyarrow`` with a stub lacking the classes, as stlite does."""
     stub = types.ModuleType("pyarrow")
     monkeypatch.setitem(sys.modules, "pyarrow", stub)
     return stub
 
 
 def test_sklearn_breaks_on_the_bare_stub(stub_pyarrow):
-    """Сначала показываем саму поломку, иначе заплатка проверяет пустоту."""
+    """Show the breakage first, or the shim would be verifying nothing."""
     is_pyarrow_data = _is_pyarrow_data()
 
     with pytest.raises(AttributeError, match="|".join(PYARROW_TYPES)):
@@ -45,7 +45,7 @@ def test_sklearn_breaks_on_the_bare_stub(stub_pyarrow):
 
 
 def test_sklearn_breaks_on_the_stlite_stub(stub_pyarrow):
-    """У stlite `Table` есть — его использует сам Streamlit, — а остальных нет."""
+    """stlite has ``Table`` — Streamlit itself uses it — but not the others."""
     is_pyarrow_data = _is_pyarrow_data()
     stub_pyarrow.Table = type("Table", (), {})
 
@@ -73,7 +73,7 @@ def test_patch_is_idempotent(stub_pyarrow):
     sentinel = stub_pyarrow.RecordBatch
 
     assert patch_pyarrow_stub() == []
-    assert stub_pyarrow.RecordBatch is sentinel, "второй проход не должен подменять типы"
+    assert stub_pyarrow.RecordBatch is sentinel, "a second pass must not replace the types"
 
 
 def test_patch_leaves_a_real_pyarrow_alone(monkeypatch):

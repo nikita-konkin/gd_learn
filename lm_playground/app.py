@@ -1,4 +1,4 @@
-"""Streamlit-интерфейс playground'а языковой модели."""
+"""Streamlit interface for the language-model playground."""
 
 from __future__ import annotations
 
@@ -21,11 +21,11 @@ from lm_playground.plotting import distribution_figure, overfitting_figure
 from lm_playground.sampling import prepare
 
 MAX_ORDER = 8
-COPY_ALARM = 0.5  # доля списанного, после которой текст уже нельзя звать порождённым
+COPY_ALARM = 0.5  # copied share past which the text can no longer be called generated
 
-# Разбиение на обучение и отложенные закреплено и не зависит от зерна генерации.
-# Иначе ползунок «случайное зерно» заодно переставлял бы кривую переобучения, и
-# студент видел бы шум там, где должен видеть закономерность.
+# The train/held-out split is fixed and independent of the generation seed.
+# Otherwise the "random seed" slider would shift the overfitting curve as well,
+# and the student would see noise where there is a pattern to see.
 SPLIT_SEED = 0
 SWEEP_SEED = 0
 
@@ -131,7 +131,7 @@ def _render_sidebar():
 
 
 def _highlight(generated: str, mask: list[bool]) -> str:
-    """Собрать HTML, где дословно списанные куски подсвечены."""
+    """Build HTML with the verbatim-copied runs highlighted."""
     pieces: list[str] = []
     index = 0
     while index < len(generated):

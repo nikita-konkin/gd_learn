@@ -1,10 +1,9 @@
-"""Измерения: насколько модель предсказывает и насколько она списывает.
+"""Measurements: how much the model predicts, and how much it copies.
 
-Главный вывод playground'а держится на двух числах, которые расходятся.
-С ростом порядка n текст на вид становится всё лучше — и всё большая его
-часть оказывается дословно скопированной из обучающего корпуса. Перплексия
-на отложенной выборке показывает, где модель перестала обобщать и начала
-запоминать.
+The playground's main point rests on two numbers that pull apart. As the order
+n grows the text looks better and better — and a larger and larger share of it
+turns out to be copied verbatim from the training corpus. Held-out perplexity
+shows where the model stopped generalising and started memorising.
 """
 
 from __future__ import annotations
@@ -16,9 +15,9 @@ from lm_playground.model import CharNgramLM
 
 
 def perplexity(model: CharNgramLM, texts: list[str]) -> float:
-    """Перплексию читают как «между сколькими символами модель колеблется».
+    """Read perplexity as "how many characters the model is wavering between".
 
-    1.0 — модель уверена всегда; размер алфавита — модель не знает ничего.
+    1.0 means always certain; the size of the alphabet means it knows nothing.
     """
     total_log = 0.0
     total_count = 0
@@ -32,14 +31,14 @@ def perplexity(model: CharNgramLM, texts: list[str]) -> float:
 
 
 def longest_copied_span(generated: str, source: str) -> str:
-    """Самый длинный кусок сгенерированного текста, дословно взятый из корпуса.
+    """The longest run of generated text taken verbatim from the corpus.
 
-    Наивный поиск с наращиванием: на учебных объёмах он мгновенный, а читается
-    без комментариев, в отличие от суффиксного автомата.
+    A naive grow-and-search: instant at teaching volumes, and readable without
+    commentary, unlike a suffix automaton.
     """
     best = ""
     for start in range(len(generated)):
-        # Продолжать имеет смысл только пока кусок вообще встречается.
+        # Worth continuing only while the span still occurs at all.
         length = len(best) + 1
         while start + length <= len(generated) and generated[start : start + length] in source:
             best = generated[start : start + length]
@@ -48,11 +47,11 @@ def longest_copied_span(generated: str, source: str) -> str:
 
 
 def copied_mask(generated: str, source: str, minimum: int = 10) -> list[bool]:
-    """Для каждого символа: попал ли он в дословное совпадение длиной от `minimum`.
+    """Per character: is it inside a verbatim match of at least ``minimum``.
 
-    Порог нужен, чтобы не считать совпадением каждое «не» и « и ». Маска
-    возвращается отдельно от доли, потому что интерфейс ею же подсвечивает
-    списанные куски прямо в тексте.
+    The threshold stops every «не» and « и » from counting as a match. The mask
+    is returned separately from the fraction because the interface uses it to
+    highlight the copied runs in the text itself.
     """
     covered = [False] * len(generated)
     for start in range(len(generated)):
@@ -67,7 +66,7 @@ def copied_mask(generated: str, source: str, minimum: int = 10) -> list[bool]:
 
 
 def copied_fraction(generated: str, source: str, minimum: int = 10) -> float:
-    """Доля символов, попавших в дословные совпадения длиной от `minimum`."""
+    """Share of characters inside verbatim matches of at least ``minimum``."""
     if not generated:
         return 0.0
     covered = copied_mask(generated, source, minimum)
@@ -90,10 +89,10 @@ def sweep_orders(
     sample_length: int = 300,
     seed: int = 0,
 ) -> list[OrderResult]:
-    """Прогнать модель по всем порядкам — это и есть кривая переобучения.
+    """Run the model at every order — this is the overfitting curve.
 
-    Обучающая перплексия падает до единицы, отложенная разворачивается вверх,
-    а доля списанного растёт монотонно. Три кривые на одном графике.
+    Training perplexity falls towards one, held-out perplexity turns back
+    upwards, and the copied share climbs monotonically. Three curves, one plot.
     """
     source = "\n".join(train_texts)
     results = []

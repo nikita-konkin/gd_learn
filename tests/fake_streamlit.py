@@ -1,7 +1,7 @@
-"""Подмена модуля `streamlit` для smoke-тестов интерфейсов.
+"""A stand-in for the ``streamlit`` module, for interface smoke tests.
 
-Обоим playground'ам нужен один и тот же набор заглушек, поэтому он лежит
-отдельно: иначе добавленный виджет ломает тесты второго приложения.
+Every playground needs the same set of stubs, so they live in one place:
+otherwise a widget added to one interface breaks the other apps' tests.
 """
 
 class SessionState(dict):
@@ -37,9 +37,9 @@ class FakeColumn:
         return False
 
     def __getattr__(self, name):
-        # Колонка умеет всё, что умеет корневой объект: button, metric,
-        # selectbox и так далее. Перечислять их по одному значит ловить
-        # AttributeError каждый раз, когда в интерфейс добавили виджет.
+        # A column can do everything the root object can: button, metric,
+        # selectbox and so on. Listing them one by one means an AttributeError
+        # every time a widget is added to an interface.
         return getattr(self.root, name)
 
 

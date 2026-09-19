@@ -25,7 +25,7 @@ def parts(texts):
     return split(texts, seed=0)
 
 
-# --- корпус ----------------------------------------------------------------
+# --- corpus ----------------------------------------------------------------
 
 
 def test_corpus_matches_the_localisation_set(texts):
@@ -46,7 +46,7 @@ def test_split_is_disjoint_and_deterministic(texts):
     assert split(texts, seed=0) == (train, heldout)
 
 
-# --- модель ----------------------------------------------------------------
+# --- model -----------------------------------------------------------------
 
 
 def test_order_must_be_positive():
@@ -85,7 +85,7 @@ def test_log_likelihood_is_negative_and_counts_every_character(parts):
     assert total < 0
 
 
-# --- сэмплирование ---------------------------------------------------------
+# --- sampling --------------------------------------------------------------
 
 
 def test_low_temperature_collapses_to_the_most_likely():
@@ -142,7 +142,7 @@ def test_prepare_applies_temperature_before_cutting():
     assert sum(prepared.values()) == pytest.approx(1.0)
 
 
-# --- генерация -------------------------------------------------------------
+# --- generation ------------------------------------------------------------
 
 
 def test_generation_is_deterministic_for_a_seed(parts):
@@ -169,7 +169,7 @@ def test_split_segments_drops_empty_pieces():
     assert split_segments(f"один{BOUNDARY}{BOUNDARY}два{BOUNDARY}") == ["один", "два"]
 
 
-# --- измерения -------------------------------------------------------------
+# --- measurements ----------------------------------------------------------
 
 
 def test_perplexity_is_near_one_when_the_text_is_memorised():
@@ -179,7 +179,7 @@ def test_perplexity_is_near_one_when_the_text_is_memorised():
 
 
 def test_perplexity_is_finite_on_unseen_text(parts):
-    """Ради этого и сделано сглаживание."""
+    """This is what the smoothing is there for."""
     model = CharNgramLM(5).fit(parts[0])
 
     assert math.isfinite(perplexity(model, ["совершенно невиданный текст"]))
@@ -206,7 +206,7 @@ def test_copied_fraction_is_one_for_a_verbatim_copy():
     assert copied_fraction(source, source) == pytest.approx(1.0)
 
 
-# --- главный вывод работы --------------------------------------------------
+# --- the playground's main point -------------------------------------------
 
 
 @pytest.fixture(scope="module")
@@ -222,7 +222,7 @@ def test_training_perplexity_falls_as_context_grows(sweep):
 
 
 def test_heldout_perplexity_has_a_minimum_in_the_middle(sweep):
-    """Кривая переобучения: качество на невиданном тексте разворачивается вверх."""
+    """The overfitting curve: quality on unseen text turns back upwards."""
     values = [result.heldout_perplexity for result in sweep]
     best = values.index(min(values))
 
@@ -238,10 +238,10 @@ def test_copying_grows_with_context(sweep):
 
 
 def test_the_best_generalising_model_still_copies_little(sweep):
-    """Связка, ради которой playground существует.
+    """The pairing the playground exists to show.
 
-    Порядок с лучшей отложенной перплексией списывает единицы процентов, а
-    самый «складный» на вид — почти всё.
+    The order with the best held-out perplexity copies a few per cent; the one
+    that looks most fluent copies nearly everything.
     """
     best = min(sweep, key=lambda result: result.heldout_perplexity)
     greediest = sweep[-1]

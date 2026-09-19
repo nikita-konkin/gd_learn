@@ -1,4 +1,4 @@
-"""Точка входа playground'а языковой модели."""
+"""Entry point for the language-model playground."""
 
 from lm_playground import main
 

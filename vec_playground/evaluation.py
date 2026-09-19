@@ -1,4 +1,4 @@
-"""Оценка качества классификации и разбор того, на чём модель ошибается."""
+"""Scoring the classifier, and working out which segments it gets wrong."""
 
 from __future__ import annotations
 
@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 from vec_playground.compat import patch_pyarrow_stub
 
-# Должно отработать до первого обращения к sklearn: в браузере иначе падает
-# любой вызов, разбирающий входные данные.
+# Has to run before sklearn is first touched: in the browser every call that
+# inspects its input fails otherwise.
 patch_pyarrow_stub()
 
 import numpy as np  # noqa: E402
@@ -47,10 +47,11 @@ class Score:
 
 
 def evaluate(texts, labels, settings: FeatureSettings, classifier: str) -> Score:
-    """Точность по 5-кратной кросс-валидации — как в лабораторной работе.
+    """Accuracy over five folds, the way the lab measures it.
 
-    Одно разбиение на 160 сегментах слишком шумное: разброс между частями
-    сравним с разницей между конфигурациями, и его тоже надо показывать.
+    A single split of 160 segments is too noisy: the spread between folds is
+    comparable to the difference between configurations, so it has to be shown
+    alongside the mean rather than hidden behind it.
     """
     pipeline = build_pipeline(settings, classifier)
     scores = cross_val_score(pipeline, texts, labels, cv=FOLDS, scoring="accuracy")
@@ -59,7 +60,7 @@ def evaluate(texts, labels, settings: FeatureSettings, classifier: str) -> Score
 
 
 def baseline_accuracy(labels) -> float:
-    """Самый частый класс. На сбалансированном корпусе это 1/4."""
+    """Always answer the most frequent class. On a balanced corpus that is 1/4."""
     dummy = DummyClassifier(strategy="most_frequent")
     zeros = np.zeros((len(labels), 1))
     scores = cross_val_score(dummy, zeros, labels, cv=FOLDS, scoring="accuracy")
@@ -67,7 +68,7 @@ def baseline_accuracy(labels) -> float:
 
 
 def predictions(texts, labels, settings: FeatureSettings, classifier: str) -> np.ndarray:
-    """Предсказания вне обучения — каждый сегмент предсказан моделью, его не видевшей."""
+    """Out-of-fold predictions: each segment is answered by a model that never saw it."""
     return cross_val_predict(build_pipeline(settings, classifier), texts, labels, cv=FOLDS)
 
 
@@ -77,16 +78,16 @@ def confusion(labels, predicted, classes: list[str]) -> pd.DataFrame:
 
 
 def mistakes(texts, labels, predicted) -> pd.DataFrame:
-    """Сегменты, на которых модель ошиблась — с самим текстом."""
+    """The segments the model got wrong, with the text itself."""
     frame = pd.DataFrame({"текст": texts, "правильно": labels, "модель сказала": predicted})
     return frame[frame["правильно"] != frame["модель сказала"]].reset_index(drop=True)
 
 
 def flipped(texts, labels, before: np.ndarray, after: np.ndarray) -> pd.DataFrame:
-    """Сегменты, у которых ответ изменился между двумя конфигурациями.
+    """Segments whose answer changed between two configurations.
 
-    Средняя точность прячет как раз это: два набора признаков с одинаковым
-    числом могут ошибаться на совершенно разных сегментах.
+    This is exactly what a mean accuracy hides: two feature sets scoring the
+    same number can be wrong about entirely different segments.
     """
     frame = pd.DataFrame(
         {
@@ -106,11 +107,11 @@ def flipped(texts, labels, before: np.ndarray, after: np.ndarray) -> pd.DataFram
 
 
 def top_features(texts, labels, settings: FeatureSettings, top: int = 8) -> pd.DataFrame:
-    """Признаки с наибольшим весом для каждого класса.
+    """The heaviest-weighted features for each class.
 
-    Считается по логистической регрессии независимо от выбранного
-    классификатора: у наивного Байеса и SVM веса означают разное, а вопрос
-    «на что модель смотрит» один.
+    Always computed with logistic regression, whichever classifier is selected:
+    weights mean different things to naive Bayes and to an SVM, while the
+    question "what is the model looking at" is one question.
     """
     vectorizer = build_vectorizer(settings)
     matrix = vectorizer.fit_transform(texts)
@@ -135,10 +136,10 @@ class SweepPoint:
 
 
 def sweep_ngrams(texts, labels, classifier: str, max_n: int = 6) -> list[SweepPoint]:
-    """Точность как функция длины n-граммы — для слов и для символов.
+    """Accuracy as a function of n-gram length, for words and for characters.
 
-    Это и есть главный результат работы № 1 в виде кривой: словарные признаки
-    упираются в потолок рано, символьные продолжают расти.
+    This is the headline result of lab 1 drawn as a curve: word features hit a
+    ceiling early, character features keep climbing past it.
     """
     points = []
     for analyzer, start in (("слова", 1), ("символы внутри слов", 2)):
@@ -157,8 +158,8 @@ def sweep_ngrams(texts, labels, classifier: str, max_n: int = 6) -> list[SweepPo
     return points
 
 
-# Набор из раздела 8 лабораторной работы. Значения в комментариях — то, что
-# работа документирует для логистической регрессии; тесты это проверяют.
+# The set from section 8 of the lab. The numbers in the comments are what the
+# lab documents for logistic regression, and the tests check them.
 LAB_CONFIGURATIONS = (
     ("TF-IDF по умолчанию", FeatureSettings()),  # 0.53
     ("без нижнего регистра", FeatureSettings(lowercase=False)),

@@ -1,4 +1,4 @@
-"""Графики playground'а векторизации."""
+"""Figures for the vectorisation playground."""
 
 from __future__ import annotations
 
@@ -14,10 +14,10 @@ CURRENT_COLOR = "#2E8B57"
 
 
 def ngram_sweep_figure(points: list[SweepPoint], baseline: float) -> go.Figure:
-    """Точность как функция длины n-граммы, отдельно для слов и символов.
+    """Accuracy against n-gram length, words and characters plotted apart.
 
-    Главный результат работы № 1 в виде кривой: словарные признаки упираются
-    в потолок, символьные проходят выше.
+    The headline result of lab 1 as a curve: word features hit a ceiling,
+    character features pass above it.
     """
     figure = go.Figure()
     for analyzer, colour in (("слова", WORD_COLOR), ("символы внутри слов", CHAR_COLOR)):
@@ -63,7 +63,7 @@ def ngram_sweep_figure(points: list[SweepPoint], baseline: float) -> go.Figure:
 
 
 def comparison_figure(table: pd.DataFrame, baseline: float, current: float | None = None) -> go.Figure:
-    """Столбики по конфигурациям — та же картинка, что в разделе 8 работы."""
+    """Bars per configuration — the same picture as section 8 of the lab."""
     figure = go.Figure(
         go.Bar(
             x=table["точность"],
@@ -101,7 +101,7 @@ def comparison_figure(table: pd.DataFrame, baseline: float, current: float | Non
 
 
 def confusion_figure(matrix: pd.DataFrame) -> go.Figure:
-    """Матрица ошибок: что именно модель путает."""
+    """The confusion matrix: what exactly the model mixes up."""
     figure = go.Figure(
         go.Heatmap(
             z=matrix.values,

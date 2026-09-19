@@ -1,23 +1,26 @@
-"""Совместимость со средой браузера.
+"""Browser-environment shim.
 
-`stlite` подсовывает заглушку вместо `pyarrow`: настоящий пакет в сборку не
-влезает, а `Streamlit` его импортирует. У заглушки нет классов `Table`,
-`RecordBatch`, `Array` и `ChunkedArray`.
+``stlite`` substitutes a stub for ``pyarrow``: the real package does not fit in
+the bundle, but ``streamlit`` imports it. The stub has ``Table`` — Streamlit
+itself uses that one — but no ``RecordBatch``, ``Array`` or ``ChunkedArray``.
 
-`scikit-learn` на них натыкается. В `sklearn/utils/_dataframe.py` есть
+``scikit-learn`` walks straight into that. ``sklearn/utils/_dataframe.py`` has
 
     def is_pyarrow_data(X):
         pa = sys.modules["pyarrow"]
         return isinstance(X, (pa.Table, pa.RecordBatch, pa.Array, pa.ChunkedArray))
 
-то есть проверка «а не стрелочные ли это данные» выполняется каждый раз, когда
-`sklearn` разбирает входные данные — и на заглушке падает с `AttributeError`
-ещё до начала обучения. Ломается любой вызов `sklearn` в браузере, а не только
-наш.
+and that check runs every time ``sklearn`` inspects its input, so against the
+stub it raises ``AttributeError`` before any fitting begins. It breaks every
+``sklearn`` call in the browser, not just ours.
 
-Лечение — дописать заглушке недостающие имена. Каждое становится пустым
-классом, экземпляров у которого не бывает, поэтому `isinstance` честно
-возвращает `False`: стрелочных данных здесь и правда нет.
+The cure is to give the stub the missing names. Each becomes an empty class
+that nothing is ever an instance of, so ``isinstance`` honestly answers False:
+there really is no arrow data here.
+
+The site builder ships one package per app, so a module two apps need has to
+exist in both: ``tm_playground/compat.py`` is this file again. ``test_tm_compat``
+compares the source of the two functions and fails if they drift apart.
 """
 
 from __future__ import annotations
@@ -28,10 +31,10 @@ PYARROW_TYPES = ("Table", "RecordBatch", "Array", "ChunkedArray")
 
 
 def patch_pyarrow_stub() -> list[str]:
-    """Дописать заглушке `pyarrow` недостающие типы. Возвращает список добавленных.
+    """Add the missing types to the ``pyarrow`` stub. Returns the names added.
 
-    Вне браузера, где `pyarrow` либо настоящий, либо не импортирован вовсе,
-    ничего не делает.
+    Outside the browser, where ``pyarrow`` is either real or never imported,
+    this does nothing.
     """
     module = sys.modules.get("pyarrow")
     if module is None:
@@ -40,7 +43,7 @@ def patch_pyarrow_stub() -> list[str]:
     added = []
     for name in PYARROW_TYPES:
         if not hasattr(module, name):
-            # Пустой класс: ни один объект его экземпляром не является.
+            # An empty class: no object is an instance of it.
             setattr(module, name, type(name, (), {}))
             added.append(name)
     return added

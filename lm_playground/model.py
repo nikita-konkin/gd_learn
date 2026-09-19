@@ -1,16 +1,16 @@
-"""Символьная n-граммная языковая модель.
+"""A character n-gram language model.
 
-Считает, с какой вероятностью после контекста из `order` символов идёт каждый
-следующий символ. Это не нейросеть, и в этом смысл: вся модель умещается в
-словарь счётчиков, её можно распечатать и прочитать глазами, а вопросы, ради
-которых модель тут стоит — что такое распределение следующего токена,
-что делает температура, чем «складно» отличается от «выучено наизусть» —
-одинаковы и для неё, и для трансформера.
+Works out how likely each next character is after a context of ``order``
+characters. It is not a neural network, and that is the point: the whole model
+fits in a dictionary of counts, it can be printed and read by eye, and the
+questions it exists to answer — what a next-token distribution is, what
+temperature does to one, how "fluent" differs from "memorised" — are the same
+questions a transformer raises.
 
-Вероятности сглажены интерполяцией Йелинека-Мерсера: оценка по контексту
-длины n смешивается с оценкой по контексту длины n-1 и так далее до
-равномерного распределения. Без этого любой невиданный символ давал бы
-нулевую вероятность и бесконечную перплексию на отложенной выборке.
+Probabilities are smoothed by Jelinek-Mercer interpolation: the estimate from a
+context of length n is mixed with the estimate from length n-1, and so on down
+to the uniform distribution. Without it any unseen character would have
+probability zero and the held-out perplexity would be infinite.
 """
 
 from __future__ import annotations
@@ -19,15 +19,15 @@ import math
 from collections import Counter, defaultdict
 from collections.abc import Iterable
 
-# Вес старшего контекста при интерполяции. 0.7 — обычный учебный выбор:
-# старший порядок доминирует, но никогда не забирает всю массу.
+# Weight of the longest context in the interpolation. 0.7 is the usual teaching
+# choice: the highest order dominates without ever taking all the mass.
 LAMBDA = 0.7
 
 BOUNDARY = "\n"
 
 
 class CharNgramLM:
-    """Модель символьных n-грамм с интерполяционным сглаживанием."""
+    """A character n-gram model with interpolation smoothing."""
 
     def __init__(self, order: int = 3):
         if order < 1:
@@ -38,7 +38,7 @@ class CharNgramLM:
         self.training_text = ""
 
     def fit(self, texts: Iterable[str]) -> CharNgramLM:
-        """Обучение — это подсчёт. Никакого градиентного спуска здесь нет."""
+        """Training here is counting. There is no gradient descent in it."""
         joined = BOUNDARY.join(str(text) for text in texts) + BOUNDARY
         self.training_text = joined
         self.vocabulary = tuple(sorted(set(joined)))
@@ -46,7 +46,7 @@ class CharNgramLM:
         padded = BOUNDARY * self.order + joined
         for index in range(self.order, len(padded)):
             following = padded[index]
-            # Считаем сразу все порядки от 0 до order: они нужны для отката.
+            # Count every order from 0 to order at once: the backoff needs them all.
             for back in range(self.order + 1):
                 context = tuple(padded[index - back : index])
                 self.counts[context][following] += 1
@@ -71,7 +71,7 @@ class CharNgramLM:
         return LAMBDA * maximum_likelihood + (1 - LAMBDA) * lower
 
     def distribution(self, context: str) -> dict[str, float]:
-        """Распределение следующего символа — то самое, из чего потом сэмплируют."""
+        """The next-character distribution — the thing that gets sampled from."""
         if not self.vocabulary:
             raise RuntimeError("модель не обучена")
 
@@ -81,16 +81,16 @@ class CharNgramLM:
         return {character: value / total for character, value in raw.items()}
 
     def context_support(self, context: str) -> int:
-        """Сколько раз этот контекст встретился в обучающем тексте.
+        """How many times this context occurred in the training text.
 
-        Ноль означает, что модель откатилась на более короткий контекст:
-        полезно видеть, когда «модель» на самом деле уже ничего не знает.
+        Zero means the model has backed off to a shorter context. It is worth
+        being able to see when the "model" in fact knows nothing any more.
         """
         trimmed = tuple((BOUNDARY * self.order + context)[-self.order :])
         return sum(self.counts.get(trimmed, Counter()).values())
 
     def log_likelihood(self, text: str) -> tuple[float, int]:
-        """Суммарный log2 правдоподобия текста и число символов в нём."""
+        """Total log2 likelihood of the text, and how many characters it has."""
         padded = BOUNDARY * self.order + str(text)
         total = 0.0
         count = 0

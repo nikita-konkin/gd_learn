@@ -1,9 +1,8 @@
-"""Как текст превращается в числа.
+"""How text turns into numbers.
 
-Ровно те ручки, которые в лабораторной работе № 1 перебираются вручную по
-списку конфигураций. Значения по умолчанию совпадают с `TfidfVectorizer()`
-без аргументов, поэтому «всё по умолчанию» в интерфейсе даёт ту же точность,
-что первая строка таблицы в работе.
+Exactly the knobs that lab 1 works through by hand, one configuration at a
+time. The defaults match ``TfidfVectorizer()`` with no arguments, so leaving
+everything alone in the interface reproduces the first row of the lab's table.
 """
 
 from __future__ import annotations
@@ -27,22 +26,22 @@ _stemmer = SnowballStemmer("russian")
 
 
 def tokenize_words(text: str) -> list[str]:
-    """Слова из букв и цифр, приведённые к нижнему регистру."""
+    """Words of letters and digits, lowercased."""
     return TOKEN.findall(str(text).lower())
 
 
 def tokenize_and_stem(text: str) -> list[str]:
-    """То же, но каждое слово усечено до основы.
+    """The same, with each word cut back to its stem.
 
-    «Сохранить» и «сохранены» становятся одним признаком — для русского это
-    даёт больше, чем любая замена классификатора.
+    "Сохранить" and "сохранены" collapse into one feature, which for Russian
+    buys more than any change of classifier.
     """
     return [_stemmer.stem(word) for word in tokenize_words(text)]
 
 
 @dataclass(frozen=True)
 class FeatureSettings:
-    """Настройки векторизатора — то, что студент крутит в сайдбаре."""
+    """The vectoriser settings — what the student turns in the sidebar."""
 
     analyzer: str = "слова"
     ngram_min: int = 1
@@ -69,11 +68,11 @@ class FeatureSettings:
 
 
 def build_vectorizer(settings: FeatureSettings) -> TfidfVectorizer:
-    """Собрать `TfidfVectorizer` из настроек.
+    """Assemble a ``TfidfVectorizer`` from the settings.
 
-    Стемминг подключается только для словарного анализатора: усекать основы у
-    символьных n-грамм бессмысленно, и `scikit-learn` в этом случае токенизатор
-    попросту игнорирует — лучше не делать вид, что ручка работает.
+    Stemming is wired up only for the word analyzer. Stemming character
+    n-grams is meaningless, and ``scikit-learn`` silently ignores the tokenizer
+    in that case — better not to pretend the knob does something.
     """
     analyzer = ANALYZER_CODES[settings.analyzer]
     parameters = {

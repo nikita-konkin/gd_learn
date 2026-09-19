@@ -13,7 +13,7 @@ def test_main_renders_without_errors(monkeypatch):
     fake_st = _run(monkeypatch)
 
     assert fake_st.page_config["page_title"] == "Векторизация текста"
-    # кривая по n-граммам, сравнение конфигураций, матрица ошибок
+    # n-gram curve, configuration comparison, confusion matrix
     assert len(fake_st.figures) == 3
 
 

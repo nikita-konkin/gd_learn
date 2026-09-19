@@ -1,4 +1,4 @@
-"""Streamlit-интерфейс playground'а векторизации текста."""
+"""Streamlit interface for the text-vectorisation playground."""
 
 from __future__ import annotations
 
@@ -22,7 +22,7 @@ from vec_playground.evaluation import (
 from vec_playground.features import ANALYZERS, FeatureSettings
 from vec_playground.plotting import comparison_figure, confusion_figure, ngram_sweep_figure
 
-# С чем сравнивается любая настройка: словарный TF-IDF без аргументов.
+# What every setting is compared against: word TF-IDF with no arguments.
 REFERENCE = FeatureSettings()
 MAX_NGRAM = 6
 

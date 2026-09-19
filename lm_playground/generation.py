@@ -1,4 +1,4 @@
-"""Порождение текста символ за символом."""
+"""Generating text one character at a time."""
 
 from __future__ import annotations
 
@@ -11,12 +11,12 @@ from lm_playground.sampling import prepare, sample
 
 @dataclass
 class GenerationStep:
-    """Один шаг генерации — чтобы показать, из чего складывался выбор."""
+    """One step of generation, kept so the choice behind it can be shown."""
 
     context: str
     chosen: str
     distribution: dict[str, float]
-    support: int  # сколько раз контекст встречался в обучении
+    support: int  # how many times the context occurred in training
 
 
 @dataclass
@@ -35,11 +35,11 @@ def generate(
     seed: int = 0,
     keep_steps: int = 0,
 ) -> Generation:
-    """Сгенерировать текст, при желании сохранив разбор первых шагов.
+    """Generate text, optionally keeping a breakdown of the first steps.
 
-    `keep_steps` управляет тем, сколько шагов запомнить для показа
-    распределения: хранить все 240 незачем, а первые несколько объясняют
-    механику.
+    ``keep_steps`` says how many steps to remember for showing the
+    distribution: there is no reason to keep all 240, and the first few explain
+    the mechanics.
     """
     generator = random.Random(seed)
     context = prompt
@@ -68,5 +68,5 @@ def generate(
 
 
 def split_segments(text: str) -> list[str]:
-    """Разбить сгенерированный поток на сегменты по границам."""
+    """Split the generated stream into segments on the boundary character."""
     return [part.strip() for part in text.split(BOUNDARY) if part.strip()]

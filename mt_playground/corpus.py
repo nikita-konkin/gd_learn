@@ -1,4 +1,4 @@
-"""Загрузка учебного корпуса локализации и расчёт метрик по всем сегментам."""
+"""Loading the teaching corpus and scoring every segment in it."""
 
 from __future__ import annotations
 
@@ -18,11 +18,11 @@ CONTENT_TYPES = ("интерфейс", "документация", "маркет
 
 
 def load_corpus(negation_rule: re.Pattern = NEG_RU) -> pd.DataFrame:
-    """Корпус с метриками baseline-перевода `ru_mt` относительно эталона.
+    """The corpus, scored: baseline translation ``ru_mt`` against the reference.
 
-    Колонка `semantic` посчитана заранее многоязычной моделью
-    `paraphrase-multilingual-MiniLM-L12-v2`: энкодер в браузер не помещается,
-    поэтому в комплекте лежат готовые значения, а не векторы.
+    The ``semantic`` column was computed ahead of time by the multilingual
+    model ``paraphrase-multilingual-MiniLM-L12-v2``. The encoder does not fit
+    in the browser, so the kit ships the finished numbers rather than vectors.
     """
     corpus = pd.read_csv(CORPUS_PATH)
     semantic = pd.read_csv(SEMANTIC_PATH)
@@ -39,7 +39,7 @@ def load_corpus(negation_rule: re.Pattern = NEG_RU) -> pd.DataFrame:
 
 
 def segment_label(row) -> str:
-    """Подпись сегмента для выпадающего списка."""
+    """The label a segment gets in the dropdown."""
     source = row["en"]
     if len(source) > 44:
         source = source[:41] + "…"
@@ -47,10 +47,10 @@ def segment_label(row) -> str:
 
 
 def coverage_table(corpus: pd.DataFrame, bleu_threshold: float, semantic_threshold: float) -> pd.DataFrame:
-    """Сколько сегментов отправит на проверку каждое средство.
+    """How many segments each instrument would send back for review.
 
-    Воспроизводит «цену тревоги» из раздела 8: у порога по BLEU она в десять
-    раз выше, чем у формальных проверок.
+    This is the "cost of an alarm" from section 8: a BLEU threshold raises it
+    ten times as often as the formal checks do.
     """
     total = len(corpus)
     rows = [
@@ -68,10 +68,10 @@ def coverage_table(corpus: pd.DataFrame, bleu_threshold: float, semantic_thresho
 
 
 def blind_spots(corpus: pd.DataFrame, bleu_threshold: float) -> pd.DataFrame:
-    """Сегменты, где формальная проверка сработала, а BLEU не забил тревогу.
+    """Segments a formal check flagged and BLEU did not.
 
-    Это и есть слепая зона метрики: перевод выглядит хорошо по n-граммам, но
-    собираться в продукте он не будет.
+    This is the measure's blind spot: the translation looks fine by n-grams
+    and will not build in the product.
     """
     missed = corpus[corpus["есть_замечания"] & (corpus["BLEU"] >= bleu_threshold)]
     return missed[["id", "type", "en", "ru_ref", "ru_mt", "BLEU", "chrF", "semantic", "проверки"]]

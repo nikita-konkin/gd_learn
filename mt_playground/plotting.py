@@ -1,4 +1,4 @@
-"""Графики playground'а. Всё на Plotly, как и в градиентном playground'е."""
+"""Figures for the playground. Plotly throughout, as in the gradient one."""
 
 from __future__ import annotations
 
@@ -12,10 +12,10 @@ ACCENT_COLOR = "#4C72B0"
 
 
 def metric_comparison_figure(current: dict[str, float], baseline: dict[str, float]) -> go.Figure:
-    """Метрики правленого перевода против исходного выхода модели.
+    """The edited translation's measures against the model's original output.
 
-    TER показан как есть; у него меньше — лучше, поэтому подпись оси
-    предупреждает об этом, а не молча переворачивает шкалу.
+    TER is shown as it is. Lower is better for it, so the axis label says so
+    rather than the scale being quietly flipped.
     """
     names = ["BLEU", "chrF", "TER"]
     figure = go.Figure()
@@ -50,7 +50,7 @@ def metric_comparison_figure(current: dict[str, float], baseline: dict[str, floa
 
 
 def coverage_figure(table: pd.DataFrame) -> go.Figure:
-    """Сколько сегментов корпуса каждое средство отправляет на проверку."""
+    """How many segments of the corpus each instrument sends back for review."""
     colors = [WARN_COLOR if value > 20 else OK_COLOR for value in table["доля корпуса"]]
     figure = go.Figure(
         go.Bar(
@@ -77,10 +77,10 @@ def coverage_figure(table: pd.DataFrame) -> go.Figure:
 
 
 def blind_spot_figure(corpus: pd.DataFrame, bleu_threshold: float, selected_id: str | None = None) -> go.Figure:
-    """BLEU против семантической близости; красным — сработавшие проверки.
+    """BLEU against semantic similarity, with fired checks in red.
 
-    Красные точки справа сверху и есть слепая зона: по обеим метрикам
-    перевод выглядит хорошим, а строка сломана.
+    The red points in the top right corner are the blind spot: by both measures
+    the translation looks good, and the string is broken.
     """
     clean = corpus[~corpus["есть_замечания"]]
     flagged = corpus[corpus["есть_замечания"]]
@@ -142,7 +142,7 @@ def blind_spot_figure(corpus: pd.DataFrame, bleu_threshold: float, selected_id: 
 
 
 def distribution_figure(corpus: pd.DataFrame, metric: str, current_value: float | None) -> go.Figure:
-    """Распределение метрики по корпусу с отметкой текущего значения."""
+    """The measure's distribution across the corpus, with the current value marked."""
     figure = go.Figure(
         go.Histogram(
             x=corpus[metric],

@@ -1,4 +1,4 @@
-"""Точка входа playground'а векторизации текста."""
+"""Entry point for the text-vectorisation playground."""
 
 from vec_playground import main
 

@@ -1,4 +1,4 @@
-"""Графики playground'а языковой модели."""
+"""Figures for the language-model playground."""
 
 from __future__ import annotations
 
@@ -15,10 +15,10 @@ PREPARED_COLOR = "#4C72B0"
 
 
 def overfitting_figure(results: list[OrderResult], current_order: int) -> go.Figure:
-    """Перплексия и доля списанного как функции порядка модели.
+    """Perplexity and copied share as functions of the model's order.
 
-    Две оси намеренно на одном полотне: вывод работы в том, что минимум
-    отложенной перплексии и взлёт доли списанного происходят рядом.
+    Two axes on one canvas deliberately: the point is that the minimum of
+    held-out perplexity and the take-off of the copied share happen together.
     """
     orders = [result.order for result in results]
     heldout = [result.heldout_perplexity for result in results]
@@ -91,7 +91,7 @@ def distribution_figure(
     prepared: dict[str, float],
     top: int = 12,
 ) -> go.Figure:
-    """Распределение следующего символа до и после ручек сэмплирования."""
+    """The next-character distribution before and after the sampling knobs."""
     ranked = sorted(raw, key=lambda key: raw[key], reverse=True)[:top]
     labels = ["⏎" if character == "\n" else ("␣" if character == " " else character) for character in ranked]
 

@@ -1,26 +1,26 @@
-"""Как из распределения получается текст.
+"""How a distribution becomes text.
 
-Три ручки, которые есть у любой языковой модели — от n-граммной до
-трансформера. Порядок применения тот же, что в реальных реализациях:
-температура меняет форму распределения, top-k и top-p отрезают хвост,
-и только потом бросается жребий.
+The three knobs every language model has, from an n-gram one to a transformer.
+They are applied in the order real implementations use: temperature reshapes
+the distribution, top-k and top-p cut off its tail, and only then is the die
+cast.
 """
 
 from __future__ import annotations
 
 import random
 
-# Ниже этой температуры считаем, что выбирается просто самый вероятный символ:
-# возводить вероятности в степень 1/T при крошечном T бессмысленно численно.
+# Below this temperature we simply take the most likely character: raising
+# probabilities to the power 1/T is numerically meaningless for a tiny T.
 GREEDY_TEMPERATURE = 0.01
 
 
 def apply_temperature(distribution: dict[str, float], temperature: float) -> dict[str, float]:
-    """T < 1 заостряет распределение, T > 1 разглаживает.
+    """T < 1 sharpens the distribution, T > 1 flattens it.
 
-    При T → 0 остаётся один самый вероятный символ: текст становится
-    предсказуемым и зацикливается. При большом T распределение стремится к
-    равномерному, и текст превращается в шум.
+    As T approaches 0 only the single most likely character survives: the text
+    becomes predictable and starts looping. At a large T the distribution tends
+    towards uniform and the text turns into noise.
     """
     if temperature <= GREEDY_TEMPERATURE:
         best = max(distribution, key=lambda key: distribution[key])
@@ -37,7 +37,7 @@ def apply_temperature(distribution: dict[str, float], temperature: float) -> dic
 
 
 def apply_top_k(distribution: dict[str, float], k: int) -> dict[str, float]:
-    """Оставляет k самых вероятных символов, остальным — ноль."""
+    """Keep the k most likely characters and zero the rest."""
     if k <= 0 or k >= len(distribution):
         return dict(distribution)
 
@@ -52,10 +52,10 @@ def apply_top_k(distribution: dict[str, float], k: int) -> dict[str, float]:
 
 
 def apply_top_p(distribution: dict[str, float], p: float) -> dict[str, float]:
-    """Nucleus sampling: оставляет минимальный набор с суммарной массой p.
+    """Nucleus sampling: keep the smallest set whose mass adds up to p.
 
-    В отличие от top-k размер набора подстраивается под распределение: там, где
-    модель уверена, остаётся один-два символа, где не уверена — десяток.
+    Unlike top-k, the size of that set adapts to the distribution: where the
+    model is confident one or two characters survive, where it is not, a dozen.
     """
     if p >= 1.0:
         return dict(distribution)
@@ -81,14 +81,14 @@ def prepare(
     top_k: int = 0,
     top_p: float = 1.0,
 ) -> dict[str, float]:
-    """Температура, затем top-k, затем top-p — в этом порядке."""
+    """Temperature, then top-k, then top-p — in that order."""
     prepared = apply_temperature(distribution, temperature)
     prepared = apply_top_k(prepared, top_k)
     return apply_top_p(prepared, top_p)
 
 
 def sample(distribution: dict[str, float], generator: random.Random) -> str:
-    """Бросок жребия по подготовленному распределению."""
+    """Cast the die over the prepared distribution."""
     characters = list(distribution)
     weights = [distribution[character] for character in characters]
     return generator.choices(characters, weights=weights, k=1)[0]

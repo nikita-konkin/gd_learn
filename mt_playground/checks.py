@@ -1,8 +1,8 @@
-"""Формальные проверки перевода.
+"""Formal checks on a translation.
 
-Повторяют раздел 8 лабораторной работы № 3. Это не метрика: проверка либо
-сработала, либо нет. На учебном корпусе срабатывают на 8 сегментах из 160 —
-5 % против 49 % у порога по BLEU.
+These reproduce section 8 of lab 3. They are not a measure: a check either
+fires or it does not. On the teaching corpus they fire on 8 segments out of
+160 — 5 % against the 49 % a BLEU threshold flags.
 """
 
 from __future__ import annotations
@@ -13,20 +13,21 @@ PLACEHOLDER = re.compile(r"\{[^}]*\}|%[sd]|<[^>]+>")
 NUMBER = re.compile(r"\d+")
 NEG_EN = re.compile(r"\b(not|no|never|cannot|can't|don't|doesn't|unable|without|nor)\b", re.I)
 
-# Правило из лабораторной работы № 3, буква в букву.
+# The rule from lab 3, to the letter.
 NEG_RU = re.compile(r"\b(не|нет|ни|нельзя|без|никогда|никаких|отсутствует|запрещ\w*)\b", re.I)
 
-# То же правило, но с учётом русской морфологии. На учебном корпусе исходное
-# правило даёт две ложные тревоги: «Невозможно подключиться» (отрицание сращено
-# с основой, `\bне\b` его не видит) и «Результаты отсутствуют» (в правиле
-# захардкожена только форма «отсутствует»). Автор уже писал `запрещ\w*`, то есть
-# про словоизменение знал — здесь то же самое доведено до конца.
+# The same rule, but allowing for Russian morphology. On the teaching corpus the
+# original gives two false alarms: «Невозможно подключиться», where the negation
+# is fused into the stem and `\bне\b` cannot see it, and «Результаты
+# отсутствуют», where only the form «отсутствует» is hardcoded. The author had
+# already written `запрещ\w*`, so inflection was on their mind — this just
+# carries the same idea through.
 NEG_RU_MORPHOLOGY = re.compile(
     r"\b(не|нет|ни|нельзя|без|никогда|никаких|ничего|отсутств\w*|невозможн\w*|запрещ\w*)\b",
     re.I,
 )
 
-# Порядок задаёт порядок вывода в интерфейсе.
+# This order is the order they are listed in the interface.
 CHECK_NAMES = (
     "плейсхолдеры",
     "числа",
@@ -45,11 +46,11 @@ CHECK_EXPLANATIONS = {
 
 
 def formal_checks(source: str, translation: str, negation_rule: re.Pattern = NEG_RU) -> list[str]:
-    """Возвращает список сработавших проверок. Пустой список — нареканий нет.
+    """The checks that fired. An empty list means nothing to complain about.
 
-    `negation_rule` по умолчанию совпадает с лабораторной работой, поэтому
-    значения по корпусу воспроизводятся один в один. Передайте
-    `NEG_RU_MORPHOLOGY`, чтобы увидеть, как две ложные тревоги исчезают.
+    ``negation_rule`` defaults to the lab's own, so the corpus-wide numbers come
+    out identical to it. Pass ``NEG_RU_MORPHOLOGY`` to watch the two false
+    alarms disappear.
     """
     source, translation = str(source), str(translation)
     fired = []
@@ -67,5 +68,5 @@ def formal_checks(source: str, translation: str, negation_rule: re.Pattern = NEG
 
 
 def placeholders(text: str) -> list[str]:
-    """Плейсхолдеры в порядке появления — для подсветки в интерфейсе."""
+    """Placeholders in order of appearance, for highlighting in the interface."""
     return PLACEHOLDER.findall(str(text))

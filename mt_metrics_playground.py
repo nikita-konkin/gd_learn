@@ -1,4 +1,4 @@
-"""Точка входа playground'а по метрикам машинного перевода."""
+"""Entry point for the machine-translation metrics playground."""
 
 from mt_playground import main
 

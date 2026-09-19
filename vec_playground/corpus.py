@@ -1,4 +1,4 @@
-"""Корпус для классификации: тот же текст, что в лабораторной работе № 1."""
+"""The classification corpus: the same text lab 1 works on."""
 
 from __future__ import annotations
 
@@ -13,7 +13,7 @@ CONTENT_TYPES = ("документация", "интерфейс", "маркет
 
 
 def load_corpus() -> pd.DataFrame:
-    """Русские эталонные переводы и их тип контента."""
+    """The Russian reference translations and the content type of each."""
     return pd.read_csv(CORPUS_PATH)
 
 

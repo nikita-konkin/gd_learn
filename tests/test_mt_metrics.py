@@ -18,7 +18,7 @@ def corpus():
     return load_corpus()
 
 
-# --- метрики ---------------------------------------------------------------
+# --- measures --------------------------------------------------------------
 
 
 def test_tokenize_lowercases_and_drops_punctuation():
@@ -43,7 +43,7 @@ def test_bleu_punishes_lost_negation():
 
 
 def test_chrf_is_more_forgiving_than_bleu_on_inflection():
-    """Символьные n-граммы переживают смену формы слова, словесные — нет."""
+    """Character n-grams survive a change of word form; word n-grams do not."""
     hypothesis, reference = "Сохранение изменений", "Сохранить изменения"
     assert chrf(hypothesis, reference) > bleu(hypothesis, reference)
 
@@ -58,7 +58,7 @@ def test_ter_counts_edits_per_reference_word():
     assert ter("а б в", "а б г") == pytest.approx(1 / 3)
 
 
-# --- формальные проверки ---------------------------------------------------
+# --- formal checks ---------------------------------------------------------
 
 
 def test_broken_placeholder_is_detected():
@@ -82,7 +82,7 @@ def test_placeholders_are_extracted_in_order():
     assert placeholders("{a} then %s then <b>") == ["{a}", "%s", "<b>"]
 
 
-# --- корпус: значения обязаны совпадать с лабораторной работой ---------------
+# --- corpus: the numbers have to match the lab ------------------------------
 
 
 def test_corpus_loads_all_segments(corpus):
@@ -91,13 +91,13 @@ def test_corpus_loads_all_segments(corpus):
 
 
 def test_mean_scores_match_the_course(corpus):
-    """ЛР № 3 документирует средний BLEU 0.46 и chrF 0.64."""
+    """Lab 3 documents a mean BLEU of 0.46 and chrF of 0.64."""
     assert corpus["BLEU"].mean() == pytest.approx(0.46, abs=0.005)
     assert corpus["chrF"].mean() == pytest.approx(0.64, abs=0.005)
 
 
 def test_formal_checks_fire_on_eight_segments(corpus):
-    """ЛР № 3: проверки помечают 5 % корпуса против 49 % у порога по BLEU."""
+    """Lab 3: the checks flag 5 % of the corpus against 49 % for a BLEU threshold."""
     assert int(corpus["есть_замечания"].sum()) == 8
 
     below_median = (corpus["BLEU"] < corpus["BLEU"].median()).sum()
@@ -105,25 +105,25 @@ def test_formal_checks_fire_on_eight_segments(corpus):
 
 
 def test_the_three_real_placeholder_breakages_are_caught(corpus):
-    """О_данных.md: модель сломала ровно три плейсхолдера."""
+    """О_данных.md: the model broke exactly three placeholders."""
     broken = corpus[corpus["проверки"].apply(lambda checks: "плейсхолдеры" in checks)]
     assert set(broken["id"]) == {"s002", "s012", "s028"}
 
 
 def test_blind_spot_contains_the_broken_placeholder(corpus):
-    """s002 — сломанная строка, которую BLEU пропускает выше медианы."""
+    """s002 is a broken string that BLEU lets through above the median."""
     missed = blind_spots(corpus, corpus["BLEU"].median())
     assert "s002" in set(missed["id"])
 
 
 def test_morphology_rule_removes_only_the_false_positives():
-    """«Невозможно» и «отсутствуют» — отрицания, которых правило ЛР № 3 не видит."""
+    """«Невозможно» and «отсутствуют» are negations lab 3's rule cannot see."""
     base = load_corpus()
     fixed = load_corpus(NEG_RU_MORPHOLOGY)
 
     removed = set(base[base["есть_замечания"]]["id"]) - set(fixed[fixed["есть_замечания"]]["id"])
     assert removed == {"s010", "s031"}
-    # s083 — настоящая потеря предложения, она обязана остаться.
+    # s083 is a genuine lost sentence; it has to stay flagged.
     assert "s083" in set(fixed[fixed["есть_замечания"]]["id"])
 
 
@@ -136,7 +136,7 @@ def test_coverage_table_orders_tools_by_cost(corpus):
 
     assert formal == 8
     assert by_bleu == 78
-    # 49 % корпуса против 5 % — почти десятикратная разница в ручной работе.
+    # 49 % of the corpus against 5 % — nearly tenfold the manual work.
     assert by_bleu / formal == pytest.approx(9.75, abs=0.5)
 
 
@@ -146,7 +146,7 @@ def test_segment_label_truncates_long_sources(corpus):
     assert all(len(segment_label(row)) < 80 for _, row in corpus.iterrows())
 
 
-# --- правки ----------------------------------------------------------------
+# --- edits -----------------------------------------------------------------
 
 
 def test_break_placeholder_keeps_text_but_breaks_the_check():
@@ -158,7 +158,7 @@ def test_break_placeholder_keeps_text_but_breaks_the_check():
 
 
 def test_break_placeholder_barely_moves_bleu():
-    """Суть работы: критическая поломка почти не видна метрике."""
+    """The heart of the lab: a critical breakage the measure barely registers."""
     reference = 'Удалить файл "{name}"?'
     broken, _ = break_placeholder(reference)
 

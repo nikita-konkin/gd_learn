@@ -16,7 +16,7 @@ def test_main_renders_without_errors(monkeypatch):
     fake_st = _run(monkeypatch)
 
     assert fake_st.page_config["page_title"] == "Языковая модель и температура"
-    # кривая переобучения + распределение следующего символа
+    # overfitting curve plus the next-character distribution
     assert len(fake_st.figures) == 2
 
 
@@ -29,7 +29,7 @@ def test_default_order_generates_and_measures(monkeypatch):
 
 
 def test_long_context_raises_the_memorisation_warning(monkeypatch):
-    """При n=8 текст почти целиком списан, и интерфейс обязан это сказать."""
+    """At n=8 the text is almost entirely copied, and the interface must say so."""
     fake_st = _run(monkeypatch, overrides={"Порядок n — сколько символов контекста": 8})
 
     assert any("списано" in message or "Осторожно" in message for message in fake_st.warnings)
@@ -62,11 +62,11 @@ def test_highlight_handles_an_all_copied_text():
 
 
 def test_generation_seed_changes_the_text_but_not_the_measurements(monkeypatch):
-    """Регрессия: зерно генерации переставляло и разбиение на выборки.
+    """Regression: the generation seed used to move the train/held-out split.
 
-    Ползунок «случайное зерно» должен менять только жребий при сэмплировании.
-    Пока он заодно переразбивал корпус, перплексия прыгала на каждый щелчок и
-    кривая переобучения тонула в шуме.
+    The "random seed" slider should change only the die cast during sampling.
+    While it also re-split the corpus, perplexity jumped on every click and the
+    overfitting curve drowned in the noise.
     """
     first = _run(monkeypatch, overrides={"Случайное зерно": 3})
     second = _run(monkeypatch, overrides={"Случайное зерно": 777})
@@ -79,6 +79,6 @@ def test_generation_seed_changes_the_text_but_not_the_measurements(monkeypatch):
 
 
 def test_sweep_does_not_accept_a_sampling_seed():
-    """Кривая не должна зависеть от зерна генерации даже по недосмотру."""
+    """The curve must not depend on the generation seed, not even by oversight."""
     with pytest.raises(TypeError):
         lm_app._sweep(CONTENT_TYPES, 7)

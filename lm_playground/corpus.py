@@ -1,4 +1,4 @@
-"""Обучающий текст для языковой модели."""
+"""The training text for the language model."""
 
 from __future__ import annotations
 
@@ -15,7 +15,7 @@ HELDOUT_SHARE = 0.2
 
 
 def load_texts(content_types: tuple[str, ...] | list[str] | None = None) -> list[str]:
-    """Русские эталонные переводы, при желании отфильтрованные по типу."""
+    """The Russian reference translations, optionally filtered by content type."""
     corpus = pd.read_csv(CORPUS_PATH)
     if content_types:
         corpus = corpus[corpus["type"].isin(list(content_types))]
@@ -23,10 +23,10 @@ def load_texts(content_types: tuple[str, ...] | list[str] | None = None) -> list
 
 
 def split(texts: list[str], seed: int = 0, heldout_share: float = HELDOUT_SHARE) -> tuple[list[str], list[str]]:
-    """Разделить на обучающую и отложенную части.
+    """Split into a training part and a held-out part.
 
-    Отложенная часть нужна ровно для одного вопроса: модель обобщает или
-    запоминает. Без неё перплексия всегда выглядит прекрасно.
+    The held-out part exists for exactly one question: is the model
+    generalising or memorising. Without it perplexity always looks splendid.
     """
     shuffled = list(texts)
     random.Random(seed).shuffle(shuffled)
