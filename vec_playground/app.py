@@ -114,7 +114,7 @@ def _render_sidebar() -> tuple[FeatureSettings, str]:
         st.caption(
             "Другие playground'ы: [градиентный спуск](../) · "
             "[метрики перевода](../mt/) · [языковая модель](../lm/) · "
-            "[память переводов](../tm/)"
+            "[память переводов](../tm/) · [данные и разметка](../labels/)"
         )
 
     settings = FeatureSettings(

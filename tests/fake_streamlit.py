@@ -57,6 +57,7 @@ class FakeStreamlit:
         self.infos = []
         self.errors = []
         self.successes = []
+        self.captions = []
         self.rerun_called = False
 
     def set_page_config(self, **kwargs):
@@ -65,8 +66,8 @@ class FakeStreamlit:
     def title(self, *args, **kwargs):
         return None
 
-    def caption(self, *args, **kwargs):
-        return None
+    def caption(self, body="", *args, **kwargs):
+        self.captions.append(str(body))
 
     def header(self, *args, **kwargs):
         return None

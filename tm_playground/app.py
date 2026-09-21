@@ -115,7 +115,7 @@ def _render_sidebar() -> tuple[str, int, float]:
         st.caption(
             "Другие playground'ы: [градиентный спуск](../) · "
             "[метрики перевода](../mt/) · [языковая модель](../lm/) · "
-            "[векторизация](../vec/)"
+            "[векторизация](../vec/) · [данные и разметка](../labels/)"
         )
     return str(query).strip(), int(top_n), float(threshold)
 

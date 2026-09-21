@@ -115,7 +115,7 @@ def _render_sidebar(corpus: pd.DataFrame):
         st.caption(
             "Другие playground'ы: [градиентный спуск](../) · "
             "[языковая модель](../lm/) · [векторизация](../vec/) · "
-            "[память переводов](../tm/)"
+            "[память переводов](../tm/) · [данные и разметка](../labels/)"
         )
 
     return segment_id, bleu_threshold, semantic_threshold, fix_morphology

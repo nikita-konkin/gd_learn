@@ -13,6 +13,7 @@ MT_APP = next(app for app in APPS if app.slug == "mt")
 LM_APP = next(app for app in APPS if app.slug == "lm")
 VEC_APP = next(app for app in APPS if app.slug == "vec")
 TM_APP = next(app for app in APPS if app.slug == "tm")
+LABELS_APP = next(app for app in APPS if app.slug == "labels")
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
@@ -50,6 +51,16 @@ def test_tm_app_ships_its_corpus_and_its_pretrained_vectors():
     assert "tm_playground/data/emb_tm.npy" in sources
     assert "tm_playground/data/emb_queries.npy" in sources
     assert any(r.startswith("scikit-learn") for r in TM_APP.requirements)
+
+
+def test_labels_app_ships_its_data_and_scikit_learn_but_not_nltk():
+    """Stemming happens offline; in the browser it would be a wheel for one number."""
+    sources = collect_sources(LABELS_APP)
+
+    for name in ("corpus.csv", "mqm_examples.csv", "remedies.csv", "newsgroups_curve.csv"):
+        assert f"labels_playground/data/{name}" in sources
+    assert any(r.startswith("scikit-learn") for r in LABELS_APP.requirements)
+    assert not any(r.startswith("nltk") for r in LABELS_APP.requirements)
 
 
 def test_tm_app_does_not_ship_nltk():

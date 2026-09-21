@@ -83,6 +83,16 @@ APPS = (
         # in the browser, so they travel with the app as data.
         data_globs=("data/*.csv", "data/*.npy"),
     ),
+    App(
+        slug="labels",
+        entrypoint="data_labels_playground.py",
+        package="labels_playground",
+        title="Данные и разметка",
+        # No nltk: the one remedy that stems words is computed offline, like the
+        # 20 Newsgroups curve, and shipped as numbers.
+        requirements=("numpy", "pandas", "plotly>=5.20,<8", "scikit-learn>=1.5"),
+        data_globs=("data/*.csv",),
+    ),
 )
 
 
