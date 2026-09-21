@@ -7,6 +7,8 @@ picks another classifier — which is how the browser, not the tests, caught it.
 
 from __future__ import annotations
 
+import numpy as np
+
 
 def plural(count: int, one: str, few: str, many: str) -> str:
     """The form of a noun after ``count``: one for 1, 21, 101; few for 2–4, 22–24; many otherwise.
@@ -23,3 +25,13 @@ def plural(count: int, one: str, few: str, many: str) -> str:
 
 def segments(count: int) -> str:
     return f"{count} {plural(count, 'сегмент', 'сегмента', 'сегментов')}"
+
+
+def as_printed(value: float) -> str:
+    """Three decimals, rounded the way the lab's pandas tables round them.
+
+    Accuracies over 160 segments are multiples of 1/160, and ties are common:
+    naive Bayes on character n-grams scores 98/160 = 0.6125. numpy rounds half
+    to even and the lab prints 0.612; a format string alone would print 0.613.
+    """
+    return f"{np.round(value, 3):.3f}"

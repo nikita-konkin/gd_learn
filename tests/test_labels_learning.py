@@ -55,7 +55,8 @@ def test_the_training_sizes_are_those_of_five_fold_cross_validation(curves):
 
 
 def test_full_size_matches_the_labs_headline_numbers(curves):
-    """0.531 for words, 0.744 for character n-grams — the numbers of lab 1."""
+    """0.744 is lab 1's section 9. Lab 1 never fits words with logistic regression;
+    0.531 is this playground's own, and the pair is what the lecture quotes."""
     assert curves[(WORDS, LOGISTIC)].final == pytest.approx(0.531, abs=0.0005)
     assert curves[(CHARACTERS, LOGISTIC)].final == pytest.approx(0.744, abs=0.0005)
 

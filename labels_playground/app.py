@@ -56,7 +56,7 @@ from labels_playground.plotting import (
     mqm_figure,
     newsgroups_figure,
 )
-from labels_playground.wording import segments
+from labels_playground.wording import as_printed, segments
 
 REMEDY_LABELS = {
     "hyperparameters": ("подобрать гиперпараметры", "значения по умолчанию уже оптимальны"),
@@ -148,8 +148,8 @@ def _render_data_or_model() -> None:
     full = int(words.sizes[-1])
 
     columns = st.columns(3)
-    columns[0].metric(f"{_sentence(FEATURE_LABELS[WORDS])}, {segments(full)}", f"{words.final:.3f}")
-    columns[1].metric(f"{_sentence(FEATURE_LABELS[CHARACTERS])}, {segments(full)}", f"{characters.final:.3f}")
+    columns[0].metric(f"{_sentence(FEATURE_LABELS[WORDS])}, {segments(full)}", as_printed(words.final))
+    columns[1].metric(f"{_sentence(FEATURE_LABELS[CHARACTERS])}, {segments(full)}", as_printed(characters.final))
     columns[2].metric(
         "Символьные догоняют слова на объёме",
         segments(catch_up) if catch_up is not None else "не догоняют",
@@ -175,7 +175,7 @@ def _render_data_or_model() -> None:
     if characters.test[-1] > characters.test[-2]:
         st.info(
             "**Кривая на правом краю ещё растёт** — "
-            f"с {characters.test[-2]:.3f} до {characters.test[-1]:.3f} на последнем шаге. "
+            f"с {as_printed(characters.test[-2])} до {as_printed(characters.test[-1])} на последнем шаге. "
             "Модель не насытилась данными: главный способ поднять качество — размечать дальше, "
             "а не менять модель. Пунктир сверху — точность на обучающих сегментах; разрыв "
             "между ним и нижней линией — переобучение, и с 160 сегментами он не закрывается."

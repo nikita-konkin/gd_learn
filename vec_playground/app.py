@@ -9,6 +9,7 @@ import streamlit as st
 from vec_playground.corpus import CONTENT_TYPES, texts_and_labels
 from vec_playground.evaluation import (
     CLASSIFIERS,
+    as_printed,
     baseline_accuracy,
     confusion,
     evaluate,
@@ -139,14 +140,11 @@ def _render_score(settings: FeatureSettings, classifier: str) -> None:
     left, right = st.columns(2)
     left.metric(
         "Кросс-валидация, 5 частей",
-        f"{score.accuracy:.3f}",
+        f"{as_printed(score.accuracy):.3f}",
         delta=f"{score.accuracy - reference.accuracy:+.3f} к словарному TF-IDF",
     )
     right.metric("Признаков", f"{score.features}")
-    st.caption(
-        f"Разброс между частями ±{score.deviation:.3f} · baseline {baseline:.2f} · "
-        f"{settings.describe()}"
-    )
+    st.caption(f"Разброс между частями ±{score.deviation:.3f} · baseline {baseline:.2f} · {settings.describe()}")
 
     if score.deviation > abs(score.accuracy - reference.accuracy) and settings != REFERENCE:
         st.info(
@@ -195,8 +193,7 @@ def _render_flips(settings: FeatureSettings, classifier: str) -> None:
     columns[1].metric("Испорчено", counts.get("испорчено", 0))
     columns[2].metric("Всё ещё неверно", counts.get("всё ещё неверно", 0))
     st.caption(
-        "Средняя точность прячет именно это: два набора признаков с одинаковым "
-        "числом ошибаются на разных сегментах."
+        "Средняя точность прячет именно это: два набора признаков с одинаковым числом ошибаются на разных сегментах."
     )
     st.dataframe(changed, use_container_width=True, hide_index=True, height=280)
 

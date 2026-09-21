@@ -171,6 +171,17 @@ LAB_CONFIGURATIONS = (
 )
 
 
+def as_printed(value: float) -> float:
+    """Three decimals, rounded the way the lab's pandas tables round them.
+
+    Accuracies here are multiples of 1/160, so ties are common: 86/160 is
+    0.5375. numpy rounds half to even and prints 0.538; Python's round and
+    format strings go by the binary value and print 0.537. The lab shows
+    numpy's, so the playground must too, or a student sees two numbers.
+    """
+    return float(np.round(value, 3))
+
+
 def lab_comparison(texts, labels, classifier: str) -> pd.DataFrame:
     rows = []
     for name, settings in LAB_CONFIGURATIONS:
@@ -178,8 +189,8 @@ def lab_comparison(texts, labels, classifier: str) -> pd.DataFrame:
         rows.append(
             {
                 "конфигурация": name,
-                "точность": round(score.accuracy, 3),
-                "разброс": round(score.deviation, 3),
+                "точность": as_printed(score.accuracy),
+                "разброс": as_printed(score.deviation),
                 "признаков": score.features,
             }
         )

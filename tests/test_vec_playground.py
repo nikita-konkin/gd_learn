@@ -86,18 +86,22 @@ def test_describe_mentions_the_active_switches():
 # --- reproducing the lab's numbers -----------------------------------------
 
 
-def test_default_tfidf_matches_the_lab(data):
-    """Lab 1 documents 0.53 for word TF-IDF."""
+def test_default_tfidf_matches_the_lecture(data):
+    """0.53 for word TF-IDF with logistic regression, as the lecture quotes it.
+
+    The lab itself runs section 8 with naive Bayes (0.444); that table is
+    pinned in ``test_with_naive_bayes_the_table_is_section_8_as_the_lab_prints_it``.
+    """
     assert evaluate(*data, FeatureSettings(), LOGISTIC).accuracy == pytest.approx(0.53, abs=0.006)
 
 
-def test_stemming_matches_the_lab(data):
-    """Lab 1: 0.60 with stemming."""
+def test_stemming_matches_the_lecture(data):
+    """0.60 with stemming and logistic regression; with naive Bayes the lab prints 0.538."""
     assert evaluate(*data, FeatureSettings(stemming=True), LOGISTIC).accuracy == pytest.approx(0.60, abs=0.006)
 
 
 def test_character_ngrams_match_the_lab(data):
-    """Lab 1: character n-grams reach 0.74, the best result in the lab."""
+    """Lab 1, section 9: character n-grams with logistic regression reach 0.744, the lab's best."""
     settings = FeatureSettings(analyzer="символы внутри слов", ngram_min=2, ngram_max=4)
 
     assert evaluate(*data, settings, LOGISTIC).accuracy == pytest.approx(0.74, abs=0.006)
@@ -203,3 +207,22 @@ def test_top_features_returns_one_row_per_class(data):
 def test_every_classifier_beats_the_baseline(data, name):
     assert build_classifier(name) is not None
     assert evaluate(*data, FeatureSettings(stemming=True), name).accuracy > 0.25
+
+
+def test_with_naive_bayes_the_table_is_section_8_as_the_lab_prints_it(data):
+    """Section 8 compares preprocessing with naive Bayes, not logistic regression.
+
+    Two of the rows are exact ties (86/160, 98/160); they must round as the
+    lab's pandas table rounds them, or the student sees 0.537 against 0.538.
+    """
+    table = lab_comparison(*data, "наивный Байес").set_index("конфигурация")["точность"]
+
+    assert table.to_dict() == {
+        "TF-IDF по умолчанию": 0.444,
+        "без нижнего регистра": 0.419,
+        "слова + биграммы": 0.456,
+        "min_df=2 (без редких)": 0.381,
+        "стемминг": 0.538,
+        "символьные 3-5": 0.631,
+        "символьные 2-4": 0.612,
+    }
