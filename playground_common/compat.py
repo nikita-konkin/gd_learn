@@ -1,8 +1,8 @@
 """Browser-environment shim.
 
 ``stlite`` substitutes a stub for ``pyarrow``: the real package does not fit in
-the bundle, but ``streamlit`` imports it. The stub has no ``Table``,
-``RecordBatch``, ``Array`` or ``ChunkedArray``.
+the bundle, but ``streamlit`` imports it. The stub has ``Table`` — Streamlit
+itself uses that one — but no ``RecordBatch``, ``Array`` or ``ChunkedArray``.
 
 ``scikit-learn`` walks straight into that. ``sklearn/utils/_dataframe.py`` has
 
@@ -18,9 +18,8 @@ The cure is to give the stub the missing names. Each becomes an empty class
 that nothing is ever an instance of, so ``isinstance`` honestly answers False:
 there really is no arrow data here.
 
-The site builder ships one package per app, so a module two apps need has to
-exist in both: this is ``vec_playground/compat.py`` again. ``test_tm_compat``
-compares the source of the two functions and fails if they drift apart.
+Every app that touches ``sklearn`` must call ``patch_pyarrow_stub()`` before
+its first ``sklearn`` import.
 """
 
 from __future__ import annotations

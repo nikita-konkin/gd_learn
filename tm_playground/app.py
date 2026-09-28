@@ -7,6 +7,7 @@ from functools import lru_cache
 import pandas as pd
 import streamlit as st
 
+from playground_common.links import other_playgrounds
 from tm_playground.clustering import agreement_table, cluster, corpus_map, crosstab
 from tm_playground.corpus import (
     EMBEDDING_MODEL,
@@ -112,11 +113,7 @@ def _render_sidebar() -> tuple[str, int, float]:
         )
 
         st.divider()
-        st.caption(
-            "Другие playground'ы: [градиентный спуск](../) · "
-            "[метрики перевода](../mt/) · [языковая модель](../lm/) · "
-            "[векторизация](../vec/) · [данные и разметка](../labels/)"
-        )
+        st.caption(other_playgrounds("tm"))
     return str(query).strip(), int(top_n), float(threshold)
 
 

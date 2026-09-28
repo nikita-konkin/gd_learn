@@ -1,0 +1,161 @@
+id,type,en,ru_ref
+s001,интерфейс,Save changes,Сохранить изменения
+s002,интерфейс,"Delete file ""{name}""?",Удалить файл «{name}»?
+s003,интерфейс,Sign in with your work account,Войдите с рабочей учётной записью
+s004,интерфейс,Your session has expired,Срок действия сеанса истёк
+s005,интерфейс,Loading…,Загрузка…
+s006,интерфейс,Add to favorites,Добавить в избранное
+s007,интерфейс,Search settings,Поиск по настройкам
+s008,интерфейс,Choose a payment method,Выберите способ оплаты
+s009,интерфейс,Password must be at least 8 characters,Пароль должен содержать не менее 8 символов
+s010,интерфейс,Unable to connect to the server,Не удалось подключиться к серверу
+s011,интерфейс,Copy link,Копировать ссылку
+s012,интерфейс,{count} items selected,Выбрано элементов: {count}
+s013,интерфейс,Cancel,Отмена
+s014,интерфейс,Try again,Повторить
+s015,интерфейс,Enable two-factor authentication,Включить двухфакторную аутентификацию
+s016,интерфейс,This action cannot be undone,Это действие нельзя отменить
+s017,интерфейс,Upload a profile photo,Загрузите фото профиля
+s018,интерфейс,Show advanced options,Показать дополнительные параметры
+s019,интерфейс,Sync in progress,Идёт синхронизация
+s020,интерфейс,Storage almost full,Хранилище почти заполнено
+s021,интерфейс,Rename folder,Переименовать папку
+s022,интерфейс,Sort by date modified,Сортировать по дате изменения
+s023,интерфейс,Invite a teammate,Пригласить участника
+s024,интерфейс,Notifications are turned off,Уведомления отключены
+s025,интерфейс,Export to CSV,Экспорт в CSV
+s026,интерфейс,Restore from backup,Восстановить из резервной копии
+s027,интерфейс,Check your email to confirm,Проверьте почту для подтверждения
+s028,интерфейс,Session will end in {minutes} min,Сеанс завершится через {minutes} мин
+s029,интерфейс,Clear cache,Очистить кэш
+s030,интерфейс,Switch to dark theme,Переключиться на тёмную тему
+s031,интерфейс,No results found,Ничего не найдено
+s032,интерфейс,Drag files here to upload,Перетащите файлы сюда для загрузки
+s033,интерфейс,Grant camera access,Разрешить доступ к камере
+s034,интерфейс,Your changes were saved,Изменения сохранены
+s035,интерфейс,Remove from cart,Удалить из корзины
+s036,интерфейс,Continue without saving,Продолжить без сохранения
+s037,интерфейс,Set a recovery phone number,Укажите резервный номер телефона
+s038,интерфейс,Connection restored,Соединение восстановлено
+s039,интерфейс,Skip this step,Пропустить этот шаг
+s040,интерфейс,Report a problem,Сообщить о проблеме
+s041,документация,This guide describes how to configure the service for the first time.,В этом руководстве описана первоначальная настройка службы.
+s042,документация,"Before you begin, make sure that you have administrator rights.","Прежде чем начать, убедитесь, что у вас есть права администратора."
+s043,документация,The parameter defines the maximum number of simultaneous connections.,Параметр задаёт максимальное число одновременных подключений.
+s044,документация,"If the value is not specified, the default value is used.","Если значение не указано, используется значение по умолчанию."
+s045,документация,Run the command from the directory that contains the configuration file.,"Выполните команду из каталога, содержащего файл конфигурации."
+s046,документация,The service restarts automatically after the settings are applied.,После применения настроек служба перезапускается автоматически.
+s047,документация,Log files are stored for 30 days and then deleted automatically.,"Файлы журналов хранятся 30 дней, после чего удаляются автоматически."
+s048,документация,Use this method only when the standard procedure has failed.,"Используйте этот способ только в том случае, если стандартная процедура не сработала."
+s049,документация,The table below lists all supported input formats.,В таблице ниже перечислены все поддерживаемые форматы входных данных.
+s050,документация,An access token is valid for one hour from the moment it is issued.,Токен доступа действителен в течение часа с момента выдачи.
+s051,документация,Do not edit the file manually while the service is running.,Не редактируйте файл вручную во время работы службы.
+s052,документация,Each request must contain a unique identifier in the header.,Каждый запрос должен содержать уникальный идентификатор в заголовке.
+s053,документация,The system checks the integrity of the archive before unpacking it.,Перед распаковкой система проверяет целостность архива.
+s054,документация,Backups are created every night at 02:00 server time.,Резервные копии создаются каждую ночь в 02:00 по времени сервера.
+s055,документация,"If an error occurs, the operation is rolled back completely.",При возникновении ошибки операция полностью откатывается.
+s056,документация,This section is intended for system administrators.,Этот раздел предназначен для системных администраторов.
+s057,документация,The maximum size of an uploaded file is 25 MB.,Максимальный размер загружаемого файла — 25 МБ.
+s058,документация,Changes take effect only after the application is restarted.,Изменения вступают в силу только после перезапуска приложения.
+s059,документация,You can find the full list of parameters in the appendix.,Полный список параметров приведён в приложении.
+s060,документация,The connection is encrypted with the TLS 1.3 protocol.,Соединение шифруется по протоколу TLS 1.3.
+s061,документация,Verify that the port is not blocked by the firewall.,"Убедитесь, что порт не заблокирован межсетевым экраном."
+s062,документация,The report is generated in the background and may take several minutes.,Отчёт формируется в фоновом режиме и может занять несколько минут.
+s063,документация,Each user account is linked to exactly one organization.,Каждая учётная запись пользователя связана ровно с одной организацией.
+s064,документация,Deleted records remain available in the archive for 90 days.,Удалённые записи остаются доступными в архиве в течение 90 дней.
+s065,документация,The following example shows a minimal working configuration.,В следующем примере показана минимальная рабочая конфигурация.
+s066,документация,Read permissions are granted at the level of an individual folder.,Права на чтение выдаются на уровне отдельной папки.
+s067,документация,The migration script must be run only once.,Скрипт миграции следует запускать только один раз.
+s068,документация,Incoming messages are placed in a queue and processed in order.,Входящие сообщения помещаются в очередь и обрабатываются по порядку.
+s069,документация,Statistics are updated once an hour.,Статистика обновляется раз в час.
+s070,документация,"To roll back the update, use the previous version of the package.",Для отката обновления используйте предыдущую версию пакета.
+s071,документация,The interface language is selected in the user profile settings.,Язык интерфейса выбирается в настройках профиля пользователя.
+s072,документация,Empty values in required fields cause a validation error.,Пустые значения в обязательных полях приводят к ошибке проверки.
+s073,документация,The server responds with code 429 when the request limit is exceeded.,При превышении лимита запросов сервер отвечает кодом 429.
+s074,документация,Temporary files are removed when the session ends.,Временные файлы удаляются при завершении сеанса.
+s075,документация,Compatibility with earlier versions is preserved.,Совместимость с предыдущими версиями сохраняется.
+s076,документация,The certificate must be renewed before the expiration date.,Сертификат необходимо продлить до даты окончания срока действия.
+s077,документация,Access to the API is provided over HTTPS only.,Доступ к API предоставляется только по протоколу HTTPS.
+s078,документация,Duplicate entries are ignored during import.,При импорте повторяющиеся записи игнорируются.
+s079,документация,The default time zone is UTC.,Часовой пояс по умолчанию — UTC.
+s080,документация,Detailed logging noticeably reduces performance.,Подробное журналирование заметно снижает производительность.
+s081,маркетинг,"Work faster, worry less.",Работайте быстрее и спокойнее.
+s082,маркетинг,"Everything your team needs, in one place.","Всё, что нужно вашей команде, — в одном месте."
+s083,маркетинг,Try it free for 30 days. No card required.,Попробуйте бесплатно 30 дней. Карта не нужна.
+s084,маркетинг,Join more than two million professionals.,Присоединяйтесь к двум миллионам профессионалов.
+s085,маркетинг,Your data stays yours. Always.,Ваши данные остаются вашими. Всегда.
+s086,маркетинг,"Set up in minutes, not weeks.","Настройка занимает минуты, а не недели."
+s087,маркетинг,Built for teams that move fast.,"Создано для команд, которые работают быстро."
+s088,маркетинг,Say goodbye to endless spreadsheets.,Забудьте о бесконечных таблицах.
+s089,маркетинг,The results speak for themselves.,Результаты говорят сами за себя.
+s090,маркетинг,Start today — cancel any time.,Начните сегодня — отменить можно в любой момент.
+s091,маркетинг,Loved by designers and engineers alike.,"Его выбирают и дизайнеры, и инженеры."
+s092,маркетинг,One subscription for the whole company.,Одна подписка на всю компанию.
+s093,маркетинг,"Less routine, more of the work that matters.",Меньше рутины — больше по-настоящему важной работы.
+s094,маркетинг,See what your customers really think.,"Узнайте, что на самом деле думают ваши клиенты."
+s095,маркетинг,Designed to grow with your business.,Растёт вместе с вашим бизнесом.
+s096,маркетинг,Save up to 40% with an annual plan.,Экономьте до 40% на годовом тарифе.
+s097,маркетинг,No hidden fees. Ever.,Никаких скрытых платежей. Никогда.
+s098,маркетинг,Bring your whole workflow together.,Соберите весь рабочий процесс воедино.
+s099,маркетинг,Trusted by companies in 60 countries.,Нам доверяют компании из 60 стран.
+s100,маркетинг,A smarter way to plan your week.,Более разумный способ спланировать неделю.
+s101,маркетинг,Because every minute counts.,Ведь важна каждая минута.
+s102,маркетинг,Get started in three simple steps.,Начните за три простых шага.
+s103,маркетинг,"Powerful on the inside, simple on the outside.","Сложное внутри, простое снаружи."
+s104,маркетинг,Meet the new standard for team messaging.,Новый стандарт командного общения.
+s105,маркетинг,Your first project is on us.,Первый проект — за наш счёт.
+s106,маркетинг,Stop switching between five different apps.,Хватит переключаться между пятью разными приложениями.
+s107,маркетинг,Real support from real people.,Живая поддержка от живых людей.
+s108,маркетинг,Ready when you are.,"Мы готовы, когда готовы вы."
+s109,маркетинг,Turn feedback into decisions.,Превращайте отзывы в решения.
+s110,маркетинг,Security you do not have to think about.,"Безопасность, о которой не нужно думать."
+s111,маркетинг,Built on twenty years of research.,Основано на двадцати годах исследований.
+s112,маркетинг,The fastest way from idea to launch.,Кратчайший путь от идеи до запуска.
+s113,маркетинг,Free for students and non-profits.,Бесплатно для студентов и некоммерческих организаций.
+s114,маркетинг,"Works offline, syncs when you are back.",Работает офлайн и синхронизируется при возвращении в сеть.
+s115,маркетинг,Small team? We have a plan for that.,Небольшая команда? Для неё есть отдельный тариф.
+s116,маркетинг,Numbers you can finally trust.,"Цифры, которым наконец можно доверять."
+s117,маркетинг,Upgrade whenever you need more.,"Переходите на старший тариф, когда потребуется."
+s118,маркетинг,Made for the way you actually work.,"Сделано под то, как вы работаете на самом деле."
+s119,маркетинг,"Thousands of templates, ready to use.",Тысячи готовых шаблонов.
+s120,маркетинг,"Come for the speed, stay for the quality.","Останьтесь ради качества, придя за скоростью."
+s121,юридический,These Terms govern your use of the Service.,Настоящие Условия регулируют использование Сервиса.
+s122,юридический,By creating an account you accept the terms set out below.,"Создавая учётную запись, вы принимаете изложенные ниже условия."
+s123,юридический,The Company reserves the right to amend these Terms at any time.,Компания оставляет за собой право в любое время вносить изменения в настоящие Условия.
+s124,юридический,The User undertakes not to transfer access credentials to third parties.,Пользователь обязуется не передавать учётные данные третьим лицам.
+s125,юридический,Personal data is processed in accordance with applicable law.,Обработка персональных данных осуществляется в соответствии с применимым законодательством.
+s126,юридический,"The Service is provided on an ""as is"" basis.",Сервис предоставляется на условиях «как есть».
+s127,юридический,Liability of the parties is limited to the amount actually paid.,Ответственность сторон ограничена фактически уплаченной суммой.
+s128,юридический,This Agreement enters into force upon signature by both parties.,Настоящий Договор вступает в силу с момента подписания обеими сторонами.
+s129,юридический,Any dispute is subject to resolution in the courts of the Russian Federation.,Любой спор подлежит разрешению в судах Российской Федерации.
+s130,юридический,Notices are deemed delivered on the day they are sent by email.,Уведомления считаются доставленными в день их отправки по электронной почте.
+s131,юридический,The User has the right to request deletion of their personal data.,Пользователь вправе потребовать удаления своих персональных данных.
+s132,юридический,Exclusive rights to the software remain with the Licensor.,Исключительные права на программное обеспечение сохраняются за Лицензиаром.
+s133,юридический,Force majeure releases the parties from liability.,Обстоятельства непреодолимой силы освобождают стороны от ответственности.
+s134,юридический,Termination of the Agreement does not release the parties from obligations already incurred.,Расторжение Договора не освобождает стороны от уже возникших обязательств.
+s135,юридический,Confidential information may not be disclosed for five years after termination.,Конфиденциальная информация не подлежит раскрытию в течение пяти лет после прекращения действия Договора.
+s136,юридический,The Licence is granted on a non-exclusive basis.,Лицензия предоставляется на неисключительной основе.
+s137,юридический,The parties have agreed on the following.,Стороны договорились о нижеследующем.
+s138,юридический,Payment is made within ten banking days from the date of invoice.,Оплата производится в течение десяти банковских дней с даты выставления счёта.
+s139,юридический,The Agreement is drawn up in two copies of equal legal force.,"Договор составлен в двух экземплярах, имеющих равную юридическую силу."
+s140,юридический,Headings are provided for convenience only and do not affect interpretation.,Заголовки приведены исключительно для удобства и не влияют на толкование.
+s141,юридический,The Contractor is liable for the quality of the work performed.,Исполнитель несёт ответственность за качество выполненных работ.
+s142,юридический,"If any provision is held invalid, the remaining provisions remain in force.","Если какое-либо положение будет признано недействительным, остальные положения сохраняют силу."
+s143,юридический,The Customer undertakes to accept the work within five working days.,Заказчик обязуется принять работы в течение пяти рабочих дней.
+s144,юридический,Assignment of rights under this Agreement requires written consent.,Уступка прав по настоящему Договору требует письменного согласия.
+s145,юридический,The Supplier warrants that the goods are free from defects.,Поставщик гарантирует отсутствие недостатков товара.
+s146,юридический,Interest is charged for each day of delay.,За каждый день просрочки начисляется неустойка.
+s147,юридический,The Agreement is governed by the law of the place of registration of the Company.,Договор регулируется правом места регистрации Компании.
+s148,юридический,The User confirms that they have reached the age of eighteen.,"Пользователь подтверждает, что достиг восемнадцатилетнего возраста."
+s149,юридический,Use of the Service for unlawful purposes is prohibited.,Использование Сервиса в противоправных целях запрещается.
+s150,юридический,The list of processed data categories is set out in the Annex.,Перечень категорий обрабатываемых данных приведён в Приложении.
+s151,юридический,Consent may be withdrawn at any time.,Согласие может быть отозвано в любое время.
+s152,юридический,The Company does not transfer data to third countries.,Компания не передаёт данные в третьи страны.
+s153,юридический,The retention period for the data is three years.,Срок хранения данных составляет три года.
+s154,юридический,The parties shall settle disputes through negotiations.,Стороны разрешают споры путём переговоров.
+s155,юридический,Failure to comply entails termination of access.,Несоблюдение влечёт прекращение доступа.
+s156,юридический,The Licensee is not entitled to decompile the software.,Лицензиат не вправе декомпилировать программное обеспечение.
+s157,юридический,The Annex forms an integral part of the Agreement.,Приложение является неотъемлемой частью Договора.
+s158,юридический,Amendments are valid only if made in writing.,Изменения действительны только при их оформлении в письменном виде.
+s159,юридический,The Company processes data on a lawful basis.,Компания обрабатывает данные на законном основании.
+s160,юридический,Costs incurred by each party are borne by that party.,"Расходы, понесённые каждой стороной, несёт эта сторона."

@@ -4,7 +4,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from vec_playground.compat import patch_pyarrow_stub
+from playground_common.compat import patch_pyarrow_stub
+from playground_common.wording import round_as_pandas
 
 # Has to run before sklearn is first touched: in the browser every call that
 # inspects its input fails otherwise.
@@ -158,28 +159,17 @@ def sweep_ngrams(texts, labels, classifier: str, max_n: int = 6) -> list[SweepPo
     return points
 
 
-# The set from section 8 of the lab. The numbers in the comments are what the
-# lab documents for logistic regression, and the tests check them.
+# The set from section 8 of the lab. The lab runs it with naive Bayes; the
+# numbers in the comments are the ones its table prints, and the tests check them.
 LAB_CONFIGURATIONS = (
-    ("TF-IDF по умолчанию", FeatureSettings()),  # 0.53
+    ("TF-IDF по умолчанию", FeatureSettings()),  # 0.444
     ("без нижнего регистра", FeatureSettings(lowercase=False)),
     ("слова + биграммы", FeatureSettings(ngram_max=2)),
     ("min_df=2 (без редких)", FeatureSettings(min_df=2)),
-    ("стемминг", FeatureSettings(stemming=True)),  # 0.60
-    ("символьные 3-5", FeatureSettings(analyzer="символы внутри слов", ngram_min=3, ngram_max=5)),
-    ("символьные 2-4", FeatureSettings(analyzer="символы внутри слов", ngram_min=2, ngram_max=4)),  # 0.74
+    ("стемминг", FeatureSettings(stemming=True)),  # 0.538
+    ("символьные 3-5", FeatureSettings(analyzer="символы внутри слов", ngram_min=3, ngram_max=5)),  # 0.631
+    ("символьные 2-4", FeatureSettings(analyzer="символы внутри слов", ngram_min=2, ngram_max=4)),  # 0.612
 )
-
-
-def as_printed(value: float) -> float:
-    """Three decimals, rounded the way the lab's pandas tables round them.
-
-    Accuracies here are multiples of 1/160, so ties are common: 86/160 is
-    0.5375. numpy rounds half to even and prints 0.538; Python's round and
-    format strings go by the binary value and print 0.537. The lab shows
-    numpy's, so the playground must too, or a student sees two numbers.
-    """
-    return float(np.round(value, 3))
 
 
 def lab_comparison(texts, labels, classifier: str) -> pd.DataFrame:
@@ -189,8 +179,8 @@ def lab_comparison(texts, labels, classifier: str) -> pd.DataFrame:
         rows.append(
             {
                 "конфигурация": name,
-                "точность": as_printed(score.accuracy),
-                "разброс": as_printed(score.deviation),
+                "точность": round_as_pandas(score.accuracy),
+                "разброс": round_as_pandas(score.deviation),
                 "признаков": score.features,
             }
         )

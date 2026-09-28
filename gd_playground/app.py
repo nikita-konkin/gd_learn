@@ -29,6 +29,8 @@ from gd_playground.workflow import (
     current_metrics,
     history_summary,
 )
+from playground_common.links import other_playgrounds
+from playground_common.wording import plural
 
 
 def _render_actions(container):
@@ -202,11 +204,7 @@ def _render_sidebar_controls():
         run_clicked, step_clicked, animation_clicked, reset_clicked = _render_actions(actions)
 
         st.divider()
-        st.caption(
-            "Другие playground'ы: [метрики перевода](mt/) · "
-            "[языковая модель](lm/) · [векторизация](vec/) · "
-            "[память переводов](tm/) · [данные и разметка](labels/)"
-        )
+        st.caption(other_playgrounds(""))
 
     return {
         "degree": degree,
@@ -217,6 +215,11 @@ def _render_sidebar_controls():
         "animation_clicked": animation_clicked,
         "reset_clicked": reset_clicked,
     }
+
+
+def _iterations(count: int) -> str:
+    """«за 1 итерацию», «за 3 итерации», «за 100 итераций»."""
+    return f"{count} {plural(count, 'итерацию', 'итерации', 'итераций')}"
 
 
 def _render_training_status(summary):
@@ -232,9 +235,9 @@ def _render_training_status(summary):
             "Уменьшите learning rate."
         )
     elif summary["convergence_iteration"] is None:
-        st.warning(f"Сходимость не достигнута за {summary['max_iteration']} итераций.")
+        st.warning(f"Сходимость не достигнута за {_iterations(summary['max_iteration'])}.")
     else:
-        st.success(f"Сошлось примерно за {summary['convergence_iteration']} итераций.")
+        st.success(f"Сошлось примерно за {_iterations(summary['convergence_iteration'])}.")
 
 
 def _render_metrics_panel(data, degree: int):
@@ -295,7 +298,8 @@ def _render_metrics_panel(data, degree: int):
     elif st.session_state.optimizer == "SGD":
         meaning = "Использует одну точку для каждого обновления параметров."
     else:
-        meaning = f"Использует {st.session_state.batch_size} точек для каждого обновления параметров."
+        size = int(st.session_state.batch_size)
+        meaning = f"Использует {size} {plural(size, 'точку', 'точки', 'точек')} для каждого обновления параметров."
     st.caption(meaning)
 
 

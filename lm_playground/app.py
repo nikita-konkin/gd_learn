@@ -19,6 +19,7 @@ from lm_playground.generation import generate, split_segments
 from lm_playground.model import CharNgramLM
 from lm_playground.plotting import distribution_figure, overfitting_figure
 from lm_playground.sampling import prepare
+from playground_common.links import other_playgrounds
 
 MAX_ORDER = 8
 COPY_ALARM = 0.5  # copied share past which the text can no longer be called generated
@@ -112,11 +113,7 @@ def _render_sidebar():
         )
 
         st.divider()
-        st.caption(
-            "Другие playground'ы: [градиентный спуск](../) · "
-            "[метрики перевода](../mt/) · [векторизация](../vec/) · "
-            "[память переводов](../tm/) · [данные и разметка](../labels/)"
-        )
+        st.caption(other_playgrounds("lm"))
 
     return {
         "content_types": tuple(chosen_types) if chosen_types else CONTENT_TYPES,
@@ -248,8 +245,7 @@ def _render_tabs(settings: dict, model: CharNgramLM) -> None:
         survivors = sum(1 for value in prepared.values() if value > 0)
         st.caption(
             f"После температуры {settings['temperature']:.2f}, top-k {settings['top_k']} "
-            f"и top-p {settings['top_p']:.2f} в розыгрыше осталось {survivors} символов "
-            f"из {len(raw)}."
+            f"и top-p {settings['top_p']:.2f} в розыгрыше символов: {survivors} из {len(raw)}."
         )
 
     with tab_corpus:

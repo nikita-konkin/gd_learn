@@ -17,7 +17,7 @@ errors for the project at hand, and a person picks it.
 
 from __future__ import annotations
 
-from tm_playground.compat import patch_pyarrow_stub
+from playground_common.compat import patch_pyarrow_stub
 
 patch_pyarrow_stub()
 

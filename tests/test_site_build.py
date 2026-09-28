@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from scripts.build_site import APPS, build, collect_sources, render_index, site_manifest
+from scripts.build_site import APPS, SHARED_PACKAGE, build, collect_sources, render_index, site_manifest
 
 ROOT = Path(__file__).resolve().parents[1]
 PLACEHOLDERS = ("__STLITE_VERSION__", "__TITLE__", "__ENTRYPOINT__", "__REQUIREMENTS__", "__FILES__")
@@ -14,6 +14,7 @@ LM_APP = next(app for app in APPS if app.slug == "lm")
 VEC_APP = next(app for app in APPS if app.slug == "vec")
 TM_APP = next(app for app in APPS if app.slug == "tm")
 LABELS_APP = next(app for app in APPS if app.slug == "labels")
+INTRO_APP = next(app for app in APPS if app.slug == "intro")
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
@@ -23,6 +24,16 @@ def test_collect_sources_includes_entrypoint_and_package(app):
     assert app.entrypoint in sources
     assert f"{app.package}/__init__.py" in sources
     assert f"{app.package}/app.py" in sources
+
+
+@pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
+def test_every_app_ships_the_shared_package(app):
+    """Each app is served alone, so each needs its own copy of the shared helpers."""
+    sources = collect_sources(app)
+
+    shared = sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / SHARED_PACKAGE).glob("*.py"))
+    assert shared, "the shared package has no modules"
+    assert set(shared) <= set(sources)
 
 
 def test_mt_app_ships_its_data_files():
@@ -61,6 +72,13 @@ def test_labels_app_ships_its_data_and_scikit_learn_but_not_nltk():
         assert f"labels_playground/data/{name}" in sources
     assert any(r.startswith("scikit-learn") for r in LABELS_APP.requirements)
     assert not any(r.startswith("nltk") for r in LABELS_APP.requirements)
+
+
+def test_intro_app_ships_its_corpus_and_scikit_learn_but_not_nltk():
+    """The decision tree needs scikit-learn; nothing here stems."""
+    assert "intro_playground/data/corpus.csv" in collect_sources(INTRO_APP)
+    assert any(r.startswith("scikit-learn") for r in INTRO_APP.requirements)
+    assert not any(r.startswith("nltk") for r in INTRO_APP.requirements)
 
 
 def test_tm_app_does_not_ship_nltk():
@@ -118,14 +136,13 @@ def test_build_lays_out_root_and_subdirectory_apps(tmp_path):
 
 
 def test_apps_do_not_leak_each_others_files(tmp_path):
-    """Each app gets only its own package."""
+    """Each app gets its own package and the shared one, nothing else."""
     site = build(tmp_path / "dist")
 
-    assert not (site / "mt" / "lm_playground").exists()
-    assert not (site / "lm" / "mt_playground").exists()
-    assert not (site / "vec" / "lm_playground").exists()
-    assert not (site / "tm" / "vec_playground").exists()
-    assert not (site / "vec" / "tm_playground").exists()
+    for app in APPS:
+        folder = site / app.output_subdir
+        assert {path.name for path in folder.glob("*_playground")} == {app.package}, app.slug or "root"
+        assert (folder / SHARED_PACKAGE / "__init__.py").exists()
     assert not (site / "gd_playground" / "data").exists()
 
 

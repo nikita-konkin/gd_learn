@@ -1,3 +1,4 @@
+from playground_common.compat import patch_pyarrow_stub
 from tm_playground.app import main
 from tm_playground.clustering import (
     N_CLUSTERS,
@@ -9,7 +10,6 @@ from tm_playground.clustering import (
     corpus_map,
     crosstab,
 )
-from tm_playground.compat import patch_pyarrow_stub
 from tm_playground.corpus import (
     CONTENT_TYPES,
     EMBEDDING_MODEL,

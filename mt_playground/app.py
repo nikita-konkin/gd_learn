@@ -21,6 +21,7 @@ from mt_playground.plotting import (
     distribution_figure,
     metric_comparison_figure,
 )
+from playground_common.links import other_playgrounds
 
 
 def _score(hypothesis: str, reference: str) -> dict[str, float]:
@@ -112,11 +113,7 @@ def _render_sidebar(corpus: pd.DataFrame):
             "`ru_mt` — настоящий выход модели Helsinki-NLP/opus-mt-en-ru."
         )
         st.divider()
-        st.caption(
-            "Другие playground'ы: [градиентный спуск](../) · "
-            "[языковая модель](../lm/) · [векторизация](../vec/) · "
-            "[память переводов](../tm/) · [данные и разметка](../labels/)"
-        )
+        st.caption(other_playgrounds("mt"))
 
     return segment_id, bleu_threshold, semantic_threshold, fix_morphology
 

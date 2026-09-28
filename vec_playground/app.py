@@ -6,10 +6,11 @@ from functools import lru_cache
 
 import streamlit as st
 
+from playground_common.links import other_playgrounds
+from playground_common.wording import as_printed
 from vec_playground.corpus import CONTENT_TYPES, texts_and_labels
 from vec_playground.evaluation import (
     CLASSIFIERS,
-    as_printed,
     baseline_accuracy,
     confusion,
     evaluate,
@@ -112,11 +113,7 @@ def _render_sidebar() -> tuple[FeatureSettings, str]:
         classifier = st.selectbox("Классификатор", CLASSIFIERS, index=0)
 
         st.divider()
-        st.caption(
-            "Другие playground'ы: [градиентный спуск](../) · "
-            "[метрики перевода](../mt/) · [языковая модель](../lm/) · "
-            "[память переводов](../tm/) · [данные и разметка](../labels/)"
-        )
+        st.caption(other_playgrounds("vec"))
 
     settings = FeatureSettings(
         analyzer=analyzer,
@@ -140,7 +137,7 @@ def _render_score(settings: FeatureSettings, classifier: str) -> None:
     left, right = st.columns(2)
     left.metric(
         "Кросс-валидация, 5 частей",
-        f"{as_printed(score.accuracy):.3f}",
+        as_printed(score.accuracy),
         delta=f"{score.accuracy - reference.accuracy:+.3f} к словарному TF-IDF",
     )
     right.metric("Признаков", f"{score.features}")

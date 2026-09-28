@@ -7,7 +7,7 @@ import plotly.graph_objects as go
 
 from labels_playground.learning import CHARACTERS, FEATURE_LABELS, WORDS, Curve
 from labels_playground.mqm import MISSED_CRITICAL, REJECTED_CORRECT, acceptance, penalties
-from labels_playground.wording import segments
+from playground_common.wording import segments
 
 # The lab notebooks' palette, so a figure here and one there read the same.
 WORDS_COLOR = "#4C72B0"
@@ -58,7 +58,8 @@ def learning_figure(curves: dict[str, Curve], baseline: float, catch_up: int | N
                 mode="lines+markers",
                 name=f"{FEATURE_LABELS[feature_set]}, на новых данных",
                 line={"color": color, "width": 3},
-                hovertemplate="%{x} сегментов: %{y:.3f}<extra></extra>",
+                customdata=[segments(size) for size in curve.sizes],
+                hovertemplate="%{customdata}: %{y:.3f}<extra></extra>",
             )
         )
     characters = curves[CHARACTERS]
@@ -69,7 +70,8 @@ def learning_figure(curves: dict[str, Curve], baseline: float, catch_up: int | N
             mode="lines",
             name=f"{FEATURE_LABELS[CHARACTERS]}, на обучающих",
             line={"color": CHARACTERS_COLOR, "width": 1.5, "dash": "dot"},
-            hovertemplate="%{x} сегментов: %{y:.3f}<extra></extra>",
+            customdata=[segments(size) for size in characters.sizes],
+            hovertemplate="%{customdata}: %{y:.3f}<extra></extra>",
         )
     )
     figure.add_hline(
@@ -128,7 +130,8 @@ def newsgroups_figure(newsgroups: pd.DataFrame, ours: Curve) -> go.Figure:
             mode="lines+markers",
             name="наш корпус (посчитано здесь)",
             line={"color": CHARACTERS_COLOR, "width": 2},
-            hovertemplate="%{x} сегментов: %{y:.3f}<extra></extra>",
+            customdata=[segments(size) for size in ours.sizes],
+            hovertemplate="%{customdata}: %{y:.3f}<extra></extra>",
         )
     )
     figure.update_layout(

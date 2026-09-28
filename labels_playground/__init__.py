@@ -9,7 +9,6 @@ from labels_playground.agreement import (
     kappa_reading,
 )
 from labels_playground.app import main
-from labels_playground.compat import patch_pyarrow_stub
 from labels_playground.corpus import load_annotations, load_corpus, load_newsgroups_curve, load_remedies
 from labels_playground.learning import Curve, baseline_accuracy, catch_up_size, learning_curve_for
 from labels_playground.mqm import (
@@ -22,6 +21,7 @@ from labels_playground.mqm import (
     penalties,
     rank_correlation,
 )
+from playground_common.compat import patch_pyarrow_stub
 
 __all__ = [
     "CATEGORIES",

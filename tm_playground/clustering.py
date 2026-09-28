@@ -12,7 +12,7 @@ from __future__ import annotations
 import numpy as np
 import pandas as pd
 
-from tm_playground.compat import patch_pyarrow_stub
+from playground_common.compat import patch_pyarrow_stub
 
 patch_pyarrow_stub()
 

@@ -10,7 +10,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from labels_playground.compat import patch_pyarrow_stub
+from playground_common.compat import patch_pyarrow_stub
 
 # Has to run before sklearn is first touched: in the browser every call that
 # inspects its input fails otherwise.

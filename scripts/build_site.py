@@ -25,6 +25,10 @@ TEMPLATE = ROOT / "web" / "index.template.html"
 # Pinned so a CDN release cannot silently change the deployed runtime.
 STLITE_VERSION = "1.9.1"
 
+# Helpers every app imports: the pyarrow stub patch, Russian numerals, the
+# links between the apps. Shipped with each app, since each is served alone.
+SHARED_PACKAGE = "playground_common"
+
 
 @dataclass(frozen=True)
 class App:
@@ -93,14 +97,24 @@ APPS = (
         requirements=("numpy", "pandas", "plotly>=5.20,<8", "scikit-learn>=1.5"),
         data_globs=("data/*.csv",),
     ),
+    App(
+        slug="intro",
+        entrypoint="intro_tasks_playground.py",
+        package="intro_playground",
+        title="Три задачи вводной лекции",
+        # scikit-learn for the decision tree only; regression is one np.polyfit.
+        requirements=("numpy", "pandas", "plotly>=5.20,<8", "scikit-learn>=1.5"),
+        data_globs=("data/*.csv",),
+    ),
 )
 
 
 def collect_sources(app: App) -> list[str]:
     """Repo-relative POSIX paths of every file the app needs at runtime."""
     paths = [app.entrypoint]
+    for package in (app.package, SHARED_PACKAGE):
+        paths += sorted(path.relative_to(ROOT).as_posix() for path in (ROOT / package).glob("*.py"))
     package_dir = ROOT / app.package
-    paths += sorted(path.relative_to(ROOT).as_posix() for path in package_dir.glob("*.py"))
     for pattern in app.data_globs:
         paths += sorted(path.relative_to(ROOT).as_posix() for path in package_dir.glob(pattern))
     return paths

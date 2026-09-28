@@ -1,8 +1,8 @@
-"""Russian numerals: «41 сегмент», «82 сегмента», «87 сегментов»."""
+"""Numbers as the course prints them: Russian plurals and the lab tables' rounding."""
 
 import pytest
 
-from labels_playground.wording import plural, segments
+from playground_common.wording import as_printed, plural, round_as_pandas, segments
 
 
 @pytest.mark.parametrize(
@@ -33,8 +33,13 @@ def test_the_teens_always_take_the_many_form(count):
 
 def test_ties_are_rounded_the_way_the_lab_prints_them():
     """98/160 and 86/160: the lab's pandas tables show 0.612 and 0.538."""
-    from labels_playground.wording import as_printed
-
     assert as_printed(98 / 160) == "0.612"
     assert as_printed(86 / 160) == "0.538"
     assert as_printed(0.53125) == "0.531"
+
+
+def test_round_as_pandas_matches_dataframe_round():
+    import pandas as pd
+
+    values = [98 / 160, 86 / 160, 0.53125, 0.4375]
+    assert [round_as_pandas(value) for value in values] == pd.Series(values).round(3).tolist()

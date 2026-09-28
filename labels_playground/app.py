@@ -56,7 +56,8 @@ from labels_playground.plotting import (
     mqm_figure,
     newsgroups_figure,
 )
-from labels_playground.wording import as_printed, segments
+from playground_common.links import other_playgrounds
+from playground_common.wording import as_printed, segments
 
 REMEDY_LABELS = {
     "hyperparameters": ("подобрать гиперпараметры", "значения по умолчанию уже оптимальны"),
@@ -125,10 +126,7 @@ def _render_sidebar() -> None:
             "в ноутбуке, потому что корпус весит 14 МБ."
         )
         st.divider()
-        st.caption(
-            "Другие playground'ы: [градиентный спуск](../) · [метрики перевода](../mt/) · "
-            "[языковая модель](../lm/) · [векторизация](../vec/) · [память переводов](../tm/)"
-        )
+        st.caption(other_playgrounds("labels"))
 
 
 def _render_data_or_model() -> None:

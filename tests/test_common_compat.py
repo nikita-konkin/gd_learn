@@ -11,7 +11,7 @@ import types
 import numpy as np
 import pytest
 
-from vec_playground.compat import PYARROW_TYPES, patch_pyarrow_stub
+from playground_common.compat import PYARROW_TYPES, patch_pyarrow_stub
 
 
 def _is_pyarrow_data():

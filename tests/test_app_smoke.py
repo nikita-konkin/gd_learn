@@ -21,3 +21,17 @@ def test_main_run_button_populates_history(monkeypatch):
 
     assert fake_st.session_state["history"] is not None
     assert fake_st.session_state["animation_history"] is None
+
+
+def test_status_lines_agree_with_their_numbers(monkeypatch):
+    """«Использует 3 точки», «за 1 итерацию»: the noun follows the number."""
+    fake_st = FakeStreamlit(
+        pressed={"Run"},
+        overrides={"Gradient descent type": "Mini-batch SGD", "Mini-batch size": 3, "Iterations (Run)": 1},
+    )
+    monkeypatch.setattr(streamlit_app, "st", fake_st)
+
+    streamlit_app.main()
+
+    assert "Использует 3 точки для каждого обновления параметров." in fake_st.captions
+    assert fake_st.warnings == ["Сходимость не достигнута за 1 итерацию."]
