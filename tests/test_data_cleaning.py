@@ -1,6 +1,7 @@
 """The cleaning chain must reproduce lecture 2, and the order switch must do what the note says."""
 
 import struct
+import sys
 
 import numpy as np
 import pytest
@@ -91,11 +92,19 @@ def test_memory_matches_the_lecture_on_64_bit_python():
 
     assert f"{used.list_bytes / 1024**2:.1f}" == "3.4"
     assert f"{used.array_bytes / 1024**2:.1f}" == "0.8"
-    assert f"{used.ratio:.0f}" == "5"
+    # The ratio is 4.5 to three decimals, so the whole number the lecture prints
+    # is decided by sys.getsizeof(0): 28 bytes from Python 3.12, 24 before. The
+    # lecture ran on 3.12 and prints «в 5 раз»; on 3.10 the same cell prints 4.
+    assert used.ratio == pytest.approx(4.5, abs=1e-3)
+    if sys.version_info >= (3, 12):
+        assert f"{used.ratio:.0f}" == "5"
 
 
 def test_the_three_sums_agree_and_numpy_wins():
-    timings = sum_of_squares(100_000, repeats=1)
+    # A million squares and the best of five runs: the first NumPy call pays for
+    # starting its BLAS threads, and a CI machine is noisy. At this size NumPy's
+    # lead is two orders of magnitude, so neither can flip the order.
+    timings = sum_of_squares(1_000_000, repeats=5)
 
     assert results_agree(timings)
     generator, elementwise, dot = timings

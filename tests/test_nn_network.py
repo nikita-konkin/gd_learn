@@ -30,9 +30,15 @@ def lecture_run(moons):
 def test_the_csv_is_the_lectures_split(moons):
     from scripts.prepare_nn_data import lecture_split
 
-    expected = lecture_split()
-    for shipped, original in zip(moons, expected, strict=True):
-        assert np.array_equal(shipped, original)
+    # Coordinates to the last bit or so: numpy 2's sin and cos differ from 1.x's
+    # in the final digit, and the CSV was written with one of them. Labels and
+    # the split itself must match exactly.
+    train_x, test_x, train_y, test_y = moons
+    expected_train_x, expected_test_x, expected_train_y, expected_test_y = lecture_split()
+    assert np.allclose(train_x, expected_train_x, rtol=0, atol=1e-12)
+    assert np.allclose(test_x, expected_test_x, rtol=0, atol=1e-12)
+    assert np.array_equal(train_y, expected_train_y)
+    assert np.array_equal(test_y, expected_test_y)
 
 
 def test_the_split_has_the_lectures_sizes(moons):

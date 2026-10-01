@@ -18,8 +18,9 @@ from pathlib import Path
 
 import numpy as np
 import pandas as pd
+from scipy import linalg
 from sklearn.datasets import make_moons
-from sklearn.linear_model import Lasso, LinearRegression, Ridge
+from sklearn.linear_model import Lasso, Ridge
 from sklearn.metrics import mean_squared_error
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.neighbors import KNeighborsClassifier
@@ -72,17 +73,39 @@ class PolynomialFit:
     curve: tuple[float, ...]
 
 
+def _least_squares(design: np.ndarray, target: np.ndarray) -> tuple[np.ndarray, float]:
+    """Ordinary least squares with an intercept, solved as scikit-learn 1.7 solves it.
+
+    Lecture 4 fits ``LinearRegression`` on ``PolynomialFeatures``. From 1.9 that
+    class drops singular values below a new ``tol`` before solving, and for a
+    degree-17 polynomial on 25 points the cut-off is no detail: it regularises
+    the fit, the training error rises from 0.023 to 0.043, and the explosion
+    between the points that the lecture is about disappears. The page has to
+    show the lecture's numbers whatever version the browser or CI installs, so
+    the solve is spelled out: centre, then ``lstsq`` with 1.7's cut-off.
+    """
+    offset, level = design.mean(axis=0), float(target.mean())
+    cutoff = max(design.shape) * np.finfo(float).eps
+    weights = linalg.lstsq(design - offset, target - level, cond=cutoff)[0]
+    return weights, level - float(offset @ weights)
+
+
 def fit_polynomial(degree: int) -> PolynomialFit:
     features, target = polynomial_data()
     fresh_x, fresh_y = fresh_data()
-    model = make_pipeline(PolynomialFeatures(degree), LinearRegression()).fit(features, target)
+    expand = PolynomialFeatures(degree).fit(features)
+    weights, intercept = _least_squares(expand.transform(features), target)
+
+    def predict(points: np.ndarray) -> np.ndarray:
+        return expand.transform(points) @ weights + intercept
+
     grid = np.linspace(0, 1, 300)[:, None]
     return PolynomialFit(
         degree=degree,
-        train_error=float(mean_squared_error(target, model.predict(features))),
-        fresh_error=float(mean_squared_error(fresh_y, model.predict(fresh_x))),
+        train_error=float(mean_squared_error(target, predict(features))),
+        fresh_error=float(mean_squared_error(fresh_y, predict(fresh_x))),
         grid=tuple(grid.ravel().tolist()),
-        curve=tuple(model.predict(grid).tolist()),
+        curve=tuple(predict(grid).tolist()),
     )
 
 
