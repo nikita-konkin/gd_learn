@@ -1,8 +1,42 @@
-# Gradient Descent Playground
+# Площадки по машинному обучению
 
-Интерактивный учебный проект на `Streamlit` для изучения градиентного спуска на синтетических данных.
+Интерактивные учебные площадки на `Streamlit`, которые работают прямо в
+браузере. Сайт — <https://konkin-nikita.ru/gd_learn/>, каталог по темам —
+<https://konkin-nikita.ru/gd_learn/topics/>.
 
-Проект умеет:
+Здесь площадки двух курсов:
+
+- «Основы машинного обучения», магистратура лингвистики, — семь площадок.
+  Первая, градиентный спуск, стоит в корне сайта, остальные в подкаталогах
+  (`/mt/`, `/lm/`, …). Описаны ниже в этом файле.
+- «Основы программирования систем ИИ на языке Python», бакалавриат, профиль
+  ИСТ-51, — шесть площадок в разделе `/ml-practice/` со своей страницей. Описаны в
+  [docs/ist51.md](docs/ist51.md).
+
+Общие у них каркас (сборка, шаблон stlite, тесты-инварианты), пакет
+`playground_common` и **темы**. Каждая площадка отнесена к одной из шести тем:
+каталог `/topics/` собирает площадки по темам, а боковая панель каждой площадки,
+кроме ссылок своего курса, показывает соседей по теме из обоих курсов.
+
+| Тема | Основы машинного обучения | ИСТ-51 |
+|---|---|---|
+| Задачи и модели | три задачи вводной лекции | сложность модели |
+| Данные | данные и разметка | конвейер подготовки данных |
+| Обучение и оптимизация | градиентный спуск | нейросеть на NumPy |
+| Оценка качества | метрики машинного перевода | утечка данных; метрика и дисбаланс |
+| Тексты | векторизация текста; память переводов; языковая модель | — |
+| Конвейеры и эксплуатация | — | граф задач и отказы |
+
+Курсы, темы и принадлежность площадок к ним задаются в одном месте —
+`playground_common/links.py`; тесты не дадут опубликовать площадку без курса и
+темы.
+
+## Первый playground: градиентный спуск
+
+`gradient_descent_playground_v3.py` — изучение градиентного спуска на
+синтетических данных.
+
+Playground умеет:
 
 - генерировать данные из разных распределений;
 - обучать линейную, квадратичную и кубическую модели;
@@ -393,7 +427,10 @@ python -m http.server 8000 --directory dist
   копируются в `dist/` без изменений — развёрнутое приложение всегда совпадает
   с репозиторием;
 - из шаблона `web/index.template.html` генерируется `index.html` с манифестом
-  `stlite` (список файлов, точка входа, зависимости);
+  `stlite` (список файлов, точка входа, зависимости); у площадок ИСТ-51 свой
+  шаблон, `web/ist51/index.template.html`, — по-русски и в цветах слайдов курса;
+- из `web/catalog.template.html` собираются две страницы без Python —
+  `/ml-practice/` и `/topics/`: они открываются сразу, не загружая рантайм;
 - создаётся `.nojekyll`, чтобы GitHub Pages не пропускал файлы через Jekyll.
 
 Версия `stlite` и зависимости для браузера закреплены в
@@ -408,9 +445,10 @@ python -m http.server 8000 --directory dist
    **GitHub Actions**.
 3. Отправить коммит в `main` — пайплайн задеплоит сайт автоматически.
 
-Адрес сайта: `https://<пользователь>.github.io/<репозиторий>/`.
+Адрес сайта: `https://<пользователь>.github.io/<репозиторий>/`. Этот репозиторий
+опубликован на собственном домене: <https://konkin-nikita.ru/gd_learn/>.
 
-Приложений на сайте семь:
+Приложений на сайте тринадцать, и ещё две статические страницы:
 
 | адрес | приложение |
 |---|---|
@@ -421,16 +459,21 @@ python -m http.server 8000 --directory dist
 | `/tm/` | память переводов |
 | `/labels/` | данные и разметка |
 | `/intro/` | три задачи вводной лекции |
+| `/ml-practice/` | страница курса ИСТ-51, без Python |
+| `/ml-practice/data/`, `/ml-practice/leak/`, `/ml-practice/metric/`, `/ml-practice/fit/`, `/ml-practice/nn/`, `/ml-practice/dag/` | площадки ИСТ-51 — см. [docs/ist51.md](docs/ist51.md) |
+| `/topics/` | каталог всех площадок по темам, без Python |
 
 Градиентный спуск остаётся в корне: этот адрес уже опубликован. Новые
 приложения добавляются в `APPS` в `scripts/build_site.py` и получают
-подкаталог, а ссылку на себя — в `PLAYGROUNDS` в `playground_common/links.py`:
-оттуда строится строка «Другие playground'ы» в боковой панели каждого
-приложения. Тест не даст опубликовать приложение, которого нет в этом списке.
+подкаталог, а свою страницу — в `playground_common/links.py`: курс, название и
+тему. Оттуда строятся обе строки боковой панели каждого приложения — «Другие
+playground'ы» (у ИСТ-51 — «Другие площадки») и «Тема …», — а также страницы
+`/ml-practice/` и `/topics/`. Тест не даст опубликовать приложение, которого нет в
+этом реестре.
 
 Каждое приложение открывается отдельно и получает свою копию
 `playground_common`: заплатку под `pyarrow`, склонение числительных и
-округление, как в ноутбуках, и ссылки между приложениями.
+округление, как в ноутбуках, ссылки между приложениями и палитру слайдов ИСТ-51.
 
 ## CI/CD
 
@@ -453,6 +496,9 @@ pull request:
 gd_learn
 ├── gradient_descent_playground_v3.py
 ├── README.md
+├── LICENSE
+├── docs
+│   └── ist51.md
 ├── pyproject.toml
 ├── requirements.txt
 ├── requirements-dev.txt
@@ -462,11 +508,17 @@ gd_learn
 │       └── deploy-pages.yml
 ├── scripts
 │   ├── build_site.py
+│   ├── prepare_fit_data.py
 │   ├── prepare_labels_data.py
+│   ├── prepare_metric_data.py
+│   ├── prepare_nn_data.py
 │   ├── prepare_text_corpora.py
 │   └── prepare_tm_data.py
 ├── web
-│   └── index.template.html
+│   ├── catalog.template.html
+│   ├── index.template.html
+│   └── ist51
+│       └── index.template.html
 ├── mt_metrics_playground.py
 ├── mt_playground
 │   ├── __init__.py
@@ -532,7 +584,16 @@ gd_learn
 │   ├── __init__.py
 │   ├── compat.py
 │   ├── links.py
+│   ├── palette.py
 │   └── wording.py
+├── data_preparation_playground.py      ┐
+├── data_leakage_playground.py          │
+├── class_imbalance_playground.py       │ курс ИСТ-51: точки входа
+├── model_complexity_playground.py      │
+├── numpy_network_playground.py         │
+├── task_graph_playground.py            ┘
+├── data_playground, leak_playground, metric_playground,
+│   fit_playground, nn_playground, dag_playground  — их пакеты, см. docs/ist51.md
 ├── lm_text_playground.py
 ├── lm_playground
 │   ├── __init__.py
@@ -585,7 +646,8 @@ gd_learn
     ├── test_mt_metrics.py
     ├── test_plotting.py
     ├── test_site_build.py
-    └── test_workflow_and_api.py
+    ├── test_workflow_and_api.py
+    └── test_{data,leak,metric,fit,nn,dag}_*.py  — тесты площадок ИСТ-51
 ```
 
 ## Архитектура

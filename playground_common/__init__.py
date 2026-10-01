@@ -7,4 +7,6 @@ three of the number formatting, seven hand-written lists of links to the other
 pages. Now the builder adds this package to every app, so there is one copy.
 
 Keep it light: standard library and numpy only, since every app downloads it.
+``palette`` holds the ИСТ-51 lecture slides' colours; the other modules serve
+every page on the site.
 """

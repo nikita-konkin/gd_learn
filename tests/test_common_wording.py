@@ -1,8 +1,8 @@
-"""Numbers as the course prints them: Russian plurals and the lab tables' rounding."""
+"""Numbers as the courses print them: Russian plurals and the notebooks' rounding."""
 
 import pytest
 
-from playground_common.wording import as_printed, plural, round_as_pandas, segments
+from playground_common.wording import as_printed, features, observations, plural, round_as_pandas, segments
 
 
 @pytest.mark.parametrize(
@@ -31,6 +31,14 @@ def test_the_teens_always_take_the_many_form(count):
     assert plural(count, "one", "few", "many") == "many"
 
 
+def test_features_and_observations_agree_with_their_number():
+    assert features(1) == "1 признак"
+    assert features(20) == "20 признаков"
+    assert features(2000) == "2000 признаков"
+    assert observations(300) == "300 наблюдений"
+    assert observations(102) == "102 наблюдения"
+
+
 def test_ties_are_rounded_the_way_the_lab_prints_them():
     """98/160 and 86/160: the lab's pandas tables show 0.612 and 0.538."""
     assert as_printed(98 / 160) == "0.612"
@@ -38,8 +46,13 @@ def test_ties_are_rounded_the_way_the_lab_prints_them():
     assert as_printed(0.53125) == "0.531"
 
 
+def test_as_printed_keeps_the_trailing_zero_and_takes_other_precisions():
+    assert as_printed(0.51) == "0.510"
+    assert as_printed(0.7102, 4) == "0.7102"
+
+
 def test_round_as_pandas_matches_dataframe_round():
     import pandas as pd
 
-    values = [98 / 160, 86 / 160, 0.53125, 0.4375]
+    values = [98 / 160, 86 / 160, 0.53125, 0.4375, 0.0625]
     assert [round_as_pandas(value) for value in values] == pd.Series(values).round(3).tolist()

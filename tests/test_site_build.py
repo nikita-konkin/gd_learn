@@ -1,9 +1,24 @@
 import json
+import re
 from pathlib import Path
 
 import pytest
 
-from scripts.build_site import APPS, SHARED_PACKAGE, build, collect_sources, render_index, site_manifest
+from playground_common.links import CATALOG, IST51, TOPICS, page_of
+from scripts.build_site import (
+    APPS,
+    CATALOG_TEMPLATE,
+    IST51_TEMPLATE,
+    SHARED_PACKAGE,
+    STLITE_VERSION,
+    TEMPLATE,
+    build,
+    collect_sources,
+    render_catalog,
+    render_index,
+    render_ist51_page,
+    site_manifest,
+)
 
 ROOT = Path(__file__).resolve().parents[1]
 PLACEHOLDERS = ("__STLITE_VERSION__", "__TITLE__", "__ENTRYPOINT__", "__REQUIREMENTS__", "__FILES__")
@@ -15,6 +30,8 @@ VEC_APP = next(app for app in APPS if app.slug == "vec")
 TM_APP = next(app for app in APPS if app.slug == "tm")
 LABELS_APP = next(app for app in APPS if app.slug == "labels")
 INTRO_APP = next(app for app in APPS if app.slug == "intro")
+IST51_APPS = [app for app in APPS if app.slug.startswith(f"{IST51.home}/")]
+PLACEHOLDER = re.compile(r"__[A-Z_]+__")
 
 
 @pytest.mark.parametrize("app", APPS, ids=lambda app: app.slug or "root")
@@ -176,3 +193,91 @@ def test_web_plotly_pin_matches_requirements():
 
     for app in APPS:
         assert requirement in app.requirements
+
+
+# ---------------------------------------------------------------- ИСТ-51
+
+
+def test_the_ist51_course_has_its_six_apps():
+    assert [app.slug for app in IST51_APPS] == [
+        "ml-practice/data",
+        "ml-practice/leak",
+        "ml-practice/metric",
+        "ml-practice/fit",
+        "ml-practice/nn",
+        "ml-practice/dag",
+    ]
+
+
+def test_ist51_apps_declare_scikit_learn_only_where_they_use_it():
+    """leak and fit fit models in the browser; metric and nn ship numbers prepared offline."""
+    needs_sklearn = {"ml-practice/leak", "ml-practice/fit"}
+    for app in IST51_APPS:
+        declared = any(r.startswith("scikit-learn") for r in app.requirements)
+        assert declared is (app.slug in needs_sklearn), app.slug
+
+
+def test_ist51_apps_use_their_own_page_template_and_the_others_the_original():
+    for app in APPS:
+        assert app.template == (IST51_TEMPLATE if app in IST51_APPS else TEMPLATE), app.slug or "root"
+    assert 'lang="ru"' in IST51_TEMPLATE.read_text(encoding="utf-8")
+
+
+def test_no_app_ships_another_apps_package():
+    packages = {app.package for app in APPS}
+    for app in APPS:
+        sources = collect_sources(app)
+        for other in packages - {app.package}:
+            assert not any(path.startswith(f"{other}/") for path in sources), (app.slug, other)
+
+
+# ------------------------------------------------------- the static pages
+
+
+def test_the_ist51_front_page_links_every_course_app_by_topic():
+    html = render_ist51_page()
+
+    for app in IST51_APPS:
+        assert f'href="{app.slug.removeprefix(IST51.home + "/")}/"' in html
+    assert f'href="../{CATALOG}/"' in html
+    assert PLACEHOLDER.search(html) is None
+
+
+def test_the_catalog_links_every_app_once_and_names_every_topic():
+    html = render_catalog()
+
+    for app in APPS:
+        href = f"../{app.slug}/" if app.slug else "../"
+        assert html.count(f'<a href="{href}">{page_of(app.slug).title}</a>') == 1, app.slug or "root"
+    for key, title in TOPICS:
+        assert f'<h2 id="{key}">{title}</h2>' in html
+    assert PLACEHOLDER.search(html) is None
+
+
+def test_the_catalog_marks_each_app_with_its_course():
+    html = render_catalog()
+
+    assert html.count('class="tag">Основы машинного обучения') == len(APPS) - len(IST51_APPS)
+    assert html.count('class="tag">ИСТ-51 · ') == len(IST51_APPS)
+
+
+@pytest.mark.parametrize("render", [render_ist51_page, render_catalog], ids=["ist51", "catalog"])
+def test_static_pages_need_no_python_runtime(render):
+    html = render()
+
+    assert "stlite" not in html
+    assert "<script" not in html
+    assert 'lang="ru"' in html
+
+
+def test_build_writes_both_static_pages(tmp_path):
+    site = build(tmp_path / "dist")
+
+    assert (site / IST51.home / "index.html").read_text(encoding="utf-8") == render_ist51_page()
+    assert (site / CATALOG / "index.html").read_text(encoding="utf-8") == render_catalog()
+    assert CATALOG_TEMPLATE.exists()
+
+
+def test_the_pinned_stlite_version_is_exact():
+    """A range would let a CDN release change the deployed runtime silently."""
+    assert re.fullmatch(r"\d+\.\d+\.\d+", STLITE_VERSION)

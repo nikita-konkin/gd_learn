@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="ru">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>__TITLE__</title>
+    <meta
+      name="description"
+      content="__TITLE__. Интерактивные площадки по машинному обучению: Python исполняется в браузере, устанавливать ничего не нужно."
+    />
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%9B%3C/text%3E%3C/svg%3E" />
+    <style>
+      :root {
+        --fill: #e9f0f5;
+        --border: #2e5a73;
+        --text: #12242f;
+        --muted: #4a7590;
+        --accent: #c4762f;
+        --accent-fill: #fbf0e4;
+        --card: #ffffff;
+        --page: #f7fafc;
+      }
+      @media (prefers-color-scheme: dark) {
+        :root {
+          --fill: #1b2a33;
+          --border: #9ec4d8;
+          --text: #eef4f7;
+          --muted: #9ec4d8;
+          --accent: #e0a265;
+          --accent-fill: #2a2015;
+          --card: #141b21;
+          --page: #0e1117;
+        }
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        padding: 2.5rem 1rem 4rem;
+        background: var(--page);
+        color: var(--text);
+        font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+        line-height: 1.6;
+      }
+      main {
+        max-width: 54rem;
+        margin: 0 auto;
+      }
+      h1 {
+        font-size: 1.75rem;
+        line-height: 1.25;
+        margin: 0 0 0.25rem;
+      }
+      .sub {
+        color: var(--muted);
+        margin: 0 0 2rem;
+        font-size: 1rem;
+      }
+      .note {
+        background: var(--accent-fill);
+        border-left: 4px solid var(--accent);
+        padding: 0.85rem 1rem;
+        margin: 0 0 2rem;
+        font-size: 0.95rem;
+      }
+      h2 {
+        font-size: 1.1rem;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: var(--muted);
+        margin: 2.5rem 0 1rem;
+      }
+      ul.cards {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+      }
+      ul.cards li {
+        background: var(--card);
+        border: 1px solid var(--fill);
+        border-radius: 0.5rem;
+        padding: 1.1rem 1.2rem;
+      }
+      ul.cards a {
+        color: var(--border);
+        font-weight: 600;
+        font-size: 1.05rem;
+        text-decoration: none;
+      }
+      ul.cards a:hover {
+        text-decoration: underline;
+      }
+      .tag {
+        display: inline-block;
+        font-size: 0.75rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        color: var(--muted);
+        border: 1px solid var(--fill);
+        border-radius: 1rem;
+        padding: 0.1rem 0.6rem;
+        margin-bottom: 0.5rem;
+      }
+      ul.cards p {
+        margin: 0.4rem 0 0;
+        font-size: 0.9rem;
+        color: var(--text);
+      }
+      main > p a {
+        color: var(--border);
+      }
+      footer {
+        margin-top: 3rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid var(--fill);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      footer a {
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <h1>__TITLE__</h1>
+      <p class="sub">__SUBTITLE__</p>
+      __INTRO__
+
+      __SECTIONS__
+
+      <footer>__FOOTER__</footer>
+    </main>
+  </body>
+</html>

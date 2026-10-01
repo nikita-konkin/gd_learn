@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "gd-playground"
 version = "3.0.0"
-description = "Interactive Streamlit playground for exploring gradient descent on synthetic data"
+description = "Interactive browser playgrounds on machine learning for two university courses"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
@@ -26,7 +26,22 @@ dev = [
 ]
 
 [tool.setuptools]
-packages = ["gd_playground", "mt_playground", "lm_playground", "vec_playground", "tm_playground"]
+packages = [
+    "playground_common",
+    "gd_playground",
+    "mt_playground",
+    "lm_playground",
+    "vec_playground",
+    "tm_playground",
+    "labels_playground",
+    "intro_playground",
+    "data_playground",
+    "leak_playground",
+    "metric_playground",
+    "fit_playground",
+    "nn_playground",
+    "dag_playground",
+]
 
 [tool.pytest.ini_options]
 minversion = "8.0"
