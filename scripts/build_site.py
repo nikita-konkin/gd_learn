@@ -29,7 +29,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-from playground_common.links import (  # noqa: E402  — the registry lives with the apps that ship it
+# The registry lives with the apps that ship it. Only links.py may be imported
+# here: CI's build job installs nothing, and the rest of playground_common
+# needs numpy.
+from playground_common.links import (  # noqa: E402
     CATALOG,
     COURSES,
     IST51,
@@ -37,7 +40,6 @@ from playground_common.links import (  # noqa: E402  — the registry lives with
     course_of,
     page_of,
 )
-from playground_common.wording import plural  # noqa: E402
 
 TEMPLATE = ROOT / "web" / "index.template.html"
 # The ИСТ-51 pages are in Russian throughout, in the lecture slides' colours,
@@ -342,7 +344,7 @@ def render_ist51_page() -> str:
         CATALOG_TEMPLATE,
         {
             "__TITLE__": f"Площадки курса «{IST51.title}»",
-            "__SUBTITLE__": f"Б.1.2.2 · профиль ИСТ-51 · {count} {plural(count, 'площадка', 'площадки', 'площадок')}",
+            "__SUBTITLE__": f"Б.1.2.2 · профиль ИСТ-51 · площадок: {count}",
             "__INTRO__": intro,
             "__SECTIONS__": _sections(apps, IST51.home, lambda app: app.source),
             "__FOOTER__": html.escape(IST51_FOOTER),
@@ -366,9 +368,7 @@ def render_catalog() -> str:
         CATALOG_TEMPLATE,
         {
             "__TITLE__": "Площадки по машинному обучению",
-            "__SUBTITLE__": (
-                f"{count} {plural(count, 'площадка', 'площадки', 'площадок')} двух курсов по {len(TOPICS)} темам"
-            ),
+            "__SUBTITLE__": (f"площадок: {count} · курсов: {len(COURSES)} · тем: {len(TOPICS)}"),
             "__INTRO__": intro,
             "__SECTIONS__": _sections(list(APPS), CATALOG, _course_tag),
             "__FOOTER__": html.escape(FOOTER),

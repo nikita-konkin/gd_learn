@@ -281,3 +281,18 @@ def test_build_writes_both_static_pages(tmp_path):
 def test_the_pinned_stlite_version_is_exact():
     """A range would let a CDN release change the deployed runtime silently."""
     assert re.fullmatch(r"\d+\.\d+\.\d+", STLITE_VERSION)
+
+
+def test_the_builder_needs_nothing_beyond_the_standard_library():
+    """CI's build job installs no packages, so the builder must not import numpy and the like."""
+    import subprocess
+    import sys
+
+    blocked = "import sys; sys.modules.update(dict.fromkeys(['numpy', 'pandas', 'sklearn', 'streamlit'])); "
+    result = subprocess.run(
+        [sys.executable, "-c", blocked + "import scripts.build_site"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, result.stderr
