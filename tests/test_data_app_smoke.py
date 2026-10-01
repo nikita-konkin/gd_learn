@@ -1,4 +1,4 @@
-"""The data-preparation interface renders, and shows lecture 2's results."""
+"""The data-preparation interface renders, and shows what the cleaning did."""
 
 import pytest
 
@@ -32,7 +32,7 @@ def test_main_renders_without_errors(default_run):
     assert len(default_run.figures) == 2
 
 
-def test_the_lecture_tab_reproduces_the_lecture(default_run):
+def test_the_right_order_cleans_the_six_rows_completely(default_run):
     assert _metric(default_run, "Пропусков") == "2"
     assert _metric(default_run, "Полных дубликатов") == "1"
     assert _metric(default_run, "Заполнено значением") == "-48.65"

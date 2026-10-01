@@ -1,4 +1,4 @@
-"""The model-complexity interface renders, and each tab opens on its lecture's numbers."""
+"""The model-complexity interface renders, and each tab opens where the trouble is plainest."""
 
 import pytest
 
@@ -33,8 +33,7 @@ def test_main_renders_without_errors(default_run):
 def test_the_polynomial_tab_opens_on_degree_17(default_run):
     assert _metric(default_run, "Ошибка на обучении") == "0.023"
     assert _metric(default_run, "Ошибка на новых точках") == "13.2"
-    assert any("Степень 17 есть в лекции 4" in message for message in default_run.infos)
-    assert any("в 23 раза хуже" in message for message in default_run.warnings)
+    assert any("хуже, чем если бы модель всегда отвечала средним" in message for message in default_run.warnings)
 
 
 def test_a_moderate_degree_raises_no_warning_about_new_points(monkeypatch):
@@ -51,9 +50,8 @@ def test_the_neighbours_tab_shows_both_accuracies(default_run):
     assert any("цена переобучения здесь мала" in caption for caption in default_run.captions)
 
 
-def test_the_penalty_tab_opens_on_the_lectures_collapse(default_run):
+def test_the_penalty_tab_opens_on_the_collapse(default_run):
     assert _metric(default_run, "Lasso обнулил признаков") == "10 из 10"
-    assert any("Наибольший штраф лекции 5" in message for message in default_run.infos)
     assert any("отказ от модели" in message and "alpha ≈ 53" in message for message in default_run.warnings)
 
 
@@ -62,8 +60,7 @@ def test_a_middle_penalty_selects_instead_of_collapsing(monkeypatch):
 
     assert _metric(fake_st, "Lasso обнулил признаков") == "6 из 10"
     assert not any("отказ от модели" in message for message in fake_st.warnings)
-    # Lecture 5 prints this grid point too, since the revision the playground prompted.
-    assert any("«При alpha = 10.8 Lasso обнулил 6 признаков из 10»" in message for message in fake_st.infos)
+    assert any("Lasso обнулил 6 признаков из 10 и оставил 4" in message for message in fake_st.infos)
 
 
 def test_an_unlimited_tree_is_labelled(monkeypatch):
@@ -72,7 +69,7 @@ def test_an_unlimited_tree_is_labelled(monkeypatch):
     assert _metric(fake_st, "глубина ∞: на обучении") == "1.000"
 
 
-def test_every_slider_opens_on_the_lectures_setting(default_run):
+def test_every_slider_opens_on_its_default(default_run):
     defaults = {label: value for label, value, _, _ in default_run.sliders}
 
     assert defaults == {

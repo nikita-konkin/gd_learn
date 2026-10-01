@@ -36,10 +36,10 @@ def test_the_edge_switches_do_not_touch_the_handlers():
 
 
 def test_each_edge_switch_changes_exactly_one_edge():
-    lecture = set(PIPELINE_EDGES)
+    pipeline = set(PIPELINE_EDGES)
 
-    assert len(lecture ^ set(Scenario(guard=False).edges())) == 1
-    assert len(lecture ^ set(Scenario(cycle=True).edges())) == 1
+    assert len(pipeline ^ set(Scenario(guard=False).edges())) == 1
+    assert len(pipeline ^ set(Scenario(cycle=True).edges())) == 1
 
 
 def test_no_failure_means_no_handler_at_all():

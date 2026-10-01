@@ -25,7 +25,7 @@ def graph_figure(levels, edges, status: dict[str, str]) -> go.Figure:
     """Tasks as markers, dependencies as arrows, colour as the task's fate.
 
     Tasks in the same column share a level and could run at the same time —
-    lecture 12's point that the graph shows parallelism a script hides.
+    the graph shows parallelism that a sequential script hides.
     """
     positions = _positions(levels)
     figure = go.Figure()

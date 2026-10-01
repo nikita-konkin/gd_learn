@@ -1,9 +1,8 @@
-"""Lecture 7's two-layer network on NumPy, plus three ways to get the backward pass wrong.
+"""A two-layer network on NumPy, plus three ways to get the backward pass wrong.
 
-``initialise``, ``forward``, ``loss`` and ``backward`` are the lecture's code.
-The playground's addition is ``BUGS``: each replaces one line of ``backward``
-with a mistake people really make. The lecture warns that such a network
-"всё равно будет обучаться, но медленно и не в ту сторону", and that from the
+``initialise``, ``forward``, ``loss`` and ``backward`` are the network itself.
+``BUGS`` each replace one line of ``backward`` with a mistake people really
+make. Such a network often still trains, only slower and worse, and from the
 outside it looks like bad data. The gradient check is what tells them apart.
 """
 
@@ -17,14 +16,14 @@ import pandas as pd
 
 DATA = Path(__file__).resolve().parent / "data" / "moons.csv"
 
-NO_BUG = "нет, как в лекции"
+NO_BUG = "нет, формулы верны"
 RELU_BUG = "забыта производная ReLU"
 SIZE_BUG = "градиент не поделён на размер выборки"
 SIGN_BUG = "перепутан знак градиента"
 BUGS = (NO_BUG, RELU_BUG, SIZE_BUG, SIGN_BUG)
 
-# The lecture's numerical check: a 2-5-1 network, seed 1, on the first fifty
-# training rows, central differences with this step.
+# The numerical check: a 2-5-1 network, seed 1, on the first fifty training
+# rows, central differences with this step.
 CHECK_HIDDEN = 5
 CHECK_SEED = 1
 CHECK_ROWS = 50
@@ -34,7 +33,7 @@ TOLERANCE = 1e-6
 
 
 def load_moons() -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """Train and test parts of lecture 7's two moons, in the lecture's row order."""
+    """Train and test parts of the two moons, in the order they were split."""
     table = pd.read_csv(DATA, float_precision="round_trip")
     train = table[table["part"] == "train"]
     test = table[table["part"] == "test"]
@@ -61,7 +60,7 @@ def forward(params: dict[str, np.ndarray], batch: np.ndarray) -> tuple[np.ndarra
     hidden_raw = batch @ params["W1"] + params["b1"]
     hidden = np.maximum(0, hidden_raw)  # ReLU
     output_raw = hidden @ params["W2"] + params["b2"]
-    # The lecture's sigmoid, as written. A broken backward pass drives the
+    # The plain sigmoid, as usually written. A broken backward pass drives the
     # outputs far enough for exp to overflow; the result is still a correct 0
     # or 1, so the warning is silenced rather than the formula changed.
     with np.errstate(over="ignore"):
@@ -76,7 +75,7 @@ def loss(probability: np.ndarray, labels: np.ndarray) -> float:
 
 
 def backward(params, batch, labels, probability, cache, bug: str = NO_BUG) -> dict[str, np.ndarray]:
-    """Lecture 7's gradients by the chain rule, with at most one line broken."""
+    """Gradients by the chain rule, with at most one line broken."""
     size = batch.shape[0]
     output_grad = (probability - labels).reshape(-1, 1)
     if bug != SIZE_BUG:
@@ -114,10 +113,10 @@ class Component:
 
 
 def gradient_check(train_x: np.ndarray, train_y: np.ndarray, bug: str = NO_BUG) -> tuple[Component, ...]:
-    """The lecture's numerical check, run on every weight instead of one.
+    """The numerical check, run on every weight instead of one.
 
-    The lecture compares ``W1[0, 0]`` only, and that one comparison is enough to
-    trust correct formulas. Checking all twenty-one weights is what catches the
+    A single comparison such as ``W1[0, 0]`` is enough to trust correct
+    formulas. Checking all twenty-one weights is what catches the
     mistakes that leave some components right.
     """
     params = initialise(2, CHECK_HIDDEN, 1, seed=CHECK_SEED)
@@ -168,7 +167,7 @@ def train(
     seed: int = 0,
     bug: str = NO_BUG,
 ) -> Training:
-    """Lecture 7's training loop: forward, loss, gradients, one step — ``epochs`` times."""
+    """The training loop: forward, loss, gradients, one step — ``epochs`` times."""
     params = initialise(2, hidden, 1, seed=seed)
     history = []
     for _ in range(epochs):

@@ -1,4 +1,6 @@
-"""The network must print lecture 7's numbers, and each bug must do what the page says."""
+"""The correct network must learn, and each bug must do what the page says."""
+
+import math
 
 import numpy as np
 import pytest
@@ -22,26 +24,26 @@ def moons():
 
 
 @pytest.fixture(scope="module")
-def lecture_run(moons):
+def default_run(moons):
     train_x, test_x, train_y, test_y = moons
     return train(train_x, train_y, test_x, test_y)
 
 
-def test_the_csv_is_the_lectures_split(moons):
-    from scripts.prepare_nn_data import lecture_split
+def test_the_csv_is_what_the_preparation_script_writes(moons):
+    from scripts.prepare_nn_data import moons_split
 
     # Coordinates to the last bit or so: numpy 2's sin and cos differ from 1.x's
     # in the final digit, and the CSV was written with one of them. Labels and
     # the split itself must match exactly.
     train_x, test_x, train_y, test_y = moons
-    expected_train_x, expected_test_x, expected_train_y, expected_test_y = lecture_split()
+    expected_train_x, expected_test_x, expected_train_y, expected_test_y = moons_split()
     assert np.allclose(train_x, expected_train_x, rtol=0, atol=1e-12)
     assert np.allclose(test_x, expected_test_x, rtol=0, atol=1e-12)
     assert np.array_equal(train_y, expected_train_y)
     assert np.array_equal(test_y, expected_test_y)
 
 
-def test_the_split_has_the_lectures_sizes(moons):
+def test_the_split_holds_out_thirty_per_cent(moons):
     train_x, test_x, train_y, test_y = moons
 
     assert train_x.shape == (700, 2)
@@ -49,40 +51,41 @@ def test_the_split_has_the_lectures_sizes(moons):
     assert set(np.unique(train_y)) == {0, 1}
 
 
-def test_the_loss_before_training_is_the_lectures(lecture_run):
-    assert f"{lecture_run.initial_loss:.4f}" == "0.7102"
+def test_an_untrained_network_is_a_coin(default_run):
+    # Small random weights give probabilities near one half: cross-entropy near ln 2.
+    assert abs(default_run.initial_loss - math.log(2)) < 0.05
 
 
-def test_the_accuracy_after_training_is_the_lectures(lecture_run):
-    assert as_printed(lecture_run.test_accuracy) == "0.947"
-    assert len(lecture_run.history) == 400
+def test_the_correct_network_learns_the_moons(default_run):
+    assert default_run.test_accuracy > 0.9
+    assert default_run.final_loss < default_run.initial_loss / 2
+    assert len(default_run.history) == 400
 
 
-def test_the_lectures_single_gradient_comparison(moons):
+def test_one_component_agrees_to_the_printed_digits(moons):
     train_x, _, train_y, _ = moons
     first = gradient_check(train_x, train_y)[0]
 
     assert first.name == "W1[0, 0]"
-    assert f"{first.analytic: .6f}" == "-0.002347"
-    assert f"{first.numeric: .6f}" == "-0.002347"
+    assert f"{first.analytic:.6f}" == f"{first.numeric:.6f}"
 
 
 def test_correct_formulas_agree_on_every_weight(moons):
     train_x, _, train_y, _ = moons
     components = gradient_check(train_x, train_y)
 
-    # 2*5 + 5 + 5*1 + 1 weights in the lecture's 2-5-1 check network
+    # 2*5 + 5 + 5*1 + 1 weights in the 2-5-1 check network
     assert len(components) == 21
     assert all(component.agrees for component in components)
     assert max(component.relative_error for component in components) < 1e-8
 
 
-def test_a_forgotten_relu_derivative_still_trains_plausibly(moons):
+def test_a_forgotten_relu_derivative_still_trains_plausibly(moons, default_run):
     train_x, test_x, train_y, test_y = moons
     broken = train(train_x, train_y, test_x, test_y, bug=RELU_BUG)
 
-    # The lecture's warning, measured: it still learns, just worse.
-    assert as_printed(broken.test_accuracy) == "0.887"
+    # It still learns, just worse: nothing on the outside says the formulas are wrong.
+    assert 0.8 < broken.test_accuracy < default_run.test_accuracy
     assert broken.final_loss < broken.initial_loss
 
 
@@ -120,9 +123,9 @@ def test_every_bug_is_caught_by_the_full_check(moons):
         assert caught is (bug != NO_BUG), bug
 
 
-def test_a_larger_step_learns_faster_here(moons):
-    # Not a claim of the lecture, which fixes 0.5; recorded so a change is noticed.
+def test_a_larger_step_learns_faster_here(moons, default_run):
+    # Not a claim the page makes; recorded so a change is noticed.
     train_x, test_x, train_y, test_y = moons
 
     assert train(train_x, train_y, test_x, test_y, learning_rate=0.01).test_accuracy < 0.9
-    assert train(train_x, train_y, test_x, test_y, learning_rate=2.0).test_accuracy > 0.947
+    assert train(train_x, train_y, test_x, test_y, learning_rate=2.0).test_accuracy > default_run.test_accuracy

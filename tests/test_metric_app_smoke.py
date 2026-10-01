@@ -1,4 +1,4 @@
-"""The metric interface renders, and shows lectures 4 and 6 and the RGR baseline."""
+"""The metric interface renders, and shows the trap, the threshold, the remedies and the RGR baseline."""
 
 import pytest
 
@@ -26,14 +26,14 @@ def default_run(monkeypatch):
 def test_main_renders_without_errors(default_run):
     assert default_run.page_config["page_title"] == "Метрика и дисбаланс"
     assert not default_run.errors
-    # confusion matrix, lecture 4 curve, lecture 6 curves
+    # confusion matrix, failure detector curve, remedies curves
     assert len(default_run.figures) == 3
 
 
-def test_the_trap_opens_on_lecture_4(default_run):
+def test_the_trap_opens_on_equipment_failures(default_run):
     assert _metric(default_run, "Доля правильных") == "97,9 %"
     assert _metric(default_run, "Найдено отказов") == "0"
-    assert any("0.979  <- выглядит отлично" in message for message in default_run.infos)
+    assert any("0.979 — выглядит отлично" in message for message in default_run.infos)
 
 
 def test_secom_shows_the_rgr_baseline(monkeypatch):
@@ -44,7 +44,7 @@ def test_secom_shows_the_rgr_baseline(monkeypatch):
     assert any("задания на РГР" in message for message in fake_st.infos)
 
 
-def test_the_threshold_tab_prints_the_lectures_three_points(default_run):
+def test_the_threshold_tab_lists_three_operating_points(default_run):
     table = next(text for text in default_run.markdowns if "нужна полнота" in text)
 
     assert "| 0.60 | 0.59 | 0.63 | 0.952 |" in table
@@ -70,14 +70,14 @@ def test_equal_prices_move_the_threshold_up(monkeypatch):
     assert _metric(fake_st, "Самый дешёвый порог") == "0.946"
 
 
-def test_the_remedies_table_repeats_lecture_6(default_run):
+def test_the_remedies_table_and_the_warning_about_weights(default_run):
     table = next(text for text in default_run.markdowns if "| способ |" in text)
 
     assert "| Без учёта дисбаланса | 0.615 | 0.367 | 0.880 |" in table
     assert "| Веса классов | 0.622 | 0.333 | 0.952 |" in table
     assert "| Уменьшение большинства 3:1 | 0.624 | 0.650 | 0.476 |" in table
     assert any("Веса классов здесь не подняли полноту" in message for message in default_run.warnings)
-    assert any("Лекция объясняет почему" in message for message in default_run.warnings)
+    assert any("Причина в устройстве леса" in message for message in default_run.warnings)
 
 
 def test_the_page_does_not_import_scikit_learn():

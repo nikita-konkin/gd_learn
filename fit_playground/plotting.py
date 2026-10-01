@@ -13,7 +13,7 @@ SERIES = ("#2E5A73", "#C4762F", "#4A7590", "#8C8C8C", "#7A9E7E", "#B5534A", "#6B
 
 
 def polynomial_figure(fit: PolynomialFit, train_x, train_y, fresh_x, fresh_y) -> go.Figure:
-    """Lecture 4's panel, with the new points the lecture talks about but does not draw."""
+    """The fitted curve, its training points, and new points from the same law."""
     grid = np.asarray(fit.grid)
     figure = go.Figure()
     figure.add_trace(
@@ -131,7 +131,7 @@ def boundary_figure(model: Classifier, features: np.ndarray, target: np.ndarray,
 
 
 def paths_figure(alphas, ridge_paths, lasso_paths, names, chosen: float) -> go.Figure:
-    """Lecture 5's two panels of weight trajectories, with the chosen penalty marked."""
+    """Two panels of weight trajectories, with the chosen penalty marked."""
     figure = make_subplots(rows=1, cols=2, shared_yaxes=True, subplot_titles=("Ridge", "Lasso"))
     ridge = np.asarray(ridge_paths)
     lasso = np.asarray(lasso_paths)

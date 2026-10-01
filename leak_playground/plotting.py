@@ -59,7 +59,7 @@ def recurrence_figure(selected: Selection) -> go.Figure:
 
     A column carrying real signal is re-picked by every block, so the height of
     these bars is the closest thing to evidence the selection can offer. It is
-    not proof: on the lecture's pure noise one of the twenty does reach the top
+    not proof: on the default pure noise one of the twenty does reach the top
     by luck. What the figure makes visible is how few get anywhere near it.
     """
     order = np.argsort(selected.recurrence)[::-1]

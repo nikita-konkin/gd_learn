@@ -1,15 +1,13 @@
-"""Площадка «Утечка данных» — модуль 2 лабораторных работ Б.1.2.2.
+"""Площадка «Утечка данных» — тема «Оценка качества», модуль 2 курса Б.1.2.2.
 
-Lecture 6's experiment with handles on it: select the ``k`` best features on the
-whole sample, cross-validate, and watch a logistic regression reach 0.757 on
-data that is pure noise. The honest pipeline, selecting inside each training
-block, reports 0.510 — which is the truth.
+Select the ``k`` best features on the whole sample, cross-validate, and watch a
+logistic regression score far above chance on data that is pure noise. The
+honest pipeline, selecting inside each training block, lands near 0.5 — which
+is the truth.
 """
 
 from leak_playground.app import main
 from leak_playground.experiment import (
-    LECTURE_HONEST,
-    LECTURE_LEAKY,
     TRUTH,
     Scores,
     Selection,
@@ -26,8 +24,6 @@ from leak_playground.plotting import pvalues_figure, recurrence_figure, scores_f
 
 __all__ = [
     "INFORMATIVE",
-    "LECTURE_HONEST",
-    "LECTURE_LEAKY",
     "TRUTH",
     "NoiseSettings",
     "Scores",

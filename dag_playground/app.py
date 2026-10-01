@@ -1,7 +1,7 @@
 """Streamlit interface for the task-graph playground.
 
-Lecture 12 runs its scheduler twice: once with a task that recovers on the third
-attempt, once with a task that never recovers. This page lets the student pick
+Two runs show the scheduler's whole point: one with a task that recovers on
+the third attempt, one with a task that never recovers. This page lets the student pick
 the task, the number of failures, the number of attempts and two edges of the
 graph — and shows, in the journal and on the graph, what the scheduler does.
 """
@@ -17,9 +17,9 @@ from dag_playground.plotting import graph_figure
 from dag_playground.scheduler import (
     ALWAYS,
     CYCLE_EDGE,
+    FAILING_RUN,
     GUARD_EDGE,
-    LECTURE_FAILURE,
-    LECTURE_RECOVERY,
+    RECOVERING_RUN,
     SKIPPED,
     SUCCESS,
     Outcome,
@@ -80,16 +80,16 @@ def _controls() -> Scenario:
     )
 
 
-def _lecture_note(scenario: Scenario) -> None:
-    if scenario == LECTURE_RECOVERY:
+def _scenario_note(scenario: Scenario) -> None:
+    if scenario == RECOVERING_RUN:
         st.info(
-            "Первый прогон лекции 12: «обучение» падает дважды и восстанавливается с третьей попытки, "
-            "конвейер проходит целиком."
+            "Сбой с восстановлением: «обучение» падает дважды и проходит с третьей попытки, "
+            "конвейер выполняется целиком. Повторы спасли запуск."
         )
-    elif scenario == LECTURE_FAILURE:
+    elif scenario == FAILING_RUN:
         st.info(
-            "Второй прогон лекции 12: «обучение» не восстанавливается за две попытки. "
-            "Лекция печатает «Выполнено успешно: 4 из 7» — ровно то, что выше."
+            "Сбой без восстановления: «обучение» не проходит ни с одной из двух попыток. "
+            "Всё, что от него зависит, пропущено, — и модель без оценки не опубликована."
         )
 
 
@@ -148,7 +148,7 @@ def main() -> None:
     st.set_page_config(page_title=TITLE, layout="wide")
     st.title(TITLE)
     st.caption(
-        "Планировщик из лекции 12 на сорока строках: топологический порядок, повторы при сбое "
+        "Планировщик на сорока строках: топологический порядок, повторы при сбое "
         "и пропуск задач, чьи зависимости не выполнены."
     )
 
@@ -163,7 +163,7 @@ def main() -> None:
         )
         return
 
-    _lecture_note(scenario)
+    _scenario_note(scenario)
     _verdict(outcome, scenario)
 
     edges = scenario.edges()
@@ -187,10 +187,10 @@ def main() -> None:
     with st.expander("Чего эта площадка не делает"):
         st.markdown(
             "- Не исполняет задачи одновременно: уровни выполняются по очереди, задачи внутри "
-            "уровня — тоже. Параллельность здесь показана, а не использована, как и в лекции.\n"
-            "- Не ждёт между попытками: пауза из лекции в браузере ничего бы не показала.\n"
+            "уровня — тоже. Параллельность здесь показана, а не использована.\n"
+            "- Не ждёт между попытками: пауза в браузере ничего бы не показала.\n"
             "- Не повторяет Airflow: нет расписания, таймаутов, состояния между запусками. "
-            "Их добавляет лабораторная работа модуля 4.\n"
+            "Их дают настоящие оркестраторы.\n"
             "- Сбоит только одна задача за раз — чтобы каждая ручка меняла одну причину."
         )
 

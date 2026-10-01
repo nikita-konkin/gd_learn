@@ -1,9 +1,9 @@
 """Streamlit interface for the data-preparation playground.
 
-Two lessons of lecture 2, each given handles. Cleaning: the order of steps and
-the choice of statistic, on the lecture's six rows and on a thousand. Speed and
-memory: who runs the loop, and what a Python int really costs — measured live,
-in the browser, rather than quoted from the lecture.
+Two lessons of data preparation, each given handles. Cleaning: the order of
+steps and the choice of statistic, on six rows with planted defects and on a
+thousand. Speed and memory: who runs the loop, and what a Python int really
+costs — measured live, in the browser.
 """
 
 from __future__ import annotations
@@ -24,11 +24,11 @@ from data_playground.cleaning import (
     Estimate,
     Readings,
     ReadingsSettings,
-    clean_lecture_table,
+    clean_defect_table,
     clean_signal,
+    defect_table,
     estimate,
     inspect,
-    lecture_table,
     make_readings,
 )
 from data_playground.plotting import cleaned_histogram, timing_figure
@@ -103,10 +103,13 @@ def _cleaned_view(cleaned: Cleaned) -> pd.DataFrame:
     return view
 
 
-def _lecture_tab(order: str, statistic: str) -> None:
-    raw = lecture_table()
+def _defect_tab(order: str, statistic: str) -> None:
+    raw = defect_table()
     found = inspect(raw)
-    st.markdown("Шесть строк из лекции 2 с четырьмя намеренными дефектами.")
+    st.markdown(
+        "Шесть показаний узлов связи с четырьмя намеренными дефектами: пропуски, дубликат, "
+        "разнобой в регистре и физически невозможное значение."
+    )
     st.dataframe(raw, use_container_width=True, hide_index=True)
 
     left, middle, right = st.columns(3)
@@ -118,7 +121,7 @@ def _lecture_tab(order: str, statistic: str) -> None:
         f"Статусы: {', '.join(found.statuses)} — «ok» и «OK» означают одно и то же."
     )
 
-    cleaned = clean_lecture_table(statistic, order)
+    cleaned = clean_defect_table(statistic, order)
     st.subheader("После очистки")
     st.dataframe(_cleaned_view(cleaned), use_container_width=True, hide_index=True)
 
@@ -128,17 +131,16 @@ def _lecture_tab(order: str, statistic: str) -> None:
 
     if (order, statistic) == (AFTER, MEDIAN):
         st.info(
-            "Порядок лекции 2: выбросы сначала превращены в пропуски, потом все пропуски заполнены "
-            f"медианой. Лекция печатает «Пропусков осталось: {cleaned.missing_left}», а в таблице — "
-            f"{cleaned.fill_value:.2f} в обеих заполненных ячейках."
+            "Правильный порядок: выбросы сначала превращены в пропуски, потом все пропуски заполнены "
+            f"медианой. Пропусков осталось: {cleaned.missing_left}, в обеих заполненных ячейках — "
+            f"{cleaned.fill_value:.2f}, в пределах физически возможного."
         )
     if cleaned.impossible_left:
         noun = plural(cleaned.impossible_left, "невозможное значение", "невозможных значения", "невозможных значений")
         st.error(
             f"Очистка сама вставила в таблицу {cleaned.impossible_left} {noun}: "
             f"среднее посчитано вместе с −900 и равно {cleaned.fill_value:.2f}, что ниже физического предела "
-            f"{OUTLIER_LIMIT:.0f}. Ровно об этом предупреждает лекция: «заполнение внесёт в таблицу новую "
-            "ошибку вместо того, чтобы исправить старую»."
+            f"{OUTLIER_LIMIT:.0f}. Заполнение внесло в таблицу новую ошибку вместо того, чтобы исправить старую."
         )
     elif order != AFTER:
         st.warning(
@@ -195,8 +197,8 @@ def _speed_tab(size: int) -> None:
         column.metric(timing.method, f"{timing.seconds * 1000:.1f} мс", delta)
     st.metric("Результаты совпадают", "да" if results_agree(timings) else "нет")
     st.caption(
-        "Время измерено только что, в этом браузере. С числами лекции оно совпадать не обязано: "
-        "лекция мерила обычный 64-битный Python, а здесь он работает внутри WebAssembly. Порядок величин "
+        "Время измерено только что, в этом браузере. На вашем компьютере в обычном Python оно будет другим: "
+        "здесь Python работает внутри WebAssembly. Порядок величин "
         f"остаётся тем же, как и причина, по которой «{DOT}» обгоняет поэлементный вариант: он не создаёт "
         "промежуточный массив квадратов."
     )
@@ -206,13 +208,13 @@ def _speed_tab(size: int) -> None:
     left, middle, right = st.columns(3)
     left.metric("Список, МБ", f"{used.list_bytes / 1024**2:.1f}")
     middle.metric("Массив int64, МБ", f"{used.array_bytes / 1024**2:.1f}")
-    right.metric("Разница, раз", f"{used.ratio:.0f}")
+    right.metric("Разница, раз", f"{used.ratio:.1f}")
     pointer = f"{used.pointer_bytes} {plural(used.pointer_bytes, 'байт', 'байта', 'байт')}"
     st.caption(
         f"{used.count:,} целых чисел. ".replace(",", " ")
         + f"Здесь указатель занимает {pointer}, а объект int — {used.int_object_bytes}. "
-        "Лекция печатает «3.4 МБ» против «0.8 МБ», разница в 5 раз: так выходит в 64-битном Python, где "
-        "указатель — 8 байт, а int — 28. Массив от платформы не зависит: восемь байт на число всегда."
+        "В обычном 64-битном Python указатель — 8 байт, а int — 28, и тот же список занимает 3.4 МБ "
+        "против 0.8 МБ у массива, в 4.5 раза больше. Массив от платформы не зависит: восемь байт на число всегда."
     )
 
 
@@ -220,14 +222,14 @@ def main() -> None:
     st.set_page_config(page_title=TITLE, layout="wide")
     st.title(TITLE)
     st.caption(
-        "Лекция 2 и лабораторные работы модуля 1: очистка данных в правильном порядке и векторизация. "
+        "Очистка данных в правильном порядке и векторизация. "
         "Порядок шагов очистки здесь — параметр, а не договорённость."
     )
 
     order, statistic, settings, size = _controls()
-    lecture, larger, speed = st.tabs(["Таблица лекции", "Тысяча строк", "Векторизация и память"])
-    with lecture:
-        _lecture_tab(order, statistic)
+    small, larger, speed = st.tabs(["Шесть строк", "Тысяча строк", "Векторизация и память"])
+    with small:
+        _defect_tab(order, statistic)
     with larger:
         _readings_tab(settings, order, statistic)
     with speed:
@@ -236,12 +238,12 @@ def main() -> None:
     with st.expander("Чего эта площадка не делает"):
         st.markdown(
             "- Не заполняет пропуски по группам (медиана своего узла) и не интерполирует временной ряд: "
-            "одна статистика на весь столбец, как в лекции.\n"
+            "одна статистика на весь столбец.\n"
             "- Не ищет выбросы статистически: правило одно — физический предел −120 дБм. Значения, "
             "правдоподобные физически, но неверные, этим правилом не ловятся.\n"
-            "- Не оптимизирует типы данных и не читает файл частями — это задания лабораторной работы №2 "
-            "модуля 1, выполняемые в ноутбуке на реальном файле.\n"
-            "- Не повторяет время лекции: замер делается в вашем браузере."
+            "- Не оптимизирует типы данных и не читает файл частями: это работа для ноутбука "
+            "и настоящего файла.\n"
+            "- Не сравнивает с вашим компьютером: замер делается в браузере, где Python медленнее."
         )
 
 

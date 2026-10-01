@@ -1,8 +1,9 @@
 """Streamlit interface for the leakage playground.
 
 The page answers one question: what does it cost to select features before
-splitting the sample? With the default settings it answers it in lecture 6's
-numbers — 0.757 against 0.510, on data that holds nothing to predict.
+splitting the sample? With the default settings — 300 rows, 2000 columns of
+pure noise — the leaky pipeline scores about 0.76 and the honest one about 0.51,
+on data that holds nothing to predict.
 """
 
 from __future__ import annotations
@@ -20,8 +21,6 @@ from playground_common.compat import patch_pyarrow_stub
 patch_pyarrow_stub()
 
 from leak_playground.experiment import (  # noqa: E402  — must follow the stub patch
-    LECTURE_HONEST,
-    LECTURE_LEAKY,
     TRUTH,
     Scores,
     Selection,
@@ -45,10 +44,10 @@ SEED_LABEL = "Зерно генерации данных"
 SELECT_LABEL = "Отбираем признаков"
 FOLDS_LABEL = "Блоков кросс-валидации"
 
-# Lecture 6's settings, and the point every other setting is measured against.
-LECTURE = NoiseSettings()
-LECTURE_SELECT = 20
-LECTURE_FOLDS = 5
+# Wide pure noise and few rows: the setting where the leak is plainest.
+DEFAULT = NoiseSettings()
+DEFAULT_SELECT = 20
+DEFAULT_FOLDS = 5
 
 
 @lru_cache(maxsize=32)
@@ -85,18 +84,18 @@ def _controls() -> tuple[NoiseSettings, int, int]:
     """
     st.sidebar.header("Данные")
     st.sidebar.caption("Эти ручки меняют только сами данные.")
-    count = st.sidebar.slider(OBSERVATIONS_LABEL, 100, 600, LECTURE.observations, step=50)
-    width = st.sidebar.slider(FEATURES_LABEL, 200, 4000, LECTURE.features, step=200)
-    signal = st.sidebar.slider(SIGNAL_LABEL, 0.0, 1.0, LECTURE.signal, step=0.05)
-    seed = st.sidebar.slider(SEED_LABEL, 0, 20, LECTURE.seed)
+    count = st.sidebar.slider(OBSERVATIONS_LABEL, 100, 600, DEFAULT.observations, step=50)
+    width = st.sidebar.slider(FEATURES_LABEL, 200, 4000, DEFAULT.features, step=200)
+    signal = st.sidebar.slider(SIGNAL_LABEL, 0.0, 1.0, DEFAULT.signal, step=0.05)
+    seed = st.sidebar.slider(SEED_LABEL, 0, 20, DEFAULT.seed)
 
     st.sidebar.header("Отбор признаков")
     st.sidebar.caption("Эта ручка меняет только отбор.")
-    select = st.sidebar.slider(SELECT_LABEL, 5, 100, LECTURE_SELECT, step=5)
+    select = st.sidebar.slider(SELECT_LABEL, 5, 100, DEFAULT_SELECT, step=5)
 
     st.sidebar.header("Проверка")
     st.sidebar.caption("Эта ручка меняет только разбиение на блоки.")
-    folds = st.sidebar.slider(FOLDS_LABEL, 3, 10, LECTURE_FOLDS)
+    folds = st.sidebar.slider(FOLDS_LABEL, 3, 10, DEFAULT_FOLDS)
 
     st.sidebar.divider()
     st.sidebar.markdown(other_playgrounds("ml-practice/leak"))
@@ -120,12 +119,6 @@ def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) 
             f"Сигнал подмешан в {features(min(INFORMATIVE, settings.features))}, сила {settings.signal:.2f}. "
             "Честная оценка теперь выше 0.500 законно — а утечка по-прежнему добавляет сверху, "
             "и по одному числу эти две прибавки не различить."
-        )
-
-    if (settings, select, folds) == (LECTURE, LECTURE_SELECT, LECTURE_FOLDS):
-        st.info(
-            f"Настройка лекции 6. Лекция печатает «С утечкой: {LECTURE_LEAKY:.3f}», "
-            f"«Честно: {LECTURE_HONEST:.3f}», «Истина: {TRUTH:.3f}» — ровно то, что выше."
         )
 
 
@@ -234,7 +227,7 @@ def main() -> None:
             "- Не меняет модель: логистическая регрессия тут всюду. Утечка не зависит "
             "от выбора модели — это свойство порядка операций.\n"
             "- Не считает вложенную кросс-валидацию: подбор гиперпараметров на той же "
-            "проверочной части — отдельная тема лабораторной работы модуля 2.\n"
+            "проверочной части — отдельная тема.\n"
             f"- Сигнал, когда он включён, кладётся всегда в первые {INFORMATIVE} столбцов "
             "и всегда как сдвиг среднего. Это не модель реальных данных, а способ увидеть, "
             "что по одному числу утечку от сигнала не отличить."

@@ -1,7 +1,4 @@
-"""The cleaning chain must reproduce lecture 2, and the order switch must do what the note says."""
-
-import struct
-import sys
+"""The cleaning chain must clean, and the order switch must do what the page says it does."""
 
 import numpy as np
 import pytest
@@ -12,25 +9,25 @@ from data_playground.cleaning import (
     MEAN,
     MEDIAN,
     ReadingsSettings,
-    clean_lecture_table,
+    clean_defect_table,
+    defect_table,
     estimate,
     inspect,
-    lecture_table,
     make_readings,
 )
 from data_playground.speed import memory, results_agree, sum_of_squares
 
 
-def test_the_inspection_prints_what_the_lecture_prints():
-    found = inspect(lecture_table())
+def test_the_inspection_finds_every_planted_defect():
+    found = inspect(defect_table())
 
     assert found.missing == {"узел": 1, "сигнал": 1, "статус": 0}
     assert found.duplicates == 1
     assert found.statuses == ("ok", "OK", "fail")
 
 
-def test_the_lectures_order_fills_both_gaps_with_the_clean_median():
-    cleaned = clean_lecture_table(MEDIAN, AFTER)
+def test_the_right_order_fills_both_gaps_with_the_clean_median():
+    cleaned = clean_defect_table(MEDIAN, AFTER)
 
     assert cleaned.table["узел"].tolist() == ["A", "B", "C", "A"]
     assert cleaned.table["статус"].tolist() == ["ok", "ok", "fail", "ok"]
@@ -41,19 +38,19 @@ def test_the_lectures_order_fills_both_gaps_with_the_clean_median():
 
 
 def test_after_the_outliers_are_gone_mean_and_median_agree_on_two_values():
-    assert clean_lecture_table(MEAN, AFTER).fill_value == pytest.approx(-48.65)
+    assert clean_defect_table(MEAN, AFTER).fill_value == pytest.approx(-48.65)
 
 
 def test_the_median_computed_too_early_is_wrong_but_quietly():
-    cleaned = clean_lecture_table(MEDIAN, BEFORE)
+    cleaned = clean_defect_table(MEDIAN, BEFORE)
 
     assert cleaned.fill_value == pytest.approx(-52.3)
     assert cleaned.impossible_left == 0
 
 
 def test_the_mean_computed_too_early_inserts_impossible_values():
-    # The lecture's note, measured: the cleaning creates a new error.
-    cleaned = clean_lecture_table(MEAN, BEFORE)
+    # The warning, measured: the cleaning creates a new error.
+    cleaned = clean_defect_table(MEAN, BEFORE)
 
     assert round(cleaned.fill_value, 2) == -332.43
     assert cleaned.impossible_left == 2
@@ -85,19 +82,14 @@ def test_enough_outliers_push_the_early_mean_below_the_physical_limit():
     assert result.impossible_left == result.filled
 
 
-def test_memory_matches_the_lecture_on_64_bit_python():
-    if struct.calcsize("P") != 8:
-        pytest.skip("the lecture's numbers are those of a 64-bit build")
+def test_an_array_costs_eight_bytes_a_value_and_a_list_a_pointer_and_an_object():
     used = memory()
 
-    assert f"{used.list_bytes / 1024**2:.1f}" == "3.4"
-    assert f"{used.array_bytes / 1024**2:.1f}" == "0.8"
-    # The ratio is 4.5 to three decimals, so the whole number the lecture prints
-    # is decided by sys.getsizeof(0): 28 bytes from Python 3.12, 24 before. The
-    # lecture ran on 3.12 and prints «в 5 раз»; on 3.10 the same cell prints 4.
-    assert used.ratio == pytest.approx(4.5, abs=1e-3)
-    if sys.version_info >= (3, 12):
-        assert f"{used.ratio:.0f}" == "5"
+    assert used.array_bytes == 8 * used.count
+    # Not a pinned number: a pointer and an int object differ between builds
+    # (Pyodide is 32-bit) and between Python versions, the ratio follows them.
+    assert used.ratio == pytest.approx((used.pointer_bytes + used.int_object_bytes) / 8, rel=0.01)
+    assert used.ratio > 2
 
 
 def test_the_three_sums_agree_and_numpy_wins():

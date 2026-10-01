@@ -1,10 +1,9 @@
-"""Lecture 12's scheduler, unchanged, plus the means to break it on purpose.
+"""A forty-line scheduler, plus the means to break it on purpose.
 
-``execution_levels`` and ``run`` are the lecture's forty lines: lay the graph out
-in levels, run each level in turn, retry a failing task, and skip any task whose
-parents did not all succeed. The playground adds nothing to the algorithm. What
-it adds is a way to choose *which* task fails, *how often*, and *which edges*
-the graph has — the three things the lecture fixes in its two scenarios.
+``execution_levels`` and ``run`` are the whole algorithm: lay the graph out in
+levels, run each level in turn, retry a failing task, and skip any task whose
+parents did not all succeed. The rest of the module chooses *which* task fails,
+*how often*, and *which edges* the graph has.
 """
 
 from __future__ import annotations
@@ -12,7 +11,7 @@ from __future__ import annotations
 from collections.abc import Callable
 from dataclasses import dataclass
 
-# Lecture 12's graph. A pair means "the first must finish before the second".
+# A small training pipeline. A pair means "the first must finish before the second".
 PIPELINE_EDGES: tuple[tuple[str, str], ...] = (
     ("выгрузка", "очистка"),
     ("очистка", "признаки"),
@@ -49,7 +48,7 @@ class CycleError(ValueError):
 def execution_levels(edges) -> list[list[str]]:
     """Tasks grouped into levels; within a level the tasks are independent.
 
-    Raises ``CycleError`` — the lecture's ``ValueError`` with its message — when
+    Raises ``CycleError`` — a ``ValueError``, so plain code can catch it — when
     some task can never become ready.
     """
     requirements: dict[str, set[str]] = {}
@@ -84,10 +83,10 @@ class Entry:
 
 
 def run(edges, handlers: dict[str, Callable[[], None]], attempts: int = 3) -> tuple[list[Entry], dict[str, str]]:
-    """Execute the graph level by level, as lecture 12 does.
+    """Execute the graph level by level.
 
     A task is skipped when any parent did not succeed; otherwise it is tried up
-    to ``attempts`` times. The lecture's ``pause`` between attempts is left out:
+    to ``attempts`` times. A pause between attempts is left out:
     a browser has nothing to wait for.
     """
     log: list[Entry] = []
@@ -107,7 +106,7 @@ def run(edges, handlers: dict[str, Callable[[], None]], attempts: int = 3) -> tu
                     status[task] = SUCCESS
                     log.append(Entry(task, SUCCESS, attempt))
                     break
-                except Exception as error:  # any failure is a failed attempt, as in the lecture
+                except Exception as error:  # any failure is a failed attempt
                     if attempt == attempts:
                         status[task] = FAILED
                         log.append(Entry(task, f"{FAILED}: {error}", attempt))
@@ -117,8 +116,8 @@ def run(edges, handlers: dict[str, Callable[[], None]], attempts: int = 3) -> tu
 def failing_handler(task: str, failures: int | None) -> Callable[[], None]:
     """A task that fails ``failures`` times and then succeeds; ``ALWAYS`` never succeeds.
 
-    Lecture 12 builds both kinds by hand: ``unstable_training`` fails twice, then
-    works; ``always_fails`` never does. Their messages are kept.
+    Training gets messages of its own: a model that does not converge is the
+    failure people meet first.
     """
     calls = {"count": 0}
 
@@ -154,9 +153,9 @@ class Scenario:
         return {self.failing_task: failing_handler(self.failing_task, self.failures)}
 
 
-# The lecture's two runs, as scenarios.
-LECTURE_RECOVERY = Scenario(failing_task="обучение", failures=2, attempts=3)
-LECTURE_FAILURE = Scenario(failing_task="обучение", failures=ALWAYS, attempts=2)
+# Two telling runs: one the retries save, one they cannot.
+RECOVERING_RUN = Scenario(failing_task="обучение", failures=2, attempts=3)
+FAILING_RUN = Scenario(failing_task="обучение", failures=ALWAYS, attempts=2)
 
 
 @dataclass(frozen=True)
@@ -202,5 +201,5 @@ def simulate(scenario: Scenario) -> Outcome:
 
 
 def task_names() -> list[str]:
-    """Every task of the lecture's graph, in execution order."""
+    """Every task of the pipeline, in execution order."""
     return [task for level in execution_levels(PIPELINE_EDGES) for task in level]

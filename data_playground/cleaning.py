@@ -1,11 +1,10 @@
-"""Lecture 2's cleaning pipeline, and a larger table to try it on.
+"""A cleaning pipeline on six rows with planted defects, and a larger table to try it on.
 
-The lecture cleans a six-row table with four planted defects: missing values, a
-duplicate, inconsistent case and a physically impossible reading. Its note
-makes a claim about order: compute the fill statistic before removing the
-outliers and "заполнение внесёт в таблицу новую ошибку вместо того, чтобы
-исправить старую". This module makes the order a parameter, so the claim can
-be checked instead of believed.
+The six rows carry four defects: missing values, a duplicate, inconsistent case
+and a physically impossible reading. The usual warning is about order: compute
+the fill statistic before removing the outliers, and the filling inserts a new
+error instead of fixing the old one. This module makes the order a parameter,
+so the warning can be checked instead of believed.
 """
 
 from __future__ import annotations
@@ -15,9 +14,9 @@ from dataclasses import dataclass
 import numpy as np
 import pandas as pd
 
-# Below this a received signal strength is physically impossible: lecture 2's rule.
+# Below this a received signal strength is physically impossible.
 OUTLIER_LIMIT = -120.0
-# The impossible value the lecture plants, used for the larger table as well.
+# The impossible value planted in the six rows, and in the larger table as well.
 SENTINEL = -900.0
 
 MEDIAN = "медианой"
@@ -33,8 +32,8 @@ TRUE_SPREAD = 6.0
 NODES = ("A", "B", "C")
 
 
-def lecture_table() -> pd.DataFrame:
-    """Lecture 2's six rows, defects included."""
+def defect_table() -> pd.DataFrame:
+    """Six readings, defects included."""
     return pd.DataFrame(
         {
             "узел": ["A", "B", "B", "C", None, "A"],
@@ -46,7 +45,7 @@ def lecture_table() -> pd.DataFrame:
 
 @dataclass(frozen=True)
 class Inspection:
-    """What the lecture prints before cleaning."""
+    """What an inspection before cleaning reports."""
 
     missing: dict[str, int]
     duplicates: int
@@ -87,7 +86,7 @@ def clean_signal(table: pd.DataFrame, statistic: str = MEDIAN, order: str = AFTE
     """Turn impossible readings into gaps and fill every gap with one statistic.
 
     ``order`` decides one thing only: whether that statistic is computed from
-    the signal after the impossible readings were removed (the lecture's order)
+    the signal after the impossible readings were removed (the right order)
     or before (the mistake its note warns about). Either way every gap —
     original or created by removing an outlier — gets the same value.
     """
@@ -103,10 +102,10 @@ def clean_signal(table: pd.DataFrame, statistic: str = MEDIAN, order: str = AFTE
     return Cleaned(table=result, fill_value=fill_value, filled=tuple(bool(flag) for flag in filled))
 
 
-def clean_lecture_table(statistic: str = MEDIAN, order: str = AFTER) -> Cleaned:
-    """Lecture 2's chain: duplicates, case, rows without a node, then the signal."""
+def clean_defect_table(statistic: str = MEDIAN, order: str = AFTER) -> Cleaned:
+    """The whole chain: duplicates, case, rows without a node, then the signal."""
     tidy = (
-        lecture_table()
+        defect_table()
         .drop_duplicates()
         .assign(статус=lambda frame: frame["статус"].str.lower())
         .dropna(subset=["узел"])

@@ -1,7 +1,7 @@
 """Streamlit interface for the model-complexity playground.
 
 Three tabs, three handles on the same question — how flexible should a model
-be — each opening on the setting its lecture prints. The tabs share no
+be — each opening where the trouble is plainest. The tabs share no
 control: the degree moves only the polynomial, the neighbours and the depth only
 their own panel, the penalty only the regression.
 """
@@ -20,8 +20,7 @@ patch_pyarrow_stub()
 
 from fit_playground.models import (  # noqa: E402  — must follow the stub patch
     ALPHAS,
-    LECTURE_DEGREES,
-    LECTURE_DEPTH,
+    DEFAULT_DEPTH,
     MAX_DEGREE,
     Classifier,
     Penalty,
@@ -54,11 +53,9 @@ ALPHA_LABEL = "Сила штрафа alpha"
 
 UNLIMITED = "без ограничения"
 DEPTHS = ["1", "2", "3", "4", "5", "6", "8", "10", UNLIMITED]
-LECTURE_DEGREE = 17
-LECTURE_NEIGHBOURS = 1
-LECTURE_ALPHA = ALPHAS[-1]
-# Lecture 5 also prints the grid point nearest 10, where Lasso selects rather than collapses.
-LECTURE_MIDDLE_ALPHA = min(ALPHAS, key=lambda value: abs(value - 10))
+DEFAULT_DEGREE = 17
+DEFAULT_NEIGHBOURS = 1
+DEFAULT_ALPHA = ALPHAS[-1]
 
 
 @lru_cache(maxsize=MAX_DEGREE + 1)
@@ -88,15 +85,15 @@ def _alpha_label(alpha: float) -> str:
 def _controls() -> tuple[int, int, int | None, float]:
     """The sidebar: one control per tab, and each reaches only its own tab."""
     st.sidebar.header("Многочлен")
-    degree = st.sidebar.slider(DEGREE_LABEL, 1, MAX_DEGREE, LECTURE_DEGREE)
+    degree = st.sidebar.slider(DEGREE_LABEL, 1, MAX_DEGREE, DEFAULT_DEGREE)
 
     st.sidebar.header("Соседи и дерево")
-    count = st.sidebar.slider(NEIGHBOURS_LABEL, 1, 99, LECTURE_NEIGHBOURS)
-    depth_text = st.sidebar.select_slider(DEPTH_LABEL, DEPTHS, value=str(LECTURE_DEPTH))
+    count = st.sidebar.slider(NEIGHBOURS_LABEL, 1, 99, DEFAULT_NEIGHBOURS)
+    depth_text = st.sidebar.select_slider(DEPTH_LABEL, DEPTHS, value=str(DEFAULT_DEPTH))
 
     st.sidebar.header("Штраф")
     labels = [_alpha_label(alpha) for alpha in ALPHAS]
-    chosen = st.sidebar.select_slider(ALPHA_LABEL, labels, value=_alpha_label(LECTURE_ALPHA))
+    chosen = st.sidebar.select_slider(ALPHA_LABEL, labels, value=_alpha_label(DEFAULT_ALPHA))
 
     st.sidebar.divider()
     st.sidebar.markdown(other_playgrounds("ml-practice/fit"))
@@ -117,7 +114,7 @@ def _error(value: float) -> str:
 
 
 def _polynomial_tab(degree: int) -> None:
-    st.markdown("Лекция 4: двадцать пять точек синусоиды с шумом и многочлены разной степени.")
+    st.markdown("Двадцать пять точек синусоиды с шумом и многочлены разной степени.")
     fit = _polynomial(degree)
     baseline = mean_prediction_error()
 
@@ -130,17 +127,12 @@ def _polynomial_tab(degree: int) -> None:
     fresh_x, fresh_y = fresh_data()
     st.plotly_chart(polynomial_figure(fit, train_x, train_y, fresh_x, fresh_y), use_container_width=True)
 
-    if degree in LECTURE_DEGREES:
-        st.info(
-            f"Степень {degree} есть в лекции 4. Над её графиком напечатано «ошибка на обучении "
-            f"{fit.train_error:.3f}» — ровно то, что выше."
-        )
     if fit.fresh_error > baseline:
         times = fit.fresh_error / baseline
         st.warning(
             f"Ошибка на обучении {fit.train_error:.3f} — а на новых точках {_error(fit.fresh_error)}, "
             f"в {times:.0f} {plural(round(times), 'раз', 'раза', 'раз')} хуже, чем если бы модель всегда отвечала "
-            "средним. Лекция утверждает, что так и будет; здесь это измерено."
+            "средним. Модель выучила шум, а не закон."
         )
 
     degrees = list(range(1, MAX_DEGREE + 1))
@@ -170,7 +162,7 @@ def _classifier_column(model: Classifier, title: str) -> None:
 
 def _neighbours_tab(count: int, depth: int | None) -> None:
     st.markdown(
-        "Лекция 5: метод ближайших соседей и дерево решений на трёхстах точках двух полумесяцев. "
+        "Метод ближайших соседей и дерево решений на трёхстах точках двух полумесяцев. "
         "«На проверке» — средняя доля правильных по пяти блокам кросс-валидации."
     )
     knn = _neighbours(count)
@@ -185,7 +177,7 @@ def _neighbours_tab(count: int, depth: int | None) -> None:
     if count == 1:
         st.caption(
             f"При одном соседе модель отвечает на обучении безошибочно ({as_printed(knn.train_accuracy)}): "
-            "каждая точка — сама себе сосед. Лекция называет это переобучением, и граница действительно "
+            "каждая точка — сама себе сосед. Это переобучение, и граница действительно "
             f"огибает каждый выброс. Но на проверке k = 1 даёт {as_printed(knn.cv_accuracy)} против "
             f"{as_printed(best.cv_accuracy)} у k = 15 — цена переобучения здесь мала. "
             f"Сдвиньте k к 99: недообучение обходится в {as_printed(best.cv_accuracy - _neighbours(99).cv_accuracy)}."
@@ -199,7 +191,7 @@ def _neighbours_tab(count: int, depth: int | None) -> None:
 
 def _penalty_tab(alpha: float) -> None:
     st.markdown(
-        "Лекция 5: Ridge и Lasso на таблице diabetes, десять признаков, признаки стандартизованы. "
+        "Ridge и Lasso на таблице diabetes, десять признаков, признаки стандартизованы. "
         "Метрика — R² на отложенных 30 %."
     )
     chosen = _penalty(alpha)
@@ -214,21 +206,18 @@ def _penalty_tab(alpha: float) -> None:
 
     st.plotly_chart(paths_figure(ALPHAS, ridge_paths, lasso_paths, names, alpha), use_container_width=True)
 
-    if alpha == LECTURE_ALPHA:
+    if 0 < chosen.lasso_zeroed < len(names):
+        kept = len(names) - chosen.lasso_zeroed
         st.info(
-            f"Наибольший штраф лекции 5. Лекция печатает «При максимальном штрафе Lasso обнулил "
-            f"{chosen.lasso_zeroed} признаков из {len(names)}» — ровно то, что выше."
-        )
-    elif alpha == LECTURE_MIDDLE_ALPHA:
-        st.info(
-            f"Этот штраф тоже есть в лекции 5: «При alpha = {alpha:.1f} Lasso обнулил {chosen.lasso_zeroed} "
-            f"признаков из {len(names)}» — ровно то, что выше. Это и есть отбор признаков."
+            f"Lasso обнулил {chosen.lasso_zeroed} {plural(chosen.lasso_zeroed, 'признак', 'признака', 'признаков')} "
+            f"из {len(names)} и оставил {kept}: это и есть отбор признаков. Ridge не обнуляет ни одного — "
+            "сравните их R²."
         )
     if chosen.lasso_zeroed == len(names):
         first = next(value for value in ALPHAS if _penalty(value).lasso_zeroed == len(names))
         st.warning(
             f"Обнулены все {len(names)} признаков, и R² Lasso — {chosen.lasso_r2:.3f}: модель отвечает одним "
-            "числом для всех, это уже не отбор признаков, а отказ от модели. В сетке лекции так происходит "
+            "числом для всех, это уже не отбор признаков, а отказ от модели. На этой сетке так происходит "
             f"начиная с alpha ≈ {_alpha_label(first)}. Отбор, ради которого Lasso применяют, виден левее: "
             "сдвиньте штраф к 10."
         )
@@ -259,12 +248,12 @@ def main() -> None:
     with st.expander("Чего эта площадка не делает"):
         st.markdown(
             "- Не подбирает гиперпараметры автоматически: подбор по сетке с вложенной проверкой — "
-            "задание лабораторной работы модуля 2.\n"
-            "- Не меняет данные: точки лекций 4 и 5 одни и те же при любых настройках. Новые точки "
+            "отдельная тема.\n"
+            "- Не меняет данные: точки одни и те же при любых настройках. Новые точки "
             "многочлена взяты из того же закона отдельным генератором.\n"
-            "- Не сравнивает ансамбли: случайный лес и бустинг из лекции 5 обучаются в браузере "
+            "- Не сравнивает ансамбли: случайный лес и бустинг обучаются в браузере "
             "заметно дольше, а нового о сложности модели не добавляют.\n"
-            f"- Не нормирует штраф: сетка alpha та же, что в лекции, — от {_alpha_label(ALPHAS[0])} "
+            f"- Не нормирует штраф: сетка alpha одна для обоих — от {_alpha_label(ALPHAS[0])} "
             f"до {_alpha_label(ALPHAS[-1])}, и её неодинаковый смысл для Ridge и Lasso показан как есть."
         )
 

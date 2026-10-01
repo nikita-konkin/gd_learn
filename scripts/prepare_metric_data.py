@@ -1,7 +1,7 @@
-"""Write the model scores the metric playground thresholds, from lectures 4 and 6.
+"""Write the model scores the metric playground thresholds.
 
-Both lectures train on synthetic data and print fixed numbers. Training happens
-here, once, with scikit-learn; the page receives only the held-out labels and
+Both models train on synthetic data. Training happens here, once, with
+scikit-learn; the page receives only the held-out labels and
 the scores, and computes every metric from them with NumPy. That keeps
 scikit-learn out of the browser for this page, and the tests check the NumPy
 metrics against scikit-learn's.
@@ -24,12 +24,12 @@ from sklearn.model_selection import train_test_split
 
 ROOT = Path(__file__).resolve().parents[1]
 DATA = ROOT / "metric_playground" / "data"
-LECTURE4 = DATA / "lecture4_scores.csv"
-LECTURE6 = DATA / "lecture6_scores.csv"
+FAILURES = DATA / "failures_scores.csv"
+RARE_CLASS = DATA / "rare_scores.csv"
 
 
-def lecture4_scores() -> pd.DataFrame:
-    """Lecture 4: two per cent failures, a class-weighted logistic regression."""
+def failure_scores() -> pd.DataFrame:
+    """Two per cent failures, a class-weighted logistic regression."""
     generator = np.random.default_rng(0)
     size = 5000
     labels = (generator.random(size) < 0.02).astype(int)
@@ -41,8 +41,8 @@ def lecture4_scores() -> pd.DataFrame:
     return pd.DataFrame({"label": test_y, "score": model.predict_proba(test_x)[:, 1]})
 
 
-def lecture6_scores() -> pd.DataFrame:
-    """Lecture 6: three per cent rare class, a random forest three ways."""
+def rare_class_scores() -> pd.DataFrame:
+    """Three per cent rare class, a random forest trained three ways."""
     features, target = make_classification(
         n_samples=6000, n_features=12, n_informative=5, weights=[0.97, 0.03], flip_y=0.01, random_state=42
     )
@@ -70,7 +70,7 @@ def lecture6_scores() -> pd.DataFrame:
 
 def main() -> None:
     DATA.mkdir(parents=True, exist_ok=True)
-    for path, table in ((LECTURE4, lecture4_scores()), (LECTURE6, lecture6_scores())):
+    for path, table in ((FAILURES, failure_scores()), (RARE_CLASS, rare_class_scores())):
         # repr-precision floats: the CSV must read back bit for bit.
         table.to_csv(path, index=False, float_format="%.17g")
         print(f"{path.relative_to(ROOT)}: {len(table)} rows, {int(table['label'].sum())} positive")

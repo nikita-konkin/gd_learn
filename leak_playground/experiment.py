@@ -1,7 +1,7 @@
 """The two pipelines, the features each one picks, and what the picks are worth.
 
-The experiment is lecture 6's, unchanged in its defaults: select the ``k`` best
-features by ANOVA F, then cross-validate a logistic regression. Done once on the
+The experiment: select the ``k`` best features by ANOVA F, then
+cross-validate a logistic regression. Done once on the
 whole sample the selection leaks the held-out rows into the fit; done inside a
 pipeline it is redone on each training block and nothing leaks.
 
@@ -20,10 +20,6 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import StandardScaler
 
-# What lecture 6 prints for its defaults. The tests pin these; a change here
-# means the playground and the lecture have drifted apart.
-LECTURE_LEAKY = 0.757
-LECTURE_HONEST = 0.510
 # Pure noise: two balanced classes, nothing to predict.
 TRUTH = 0.5
 
@@ -95,9 +91,8 @@ def leaky_score(matrix: np.ndarray, labels: np.ndarray, k: int, folds: int) -> t
     """Select on everything, then cross-validate. The wrong way, block by block.
 
     The scaler and the model are the honest branch's own, so the two branches
-    differ in one thing only: where the selection is made. Lecture 6 once left
-    the scaler out of this branch; the playground caught it, and the lecture
-    now scales both.
+    differ in one thing only: where the selection is made. A scaler in one
+    branch alone would mix a second difference into the comparison.
     """
     selected = SelectKBest(f_classif, k=k).fit_transform(matrix, labels)
     estimator = Pipeline([("scale", StandardScaler()), ("model", _model())])

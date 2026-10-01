@@ -1,8 +1,7 @@
-"""Площадка «Нейросеть на NumPy» — модуль 3 лабораторных работ Б.1.2.2.
+"""Площадка «Нейросеть на NumPy» — тема «Обучение и оптимизация», модуль 3 курса Б.1.2.2.
 
-Lecture 7's two-layer network with one line of the backward pass made
-breakable, and the lecture's single-component gradient check widened to every
-weight.
+A two-layer network with one line of the backward pass made breakable, and a
+numerical gradient check run on every weight.
 """
 
 from nn_playground.app import main

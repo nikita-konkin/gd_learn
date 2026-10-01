@@ -1,4 +1,4 @@
-"""The interface renders, and the numbers it shows are lecture 6's numbers."""
+"""The interface renders, and its numbers say what the page claims they say."""
 
 import pytest
 
@@ -36,15 +36,13 @@ def test_main_renders_without_errors(default_run):
     assert len(default_run.figures) == 3
 
 
-def test_the_headline_carries_the_lectures_three_numbers(default_run):
-    assert _metric(default_run, "С утечкой") == "0.757"
-    assert _metric(default_run, "Честно") == "0.510"
-    assert _metric(default_run, "Разрыв") == "+0.247"
+def test_the_headline_shows_an_invented_gap(default_run):
+    leaky = float(_metric(default_run, "С утечкой"))
+    honest = float(_metric(default_run, "Честно"))
 
-
-def test_the_default_settings_announce_themselves_as_the_lectures(default_run):
-    assert any("Настройка лекции 6" in message for message in default_run.infos)
-    assert any("0.757" in message and "0.510" in message for message in default_run.infos)
+    assert leaky > 0.7
+    assert abs(honest - 0.5) < 0.05
+    assert float(_metric(default_run, "Разрыв")) == pytest.approx(leaky - honest, abs=0.0015)
 
 
 def test_the_page_spells_out_what_it_ran_on(default_run):
@@ -73,11 +71,10 @@ def test_the_page_says_what_it_does_not_do(default_run):
     assert "Чего эта площадка не делает" in default_run.expanders
 
 
-def test_a_changed_setting_stops_claiming_to_be_the_lecture(monkeypatch):
+def test_the_number_of_picks_moves_the_leaky_score(monkeypatch, default_run):
     fake_st = _run(monkeypatch, overrides={SELECT_LABEL: 40})
 
-    assert not any("Настройка лекции 6" in message for message in fake_st.infos)
-    assert _metric(fake_st, "С утечкой") != "0.757"
+    assert _metric(fake_st, "С утечкой") != _metric(default_run, "С утечкой")
 
 
 def test_fewer_blocks_relabel_the_recurrence_metric(monkeypatch):
@@ -101,12 +98,11 @@ def test_narrower_data_leaves_less_room_for_luck(monkeypatch):
 
     # Twenty picks out of two hundred columns instead of two thousand: much less
     # scope to find a lucky one, so the invented gap shrinks.
-    assert float(_metric(fake_st, "Разрыв")) < 0.247
+    assert float(_metric(fake_st, "Разрыв")) < 0.2
 
 
-def test_every_slider_opens_on_the_lectures_setting(default_run):
-    # A default that is not the lecture's would open the page on numbers that
-    # match nothing in the course materials.
+def test_every_slider_opens_on_its_default(default_run):
+    # Wide pure noise and few rows: the setting where the leak is plainest.
     defaults = {label: value for label, value, _, _ in default_run.sliders}
 
     assert defaults == {

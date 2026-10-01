@@ -2,8 +2,8 @@
 
 Three tabs. The first shows the trap: always answering "no failure" scores high
 accuracy on rare-event data and finds nothing. The second moves the threshold
-of lecture 4's model and prices its two kinds of mistake. The third puts
-lecture 6's three remedies for imbalance side by side under one threshold.
+of a failure detector and prices its two kinds of mistake. The third puts
+three remedies for imbalance side by side under one threshold.
 """
 
 from __future__ import annotations
@@ -14,12 +14,14 @@ import numpy as np
 import streamlit as st
 
 from metric_playground.metrics import (
+    FAILURES,
     REMEDIES,
+    SECOM,
     average_precision,
     cheapest_threshold,
     confusion,
-    load_lecture4,
-    load_lecture6,
+    load_failures,
+    load_rare_class,
     majority,
     nearest_recall,
     populations,
@@ -32,24 +34,24 @@ from playground_common.wording import as_printed
 TITLE = "Метрика и дисбаланс"
 
 POPULATION_LABEL = "Набор данных"
-THRESHOLD_LABEL = "Порог модели лекции 4"
+THRESHOLD_LABEL = "Порог модели отказов"
 MISS_COST_LABEL = "Пропуск отказа дороже ложной тревоги, раз"
-REMEDY_THRESHOLD_LABEL = "Порог для моделей лекции 6"
+REMEDY_THRESHOLD_LABEL = "Порог для трёх способов"
 
-# The recalls lecture 4 asks for, and the threshold scikit-learn uses by default.
-LECTURE_RECALLS = (0.6, 0.8, 0.95)
+# Three recalls worth asking for, and the threshold scikit-learn uses by default.
+WANTED_RECALLS = (0.6, 0.8, 0.95)
 DEFAULT_THRESHOLD = 0.5
 DEFAULT_MISS_COST = 10
 
 
 @lru_cache(maxsize=1)
-def _lecture4():
-    return load_lecture4()
+def _failures():
+    return load_failures()
 
 
 @lru_cache(maxsize=1)
-def _lecture6():
-    return load_lecture6()
+def _rare_class():
+    return load_rare_class()
 
 
 @lru_cache(maxsize=1)
@@ -59,7 +61,7 @@ def _populations():
 
 @lru_cache(maxsize=32)
 def _cheapest(miss: int) -> tuple[float, float]:
-    labels, scores = _lecture4()
+    labels, scores = _failures()
     return cheapest_threshold(labels, scores, miss)
 
 
@@ -94,15 +96,14 @@ def _trap_tab(name: str) -> None:
     right.metric("Полнота", "0.000")
     last.metric("PR-AUC случайной модели", f"{population.pr_auc_baseline:.3f}")
 
-    if population.name.startswith("Лекция 4"):
-        labels, _ = _lecture4()
+    if population.name == FAILURES:
+        labels, _ = _failures()
         counts = majority(labels)
-        # Code spans: Streamlit's markdown would otherwise turn the lecture's "<-" into an arrow.
         st.info(
-            f"Лекция 4 печатает `Доля отказов в выборке: {labels.mean():.1%}` и `Доля правильных ответов: "
-            f"{counts.accuracy:.3f}  <- выглядит отлично`, а полноту, точность и F1 — нулевыми. Здесь то же самое."
+            f"Отказов в выборке {labels.mean():.1%}, доля правильных ответов {counts.accuracy:.3f} — выглядит "
+            "отлично. А полнота, точность и F1 нулевые: модель не нашла ни одного отказа."
         )
-    elif population.name.startswith("SECOM"):
+    elif population.name == SECOM:
         st.info(
             "Это базовый уровень из задания на РГР: «93,4 % — столько даёт ответ «годен» всегда», а PR-AUC "
             "случайной модели — 0,066. Критерий успеха РГР должен быть выше обоих, иначе модель ничего не умеет."
@@ -114,10 +115,10 @@ def _trap_tab(name: str) -> None:
 
 
 def _threshold_tab(threshold: float, miss: int) -> None:
-    labels, scores = _lecture4()
+    labels, scores = _failures()
     counts = confusion(labels, scores, threshold)
     st.markdown(
-        "Лекция 4: логистическая регрессия с весами классов, отложенная выборка из "
+        "Логистическая регрессия с весами классов, отложенная выборка из "
         f"{counts.total} объектов, из них {int(labels.sum())} отказов."
     )
 
@@ -140,9 +141,9 @@ def _threshold_tab(threshold: float, miss: int) -> None:
             use_container_width=True,
         )
 
-    st.subheader("Что печатает лекция")
+    st.subheader("Нужная полнота и её цена")
     rows = []
-    points = [nearest_recall(labels, scores, wanted) for wanted in LECTURE_RECALLS]
+    points = [nearest_recall(labels, scores, wanted) for wanted in WANTED_RECALLS]
     for point in points:
         rows.append(f"| {point.wanted:.2f} | {point.recall:.2f} | {point.precision:.2f} | {point.threshold:.3f} |")
     last = points[-1]
@@ -165,14 +166,14 @@ def _threshold_tab(threshold: float, miss: int) -> None:
     st.caption(
         f"Пропуск отказа стоит {miss} ложных тревог. При самом дешёвом пороге модель пропускает "
         f"{best.false_negative} и поднимает {best.false_positive} ложных тревог. Измените цену — сместится "
-        "и порог: выбор компромисса, как сказано в лекции, — «вопрос не математики, а предметной области»."
+        "и порог: выбор компромисса — вопрос не математики, а предметной области."
     )
 
 
 def _remedies_tab(threshold: float) -> None:
-    labels, scores = _lecture6()
+    labels, scores = _rare_class()
     st.markdown(
-        f"Лекция 6: случайный лес на данных с {labels.mean():.2%} редкого класса, три способа обучения, "
+        f"Случайный лес на данных с {labels.mean():.2%} редкого класса, три способа обучения, "
         f"отложенная выборка — {len(labels)} объектов, {int(labels.sum())} редких."
     )
     curves, points, rows = {}, {}, []
@@ -187,13 +188,13 @@ def _remedies_tab(threshold: float) -> None:
     st.plotly_chart(curve_figure(curves, points, float(labels.mean())), use_container_width=True)
 
     if np.isclose(threshold, DEFAULT_THRESHOLD):
-        st.info("Порог 0.5 — тот, что в лекции 6. Таблица повторяет её вывод строка в строку.")
+        st.info("Порог 0.5 — тот, что scikit-learn использует в predict по умолчанию.")
         plain = confusion(labels, scores["plain"], threshold)
         weighted = confusion(labels, scores["weighted"], threshold)
         if weighted.recall < plain.recall:
             st.warning(
                 f"Веса классов здесь не подняли полноту, а снизили её: {as_printed(weighted.recall)} против "
-                f"{as_printed(plain.recall)} без них. Лекция объясняет почему: деревья леса выращены до чистых "
+                f"{as_printed(plain.recall)} без них. Причина в устройстве леса: деревья выращены до чистых "
                 "листьев, а вероятность в чистом листе от весов не зависит — веса меняют лишь выбор разбиений."
             )
     st.caption(
@@ -222,10 +223,9 @@ def main() -> None:
 
     with st.expander("Чего эта площадка не делает"):
         st.markdown(
-            "- Не обучает модели в браузере: оценки моделей лекций 4 и 6 посчитаны заранее, здесь по ним "
+            "- Не обучает модели в браузере: оценки моделей посчитаны заранее, здесь по ним "
             "считаются только метрики. Поэтому страница не тянет scikit-learn и грузится быстро.\n"
-            "- Не работает с набором AI4I 2020 из лабораторной модуля 2: модель там своя у каждого студента, "
-            "и общих чисел для сверки нет. Механизм тот же.\n"
+            "- Не работает с набором AI4I 2020: модель на нём своя у каждого студента. Механизм тот же.\n"
             "- SECOM представлен только числом браков: для ловушки доли правильных больше ничего не нужно.\n"
             "- Цена ошибки задана одним отношением; в реальной задаче стоимости приходят из предметной области "
             "и могут зависеть от объекта."

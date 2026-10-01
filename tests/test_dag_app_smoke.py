@@ -1,4 +1,4 @@
-"""The task-graph interface renders, and says what lecture 12 says."""
+"""The task-graph interface renders, and tells the two runs apart."""
 
 import pytest
 
@@ -29,8 +29,8 @@ def test_main_renders_without_errors(default_run):
     assert len(default_run.figures) == 1
 
 
-def test_the_default_is_the_lectures_first_run(default_run):
-    assert any("Первый прогон лекции 12" in message for message in default_run.infos)
+def test_the_default_is_the_run_the_retries_save(default_run):
+    assert any("Сбой с восстановлением" in message for message in default_run.infos)
     assert _metric(default_run, "Выполнено успешно") == "7 из 7"
     assert _metric(default_run, "Попыток всего") == "9"
     assert any("с 3-й попытки" in caption for caption in default_run.captions)
@@ -40,12 +40,12 @@ def test_the_default_shows_the_parallel_level(default_run):
     assert any("отчёт о качестве, признаки — одновременно" in text for text in default_run.markdowns)
 
 
-def test_the_lectures_second_run_prints_four_of_seven(monkeypatch):
+def test_a_failure_without_recovery_succeeds_four_of_seven(monkeypatch):
     fake_st = _run(monkeypatch, overrides={dag_app.FAILURES_LABEL: "всегда", dag_app.ATTEMPTS_LABEL: 2})
 
     assert _metric(fake_st, "Выполнено успешно") == "4 из 7"
     assert _metric(fake_st, "Пропущено") == "2"
-    assert any("Второй прогон лекции 12" in message for message in fake_st.infos)
+    assert any("Сбой без восстановления" in message for message in fake_st.infos)
     assert any("Это сделал граф" in message for message in fake_st.successes)
 
 

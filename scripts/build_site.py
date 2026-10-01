@@ -42,7 +42,7 @@ from playground_common.links import (  # noqa: E402
 )
 
 TEMPLATE = ROOT / "web" / "index.template.html"
-# The ИСТ-51 pages are in Russian throughout, in the lecture slides' colours,
+# The ИСТ-51 pages are in Russian throughout, in the course slides' colours,
 # and their loading screen links back to the course's front page.
 IST51_TEMPLATE = ROOT / "web" / "ist51" / "index.template.html"
 # Both static pages: the ИСТ-51 front page and the catalog by topic.
@@ -167,7 +167,7 @@ APPS = (
         package="data_playground",
         title="Конвейер подготовки данных",
         template=IST51_TEMPLATE,
-        source="модуль 1, лекция 2",
+        source="модуль 1",
         blurb=(
             "Порядок шагов очистки как параметр: статистика, посчитанная до удаления выбросов, "
             "вставляет в таблицу невозможные значения. И векторизация, измеренная в вашем браузере."
@@ -181,7 +181,7 @@ APPS = (
         # scikit-learn for SelectKBest, LogisticRegression and cross-validation.
         requirements=IST51_SKLEARN,
         template=IST51_TEMPLATE,
-        source="модуль 2, лекция 6",
+        source="модуль 2",
         blurb=(
             "Отбор признаков до разбиения выборок находит сигнал в чистом шуме. Два конвейера рядом: с утечкой и без."
         ),
@@ -194,7 +194,7 @@ APPS = (
         # No scikit-learn: the scores are prepared offline and the metrics are NumPy.
         data_globs=("data/*.csv",),
         template=IST51_TEMPLATE,
-        source="модуль 2, лекции 4 и 6",
+        source="модуль 2",
         blurb=(
             "Модель, не нашедшая ни одного отказа, верна в 98 случаях из 100. Порог, цена пропуска "
             "и три способа выправить перекос классов."
@@ -209,7 +209,7 @@ APPS = (
         requirements=IST51_SKLEARN,
         data_globs=("data/*.csv",),
         template=IST51_TEMPLATE,
-        source="модуль 2, лекции 4 и 5",
+        source="модули 2–3",
         blurb=(
             "Многочлен, соседи, дерево, штраф Ridge и Lasso: гибкость модели — ручкой, "
             "цена ошибки — на данных, которых модель не видела."
@@ -223,9 +223,9 @@ APPS = (
         # The two moons are shipped as a CSV, so NumPy is all the network needs.
         data_globs=("data/*.csv",),
         template=IST51_TEMPLATE,
-        source="модуль 3, лекция 7",
+        source="модуль 3",
         blurb=(
-            "Сеть лекции 7 с одной строкой обратного прохода, которую можно сломать. Обучение ошибку "
+            "Двухслойная сеть с одной строкой обратного прохода, которую можно сломать. Обучение ошибку "
             "не замечает — численная проверка градиента замечает."
         ),
     ),
@@ -235,9 +235,9 @@ APPS = (
         package="dag_playground",
         title="Граф задач и отказы",
         template=IST51_TEMPLATE,
-        source="модуль 4, лекция 12",
+        source="модуль 4",
         blurb=(
-            "Планировщик лекции 12: повторы, пропуск задач после отказа — и что будет, если убрать "
+            "Планировщик на сорока строках: повторы, пропуск задач после отказа — и что будет, если убрать "
             "одно ребро, охраняющее публикацию."
         ),
     ),
@@ -334,8 +334,9 @@ def render_ist51_page() -> str:
     count = len(apps)
     intro = (
         '<p class="note">Площадки не заменяют лабораторные работы. Лабораторная показывает результат — '
-        "площадка позволяет его покрутить: подвинуть параметр и увидеть, что изменилось. Значения по "
-        "умолчанию на каждой площадке воспроизводят числа соответствующего занятия.</p>\n      "
+        "площадка позволяет его покрутить: подвинуть параметр и увидеть, что изменилось. С занятием "
+        "площадку связывает тема, а не примеры: данные, термины и числа на ней могут отличаться "
+        "от лекционных.</p>\n      "
         '<p class="note">Устанавливать ничего не нужно: Python исполняется в самом браузере. Первая '
         "загрузка страницы скачивает рантайм и занимает до минуты.</p>\n      "
         f'<p>Площадки обоих курсов сайта по темам — в <a href="../{CATALOG}/">каталоге</a>.</p>'

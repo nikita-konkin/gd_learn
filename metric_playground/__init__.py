@@ -1,8 +1,8 @@
-"""Площадка «Метрика и дисбаланс» — модуль 2 лабораторных работ Б.1.2.2.
+"""Площадка «Метрика и дисбаланс» — тема «Оценка качества», модуль 2 курса Б.1.2.2.
 
-The accuracy trap on rare events, lecture 4's threshold and the price of its two
-mistakes, and lecture 6's three remedies for imbalance under one threshold. All
-metrics are computed in NumPy from scores prepared offline.
+The accuracy trap on rare events, a threshold and the price of its two
+mistakes, and three remedies for imbalance under one threshold. All metrics are
+computed in NumPy from scores prepared offline.
 """
 
 from metric_playground.app import main
@@ -14,8 +14,8 @@ from metric_playground.metrics import (
     average_precision,
     cheapest_threshold,
     confusion,
-    load_lecture4,
-    load_lecture6,
+    load_failures,
+    load_rare_class,
     majority,
     nearest_recall,
     populations,
@@ -30,8 +30,8 @@ __all__ = [
     "average_precision",
     "cheapest_threshold",
     "confusion",
-    "load_lecture4",
-    "load_lecture6",
+    "load_failures",
+    "load_rare_class",
     "main",
     "majority",
     "nearest_recall",

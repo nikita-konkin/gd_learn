@@ -1,10 +1,10 @@
-"""Lecture 2's two measurements: memory of a list against an array, and who runs the loop.
+"""Two measurements: memory of a list against an array, and who runs the loop.
 
 Both are measured live, in whatever Python runs the page. That matters more
-than it seems: the lecture's numbers come from 64-bit CPython, while the page
-runs on Pyodide, a 32-bit WebAssembly build, where a pointer and an int object
-are smaller. The timings differ for the same reason and more — so the page
-shows what it measured and never claims the lecture's timings as its own.
+than it seems: the page runs on Pyodide, a 32-bit WebAssembly build, where a
+pointer and an int object are smaller than in the 64-bit CPython students have
+at home. The timings differ for the same reason and more — so the page shows
+what it measured and never quotes timings from elsewhere.
 """
 
 from __future__ import annotations
@@ -17,7 +17,7 @@ from dataclasses import dataclass
 
 import numpy as np
 
-# Lecture 2's sizes.
+# Sizes large enough for the differences to dwarf the noise.
 MEMORY_COUNT = 100_000
 SUM_SIZE = 1_000_000
 
@@ -38,10 +38,10 @@ class Memory:
 
 
 def memory(count: int = MEMORY_COUNT) -> Memory:
-    """The lecture's estimate: the list itself plus the average int object, times count.
+    """An estimate: the list itself plus the average int object, times count.
 
-    Averaged over the first thousand values, exactly as the lecture does, so on
-    64-bit CPython the result is the lecture's «3.4 МБ» against «0.8 МБ».
+    Averaged over the first thousand values; on 64-bit CPython the result is
+    3.4 MB against 0.8 MB.
     """
     values_list = list(range(count))
     values_array = np.arange(count, dtype=np.int64)
@@ -59,7 +59,7 @@ def memory(count: int = MEMORY_COUNT) -> Memory:
 
 
 def measure(function: Callable[[], float], repeats: int = 3) -> tuple[float, float]:
-    """Best of ``repeats`` wall-clock timings, and the result. The lecture's helper."""
+    """Best of ``repeats`` wall-clock timings, and the result."""
     timings = []
     result = 0.0
     for _ in range(repeats):
@@ -84,7 +84,7 @@ DOT = "NumPy, скалярное произведение"
 
 
 def sum_of_squares(size: int = SUM_SIZE, repeats: int = 3) -> tuple[Timing, ...]:
-    """Lecture 2's comparison: the same sum, three different owners of the loop."""
+    """The same sum, three different owners of the loop."""
     data = np.random.default_rng(0).random(size)
     plain = data.tolist()
     runs = (
@@ -100,6 +100,6 @@ def sum_of_squares(size: int = SUM_SIZE, repeats: int = 3) -> tuple[Timing, ...]
 
 
 def results_agree(timings: tuple[Timing, ...]) -> bool:
-    """The lecture's «Результаты совпадают»: all three sums equal up to rounding."""
+    """«Результаты совпадают»: all three sums equal up to rounding."""
     first = timings[0].result
     return all(np.isclose(first, timing.result) for timing in timings[1:])

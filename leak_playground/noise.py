@@ -1,21 +1,20 @@
 """The data the experiment runs on: noise, with an optional dose of real signal.
 
-Lecture 6 of the course generates pure noise and nothing else:
+By default the data is pure noise and nothing else:
 
     generator = np.random.default_rng(1)
     noise_x = generator.normal(size=(300, 2000))
     noise_y = generator.integers(0, 2, 300)
 
-``make_data(NoiseSettings())`` reproduces those two arrays exactly — same seed,
-same draws, same order — because the playground's whole claim rests on getting
-the lecture's numbers back.
+``make_data(NoiseSettings())`` returns exactly those two arrays — same seed,
+same draws, same order — so the default page is the same for everyone.
 
 The ``signal`` setting is the playground's one addition. At its default of 0.0
 nothing is added, so the arrays are untouched; above 0.0 the first
 ``INFORMATIVE`` columns are shifted for one class, which puts genuine signal
 into the data without drawing from the generator again. That matters: another
-draw would change every later value and the lecture's numbers would move for a
-setting the student did not touch.
+draw would change every later value and the numbers would move for a setting
+the student did not touch.
 """
 
 from __future__ import annotations

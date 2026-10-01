@@ -1,12 +1,12 @@
-"""The scheduler must print lecture 12's results. That is the whole point."""
+"""The scheduler must order, retry and skip as the page says it does."""
 
 import pytest
 
 from dag_playground.scheduler import (
     ALWAYS,
-    LECTURE_FAILURE,
-    LECTURE_RECOVERY,
+    FAILING_RUN,
     PIPELINE_EDGES,
+    RECOVERING_RUN,
     CycleError,
     Scenario,
     execution_levels,
@@ -17,15 +17,14 @@ from dag_playground.scheduler import (
 )
 
 
-def test_the_graph_is_the_lectures_graph():
+def test_the_pipeline_has_seven_tasks_and_seven_edges():
     tasks = {task for edge in PIPELINE_EDGES for task in edge}
 
-    # Lecture 12 prints «Задач: 7, зависимостей: 7».
     assert len(tasks) == 7
     assert len(PIPELINE_EDGES) == 7
 
 
-def test_the_levels_are_the_lectures_six_steps():
+def test_the_levels_put_independent_tasks_together():
     levels = execution_levels(PIPELINE_EDGES)
 
     assert levels == [
@@ -38,17 +37,17 @@ def test_the_levels_are_the_lectures_six_steps():
     ]
 
 
-def test_a_cycle_is_rejected_with_the_lectures_message():
+def test_a_cycle_is_rejected_with_a_message():
     with pytest.raises(CycleError, match="В графе цикл: выполнение невозможно"):
         execution_levels([("a", "b"), ("b", "c"), ("c", "a")])
 
 
-def test_a_cycle_error_is_still_a_value_error_as_in_the_lecture():
+def test_a_cycle_error_is_still_a_value_error():
     assert issubclass(CycleError, ValueError)
 
 
 def test_the_first_run_recovers_on_the_third_attempt():
-    outcome = simulate(LECTURE_RECOVERY)
+    outcome = simulate(RECOVERING_RUN)
 
     assert outcome.succeeded == 7
     attempts = {entry.task: entry.attempts for entry in outcome.log}
@@ -58,9 +57,8 @@ def test_the_first_run_recovers_on_the_third_attempt():
 
 
 def test_the_second_run_succeeds_four_of_seven_and_skips_the_rest():
-    outcome = simulate(LECTURE_FAILURE)
+    outcome = simulate(FAILING_RUN)
 
-    # «Выполнено успешно: 4 из 7»
     assert (outcome.succeeded, len(outcome.status)) == (4, 7)
     outcomes = {entry.task: entry.outcome for entry in outcome.log}
     assert outcomes["обучение"] == "провал: модель не сходится"
@@ -115,7 +113,7 @@ def test_a_permanent_failure_outside_training_gets_a_generic_message():
         failing_handler("очистка", ALWAYS)()
 
 
-def test_the_lecture_run_function_matches_the_lectures_signature():
+def test_run_works_with_handlers_given_for_no_task():
     log, status = run(PIPELINE_EDGES, {}, attempts=3)
 
     assert len(log) == 7

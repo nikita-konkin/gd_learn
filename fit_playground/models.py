@@ -1,12 +1,11 @@
-"""Model complexity three ways, each taken from the lecture that shows it.
+"""Model complexity three ways.
 
-* Lecture 4: polynomials of growing degree on twenty-five noisy points of a
-  sine. The lecture reports the error on the training points only and states
-  that the flexible model "на новых точках окажется хуже случайного". Here the
-  new points are drawn, so the claim is measured.
-* Lecture 5: nearest neighbours and a decision tree on two moons, where the
-  number of neighbours and the depth set the flexibility.
-* Lecture 5: Ridge and Lasso on the diabetes table, where the penalty does.
+* Polynomials of growing degree on twenty-five noisy points of a sine. The
+  training error alone says the flexible model is best; new points, drawn from
+  the same law, measure what it is really worth.
+* Nearest neighbours and a decision tree on two moons, where the number of
+  neighbours and the depth set the flexibility.
+* Ridge and Lasso on the diabetes table, where the penalty does.
 
 Every function returns plain numbers; the interface only draws them.
 """
@@ -30,16 +29,16 @@ from sklearn.tree import DecisionTreeClassifier
 
 DATA = Path(__file__).resolve().parent / "data" / "diabetes.csv"
 
-# ----------------------------------------------------------------- lecture 4
+# ----------------------------------------------------------------- polynomials
 
 POLY_SEED = 3
 POLY_POINTS = 25
 POLY_NOISE = 0.25
-LECTURE_DEGREES = (1, 4, 17)
+SHOWCASE_DEGREES = (1, 4, 17)
 MAX_DEGREE = 20
-# New points come from their own generator: drawing them from the lecture's
-# would change nothing about the training data, but tying them to it would make
-# one seed decide two things.
+# New points come from their own generator: drawing them from the training
+# generator would change nothing about the training data, but tying them to it
+# would make one seed decide two things.
 FRESH_SEED = 1003
 FRESH_POINTS = 200
 
@@ -49,7 +48,7 @@ def truth(values: np.ndarray) -> np.ndarray:
 
 
 def polynomial_data() -> tuple[np.ndarray, np.ndarray]:
-    """Lecture 4's twenty-five points, drawn exactly as the lecture draws them."""
+    """Twenty-five noisy points of a sine, the same on every run."""
     generator = np.random.default_rng(POLY_SEED)
     features = np.sort(generator.uniform(0, 1, POLY_POINTS))[:, None]
     target = truth(features).ravel() + generator.normal(0, POLY_NOISE, features.shape[0])
@@ -76,13 +75,13 @@ class PolynomialFit:
 def _least_squares(design: np.ndarray, target: np.ndarray) -> tuple[np.ndarray, float]:
     """Ordinary least squares with an intercept, solved as scikit-learn 1.7 solves it.
 
-    Lecture 4 fits ``LinearRegression`` on ``PolynomialFeatures``. From 1.9 that
-    class drops singular values below a new ``tol`` before solving, and for a
-    degree-17 polynomial on 25 points the cut-off is no detail: it regularises
-    the fit, the training error rises from 0.023 to 0.043, and the explosion
-    between the points that the lecture is about disappears. The page has to
-    show the lecture's numbers whatever version the browser or CI installs, so
-    the solve is spelled out: centre, then ``lstsq`` with 1.7's cut-off.
+    From scikit-learn 1.9 ``LinearRegression`` drops singular values below a new
+    ``tol`` before solving, and for a degree-17 polynomial on 25 points the
+    cut-off is no detail: it regularises the fit, the training error rises from
+    0.023 to 0.043, and the explosion between the points — the overfitting the
+    page exists to show — disappears. The page has to behave the same whatever
+    version the browser or CI installs, so the solve is spelled out: centre,
+    then ``lstsq`` with 1.7's cut-off.
     """
     offset, level = design.mean(axis=0), float(target.mean())
     cutoff = max(design.shape) * np.finfo(float).eps
@@ -116,12 +115,12 @@ def mean_prediction_error() -> float:
     return float(np.mean((fresh_y - target.mean()) ** 2))
 
 
-# ----------------------------------------------------------------- lecture 5, neighbours and trees
+# ----------------------------------------------------------------- neighbours and trees
 
 MOONS_POINTS = 300
 MOONS_NOISE = 0.25
-LECTURE_NEIGHBOURS = (1, 15, 99)
-LECTURE_DEPTH = 3
+SHOWCASE_NEIGHBOURS = (1, 15, 99)
+DEFAULT_DEPTH = 3
 FOLDS = 5
 MESH = 120
 
@@ -170,14 +169,14 @@ def tree(depth: int | None) -> Classifier:
     return _classifier(DecisionTreeClassifier(max_depth=depth, random_state=0))
 
 
-# ----------------------------------------------------------------- lecture 5, penalties
+# ----------------------------------------------------------------- penalties
 
 ALPHAS = tuple(float(alpha) for alpha in np.logspace(-2, 2, 30))
 ZERO = 1e-8
 
 
 def diabetes() -> tuple[pd.DataFrame, pd.DataFrame, pd.Series, pd.Series]:
-    """Lecture 5's split of the diabetes table."""
+    """A fixed 70/30 split of the diabetes table."""
     table = pd.read_csv(DATA, float_precision="round_trip")
     features, target = table.drop(columns="target"), table["target"]
     return train_test_split(features, target, test_size=0.3, random_state=42)
