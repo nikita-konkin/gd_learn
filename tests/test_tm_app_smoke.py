@@ -99,3 +99,33 @@ def test_the_free_text_box_commits_without_a_keyboard_shortcut(monkeypatch):
     assert divergence, "the trailing clause is what makes the two measures split"
     assert "Очистить кэш" in divergence[0]
     assert "Укажите резервный номер телефона" in divergence[0]
+
+
+def _results(fake_st):
+    return next(frame for frame in fake_st.dataframes if "прошла порог" in getattr(frame, "columns", ()))
+
+
+def test_the_results_table_marks_what_the_cut_off_would_hide(monkeypatch):
+    """Rows below the threshold stay visible, so the cut-off has to be spelled out."""
+    fake_st = _run(monkeypatch, overrides={"Сколько подсказок показывать": 5})
+    table = _results(fake_st)
+
+    levenshtein = table[table["мера"] == "Левенштейн"]
+    others = table[table["мера"] != "Левенштейн"]
+    percents = levenshtein["оценка"].str.rstrip("%").astype(float)
+
+    assert len(levenshtein) == 5
+    assert (levenshtein["прошла порог"] == ["да" if p >= 75 else "нет" for p in percents]).all()
+    assert set(levenshtein["прошла порог"]) == {"да", "нет"}
+    assert set(others["прошла порог"]) == {"—"}, "a cosine has no percentage to cut off"
+
+
+def test_lowering_the_cut_off_lets_more_suggestions_through(monkeypatch):
+    def passed(threshold):
+        fake_st = _run(
+            monkeypatch,
+            overrides={"Сколько подсказок показывать": 5, "Порог совпадения, %": threshold},
+        )
+        return int((_results(fake_st)["прошла порог"] == "да").sum())
+
+    assert passed(50) > passed(95)

@@ -102,14 +102,38 @@ def _render_sidebar() -> tuple[str, int, float]:
             )
 
         st.header("Поиск")
-        top_n = st.slider("Сколько подсказок показывать", 1, 5, 3, 1)
+        top_n = st.slider(
+            "Сколько подсказок показывать",
+            1, 5, 3, 1,
+            help=(
+                "Сколько ближайших сегментов памяти выводить в таблице по каждой мере — "
+                "ранги с 1 по N. Строк получится N на меру: четыре меры для запроса из "
+                "работы, три для своего текста. Ранг 1 — то, что переводчик увидел бы "
+                "первым; ранги ниже показывают, на каком месте у другой меры стоит тот "
+                "же сегмент. Плашка сверху, график и вкладки берут только ранг 1, "
+                "поэтому от ползунка не меняются."
+            ),
+        )
+        st.caption("Меняет только таблицу подсказок: N строк на каждую меру.")
         threshold = st.slider(
             "Порог совпадения, %",
             50,
             95,
             int(DEFAULT_THRESHOLD),
             5,
-            help="Ниже порога подсказка не показывается. Это решение человека о цене ошибки, а не свойство меры.",
+            help=(
+                "Ниже этого процента подсказку переводчику не показали бы. Процент — "
+                "совпадение по Левенштейну, как в Trados и memoQ; у остальных мер оценка — "
+                "косинус от 0 до 1, и порог к ним не относится. В таблице строки ниже "
+                "порога не прячутся, а получают «нет» в колонке «прошла порог», чтобы было "
+                "видно, что именно отсекается. Порог — решение человека, а не свойство "
+                "меры: он задаёт, что дешевле — править негодную подсказку или переводить "
+                "с нуля. Обычно ставят 70–75 %."
+            ),
+        )
+        st.caption(
+            "Относится только к проценту Левенштейна. Строки ниже порога в таблице "
+            "остаются и помечаются «нет»."
         )
 
         st.divider()
@@ -117,7 +141,19 @@ def _render_sidebar() -> tuple[str, int, float]:
     return str(query).strip(), int(top_n), float(threshold)
 
 
-def _results_table(query: str, top_n: int) -> tuple[pd.DataFrame, list[str]]:
+def _passes(measure: str, score: float, threshold: float) -> str:
+    """Whether the cut-off lets this suggestion through, in the table's words.
+
+    The cut-off is a percentage of Levenshtein matching, the way CAT tools set
+    it. A cosine between 0 and 1 has no percentage to compare, so those rows
+    get a dash rather than a verdict the tool would never have made.
+    """
+    if measure != LEVENSHTEIN:
+        return "—"
+    return "да" if score >= threshold else "нет"
+
+
+def _results_table(query: str, top_n: int, threshold: float) -> tuple[pd.DataFrame, list[str]]:
     """One row per measure and rank, plus the measures that could not answer."""
     index = _index()
     rows: list[dict[str, object]] = []
@@ -135,6 +171,7 @@ def _results_table(query: str, top_n: int) -> tuple[pd.DataFrame, list[str]]:
                     "ранг": hit.rank,
                     "сегмент из памяти": hit.segment,
                     "оценка": f"{hit.score:.{digits}f}{MEASURE_UNITS[measure]}",
+                    "прошла порог": _passes(measure, hit.score, threshold),
                     "тип контента": hit.content_type,
                 }
             )
@@ -166,8 +203,14 @@ def _render_query(query: str, top_n: int, threshold: float) -> None:
 
     left, right = st.columns([3, 4])
     with left:
-        table, unavailable = _results_table(query, top_n)
+        table, unavailable = _results_table(query, top_n, threshold)
         st.dataframe(table, use_container_width=True, hide_index=True, height=min(60 + 35 * len(table), 460))
+        st.caption(
+            f"По {top_n} ближайших сегментов на каждую меру, ранг 1 — лучший. Оценка "
+            "Левенштейна — процент совпадения (100 % — строки равны), у остальных мер — "
+            "косинус от 0 до 1. «Прошла порог» есть только у Левенштейна: «нет» значит, "
+            "что в Trados или memoQ переводчик этой подсказки не увидел бы."
+        )
         if unavailable:
             st.info(
                 f"**{', '.join(unavailable)}** для своего текста посчитать негде. "
