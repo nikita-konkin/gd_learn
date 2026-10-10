@@ -9,6 +9,7 @@ from gd_playground.training import (
     optimizer_history,
     params_from_row,
     prepare_history_for_display,
+    weight_step,
 )
 
 
@@ -23,7 +24,9 @@ def history_summary(history, tolerance: float) -> dict | None:
         "best_true_optimization_loss": min(row["true_optimization_loss"] for row in history),
         "best_observed_mse": min(row["mse"] for row in history),
         "best_true_mse": min(row["true_mse"] for row in history),
+        "first_optimization_loss": history[0]["optimization_loss"],
         "last_optimization_loss": history[-1]["optimization_loss"],
+        "last_weight_step": weight_step(history[-2], history[-1]) if len(history) > 1 else 0.0,
     }
 
 

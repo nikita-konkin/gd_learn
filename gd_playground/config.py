@@ -8,6 +8,25 @@ DATA_DISTRIBUTIONS = ("Linear", "Quadratic", "Cubic", "Sine")
 MODEL_TYPES = ("Linear", "Quadratic", "Cubic")
 OPTIMIZERS = ("Batch GD", "SGD", "Mini-batch SGD")
 LOSS_FUNCTIONS = ("MSE", "MAE")
+
+# The values above are compared in code and tests, so they stay English.
+# These are the labels the student sees.
+DISTRIBUTION_NAMES = {
+    "Linear": "прямая",
+    "Quadratic": "парабола",
+    "Cubic": "кубическая кривая",
+    "Sine": "синусоида",
+}
+MODEL_NAMES = {
+    "Linear": "прямая (1-я степень)",
+    "Quadratic": "парабола (2-я степень)",
+    "Cubic": "кубическая (3-я степень)",
+}
+OPTIMIZER_NAMES = {
+    "Batch GD": "все точки сразу (Batch GD)",
+    "SGD": "одну случайную точку (SGD)",
+    "Mini-batch SGD": "пакет точек (мини-пакетный SGD)",
+}
 LEARNING_RATE_OPTIONS = (1e-5, 3e-5, 1e-4, 3e-4, 1e-3, 3e-3, 1e-2, 3e-2, 1e-1, 3e-1, 1.0)
 CONVERGENCE_OPTIONS = (1e-2, 1e-3, 1e-4, 1e-5, 1e-6, 1e-7, 1e-8)
 

@@ -32,6 +32,7 @@ from leak_playground.experiment import (  # noqa: E402  — must follow the stub
 )
 from leak_playground.noise import INFORMATIVE, NoiseSettings, make_data  # noqa: E402
 from leak_playground.plotting import pvalues_figure, recurrence_figure, scores_figure  # noqa: E402
+from playground_common.explain import how_to_read, quick_start, reference  # noqa: E402
 from playground_common.links import other_playgrounds  # noqa: E402
 from playground_common.wording import as_printed, features, observations, plural  # noqa: E402
 
@@ -84,18 +85,46 @@ def _controls() -> tuple[NoiseSettings, int, int]:
     """
     st.sidebar.header("Данные")
     st.sidebar.caption("Эти ручки меняют только сами данные.")
-    count = st.sidebar.slider(OBSERVATIONS_LABEL, 100, 600, DEFAULT.observations, step=50)
-    width = st.sidebar.slider(FEATURES_LABEL, 200, 4000, DEFAULT.features, step=200)
-    signal = st.sidebar.slider(SIGNAL_LABEL, 0.0, 1.0, DEFAULT.signal, step=0.05)
-    seed = st.sidebar.slider(SEED_LABEL, 0, 20, DEFAULT.seed)
+    count = st.sidebar.slider(
+        OBSERVATIONS_LABEL, 100, 600, DEFAULT.observations, step=50,
+        help="Сколько строк в таблице. Чем их меньше относительно числа столбцов, "
+        "тем легче найти в шуме мнимую закономерность.",
+    )
+    width = st.sidebar.slider(
+        FEATURES_LABEL, 200, 4000, DEFAULT.features, step=200,
+        help="Сколько столбцов-признаков. Все они, если сигнал выключен, — чистый шум: "
+        "случайные числа, никак не связанные с тем, что предсказываем.",
+    )
+    signal = st.sidebar.slider(
+        SIGNAL_LABEL, 0.0, 1.0, DEFAULT.signal, step=0.05,
+        help="При нуле предсказывать в данных нечего вовсе, и любая оценка выше 0.500 "
+        "целиком придумана. Сдвиньте вправо — в первые столбцы подмешается настоящая связь.",
+    )
+    seed = st.sidebar.slider(
+        SEED_LABEL, 0, 20, DEFAULT.seed,
+        help="Другое зерно — другой шум при тех же настройках. Разрыв не исчезает: "
+        "он не случайность одного набора данных.",
+    )
 
     st.sidebar.header("Отбор признаков")
     st.sidebar.caption("Эта ручка меняет только отбор.")
-    select = st.sidebar.slider(SELECT_LABEL, 5, 100, DEFAULT_SELECT, step=5)
+    select = st.sidebar.slider(
+        SELECT_LABEL, 5, 100, DEFAULT_SELECT, step=5,
+        help=(
+            "Сколько самых «значимых» столбцов оставить модели. Именно этот шаг и совершает утечку, если сделан до "
+            "разбиения выборки."
+        ),
+    )
 
     st.sidebar.header("Проверка")
     st.sidebar.caption("Эта ручка меняет только разбиение на блоки.")
-    folds = st.sidebar.slider(FOLDS_LABEL, 3, 10, DEFAULT_FOLDS)
+    folds = st.sidebar.slider(
+        FOLDS_LABEL, 3, 10, DEFAULT_FOLDS,
+        help=(
+            "На сколько частей делится выборка при проверке: каждая по очереди становится отложенной, остальные — "
+            "обучающими."
+        ),
+    )
 
     st.sidebar.divider()
     st.sidebar.markdown(other_playgrounds("ml-practice/leak"))
@@ -105,9 +134,24 @@ def _controls() -> tuple[NoiseSettings, int, int]:
 
 def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) -> None:
     left, middle, right = st.columns(3)
-    left.metric("С утечкой", as_printed(result.leaky))
-    middle.metric("Честно", as_printed(result.honest))
-    right.metric("Разрыв", f"+{as_printed(result.gap)}")
+    left.metric(
+        "С утечкой",
+        as_printed(result.leaky),
+        help="Доля верных ответов, когда отбор признаков сделан один раз на всей таблице — "
+        "то есть уже подсмотрев отложенные строки.",
+    )
+    middle.metric(
+        "Честно",
+        as_printed(result.honest),
+        help="Та же модель, но отбор признаков делается заново внутри каждого блока, "
+        "только по обучающей части. Это и есть правильный порядок.",
+    )
+    right.metric(
+        "Разрыв",
+        f"+{as_printed(result.gap)}",
+        help="Разница между ними. Это цифра, на которую вы обманете себя и заказчика, "
+        "если поставите отбор признаков не туда.",
+    )
 
     if settings.signal == 0:
         st.caption(
@@ -181,8 +225,18 @@ def _pvalues_section(selected: Selection, settings: NoiseSettings, select: int) 
 
     expected = expected_false_positives(selected.tested)
     left, right = st.columns(2)
-    left.metric("Признаков с p < 0.05", f"{selected.significant_at_05} из {selected.tested}")
-    right.metric("Выдержали поправку Бонферрони", str(selected.significant_after_bonferroni))
+    left.metric(
+        "Признаков с p < 0.05",
+        f"{selected.significant_at_05} из {selected.tested}",
+        help="Порог 0.05 означает «такая связь возникает случайно реже чем в одном случае "
+        "из двадцати». Проверьте две тысячи случайных столбцов — и сотня порог пройдёт.",
+    )
+    right.metric(
+        "Выдержали поправку Бонферрони",
+        str(selected.significant_after_bonferroni),
+        help="Поправка делит порог на число проверок. Случайные кандидаты её не проходят — "
+        "а отбор признаков о ней и не спрашивает.",
+    )
     st.caption(
         f"Проверено {features(selected.tested)}, порог 0.05 — значит около {expected:.0f} пройдут его "
         f"по случайности. Прошли {selected.significant_at_05}. "
@@ -198,6 +252,61 @@ def main() -> None:
     st.caption(
         "Отбор признаков до разбиения выборок — самая частая и самая незаметная ошибка. "
         "Здесь она измерена на данных, в которых предсказывать нечего."
+    )
+
+    quick_start(
+        st,
+        purpose=(
+            "Утечка данных — модель при обучении видит то, по чему её потом проверяют. Здесь в данных только "
+            "шум, и честный ответ — 0.5."
+        ),
+        steps=(
+            "Сравните два числа наверху: **«С утечкой»** — 0.757, **«Честно»** — 0.510.",
+            "Меняйте **«Отбираем признаков»** и **«Блоков кросс-валидации»**: разрыв не исчезает.",
+            "Поднимите **«Сила настоящего сигнала»**: честная оценка вырастет — на этот раз законно.",
+        ),
+        notice="отбор признаков, сделанный до разбиения выборки, находит закономерность даже в чистом шуме.",
+    )
+    how_to_read(
+        st,
+        what=(
+            "Утечка данных — это когда модель при обучении так или иначе видит то, по чему её "
+            "потом проверяют. Оценка выходит завышенной, причём молча: ничего не падает, "
+            "никакой ошибки в коде нет. Здесь взят самый частый её вид — отбор признаков, "
+            "сделанный один раз на всей таблице, до разбиения на обучающую и отложенную части. "
+            "Данные нарочно взяты пустые: триста строк, две тысячи столбцов случайного шума, "
+            "предсказывать в них нечего. Честная оценка даёт около 0.500 — как подброшенная "
+            "монета, и это правильный ответ. Оценка с утечкой — около 0.760."
+        ),
+        controls=(
+            "**Данные** — размер таблицы и сила настоящего сигнала; при силе 0 в данных нет "
+            "ничего, что можно предсказать. **Отбор признаков** — сколько столбцов оставить "
+            "модели; это и есть тот самый шаг, который совершает утечку. **Проверка** — на "
+            "сколько блоков делить выборку."
+        ),
+        watch=(
+            "Два первых числа наверху: «с утечкой» и «честно». Второе должно держаться около "
+            "0.500 при любых настройках — потому что предсказывать нечего. Первое заметно выше, "
+            "и разрыв между ними не исчезает ни от смены зерна, ни от числа блоков. Поднимите "
+            "«силу настоящего сигнала» — честная оценка законно вырастет, и дальше по одному "
+            "числу вы уже не отличите, где настоящий сигнал, а где утечка. В этом и трудность: "
+            "на реальных данных вы видите только одно число."
+        ),
+        data=(
+            "Таблица генерируется на месте из нормального шума, метки классов — тоже случайные "
+            "и сбалансированные. Правильный ответ известен заранее: 0.500. Это и делает "
+            "страницу доказательством, а не иллюстрацией."
+        ),
+    )
+    reference(
+        st,
+        "leakage",
+        "feature_selection",
+        "cross_validation",
+        "accuracy",
+        "baseline",
+        "p_value",
+        "multiple_testing",
     )
 
     settings, select, folds = _controls()

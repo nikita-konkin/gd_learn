@@ -51,6 +51,7 @@ class FakeStreamlit:
         self.sidebar = FakeProxy(self)
         self.figures = []
         self.expanders = []
+        self.open_expanders = []
         self.metrics = []
         self.warnings = []
         self.infos = []
@@ -87,6 +88,8 @@ class FakeStreamlit:
 
     def expander(self, label, expanded=False, **kwargs):
         self.expanders.append(label)
+        if expanded:
+            self.open_expanders.append(label)
         return FakeProxy(self)
 
     def divider(self, *args, **kwargs):

@@ -54,9 +54,12 @@ def test_equation_text_uses_ascii_power_notation():
 
 def test_loss_label_helpers_reflect_selected_optimizer_loss():
     assert loss_function_options() == ["MSE", "MAE"]
-    assert optimization_loss_label("MAE") == "Observed MAE"
-    assert optimization_loss_label("MSE", "True-function") == "True-function MSE"
-    assert loss_axis_title("MAE") == "Loss (MAE)"
+    assert optimization_loss_label("MAE") == "MAE на данных"
+    assert (
+        optimization_loss_label("MSE", "по истинной зависимости")
+        == "MSE по истинной зависимости"
+    )
+    assert loss_axis_title("MAE") == "Ошибка (MAE)"
 
 
 def test_loss_functions_and_gradient_match_simple_linear_case():
@@ -148,14 +151,26 @@ def test_prepare_history_for_display_trims_divergent_rows():
 
 
 def test_convergence_iteration_uses_selected_metric():
+    weights = {"w0": 12.0, "w1": 2.0, "w2": 0.0, "w3": 0.0}
     history = [
-        {"iteration": 0, "optimization_loss": 10.0},
-        {"iteration": 1, "optimization_loss": 5.0},
-        {"iteration": 2, "optimization_loss": 4.9999999},
+        {"iteration": 0, "optimization_loss": 10.0, **weights},
+        {"iteration": 1, "optimization_loss": 5.0, **weights},
+        {"iteration": 2, "optimization_loss": 4.9999999, **weights},
     ]
 
     assert convergence_iteration(history, 1e-5) == 2
     assert convergence_iteration(history[:1], 1e-5) is None
+
+
+def test_a_swinging_descent_is_not_convergence():
+    """Step 1 on the default data: the loss repeats exactly while the weights jump across the minimum."""
+    history = [
+        {"iteration": 0, "optimization_loss": 43.95, "w0": 17.0, "w1": 0.8, "w2": 0.0, "w3": 0.0},
+        {"iteration": 1, "optimization_loss": 43.95, "w0": 7.4, "w1": 3.6, "w2": 0.0, "w3": 0.0},
+        {"iteration": 2, "optimization_loss": 43.95, "w0": 17.0, "w1": 0.8, "w2": 0.0, "w3": 0.0},
+    ]
+
+    assert convergence_iteration(history, 1e-5) is None
 
 
 def test_params_from_row_builds_dense_parameter_vector():

@@ -42,9 +42,10 @@ def test_metrics_text_includes_scaled_feature_summary():
 
     summary = metrics_text(row, 1, transform, "MSE")
 
-    assert "Iteration: 0" in summary
-    assert "Scaled feature:" in summary
-    assert "Model:" in summary
+    assert "Шаг: 0" in summary
+    assert "Признак в едином масштабе:" in summary
+    assert "Модель:" in summary
+    assert summary.count("MSE на данных") == 1
 
 
 def test_model_figure_draws_one_residual_segment_per_point():
@@ -71,17 +72,19 @@ def test_loss_figure_uses_selected_loss_and_reports_divergence():
 
     figure = loss_figure(history, data, degree=3, tolerance=1e-6, loss_function="MAE")
 
-    assert figure.layout.yaxis.title.text == "Loss (MAE)"
-    assert figure.data[0].name == "Observed MAE"
-    assert "Diverged at iteration 1" in figure.layout.title.text
+    assert figure.layout.yaxis.title.text == "Ошибка (MAE)"
+    assert figure.data[0].name == "MAE на данных"
+    assert "Разошлось на шаге 1" in figure.layout.title.text
 
 
 def test_animation_figure_returns_empty_state():
     data = generate_data(5, "Sine", 0.1, 11)
     figure = animated_dashboard_figure(data, [], degree=1, tolerance=1e-6)
 
-    assert figure.layout.title.text == "Gradient Descent Animation"
-    assert figure.layout.annotations[0].text == "Build animation to show model-fit and loss playback."
+    assert figure.layout.title.text == "Анимация градиентного спуска"
+    assert figure.layout.annotations[0].text == (
+        "Нажмите «Показать анимацию» — здесь спуск можно будет проиграть по шагам."
+    )
 
 
 def test_animation_controls_are_horizontal_and_below_plot():
@@ -133,6 +136,6 @@ def test_loss_surface_figure_shows_surface_and_descent_path():
     )
 
     assert figure.data[0].type == "surface"
-    assert figure.data[1].name == "Gradient descent path"
+    assert figure.data[1].name == "Путь спуска"
     assert figure.layout.scene.zaxis.title.text == "MAE"
     assert list(figure.data[1].z) == [row["optimization_loss"] for row in history]

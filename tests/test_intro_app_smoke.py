@@ -3,10 +3,10 @@
 from intro_playground import app as intro_app
 from tests.fake_streamlit import FakeStreamlit
 
-FEATURES_LABEL = "Признаки"
-DEPTH_LABEL = "Глубина дерева"
+FEATURES_LABEL = "Про что дереву разрешено спрашивать"
+DEPTH_LABEL = "Сколько вопросов подряд можно задать"
 MARGIN_LABEL = "Запас под перевод, %"
-MIN_COUNT_LABEL = "Минимум вхождений пары"
+MIN_COUNT_LABEL = "Сколько раз пара должна встретиться, чтобы попасть в рейтинг"
 
 
 def _run(monkeypatch, overrides=None):
@@ -33,10 +33,10 @@ def test_the_defaults_are_the_slides_numbers(monkeypatch):
     fake_st = _run(monkeypatch)
 
     assert _metric(fake_st, "Точность дерева") == "0.631"
-    assert _metric(fake_st, "n-граммы, Л.р. № 1") == "0.744"
-    assert _metric(fake_st, "R² прямой") == "0.79"
-    assert _metric(fake_st, "Длиннее на сегмент") == "+10%"
-    assert _metric(fake_st, "Длиннее в сумме") == "+7%"
+    assert _metric(fake_st, "Для сравнения: модель на буквах") == "0.744"
+    assert _metric(fake_st, "Насколько предсказуема длина (R²)") == "0.79"
+    assert _metric(fake_st, "Перевод длиннее, в среднем по сегменту") == "+10%"
+    assert _metric(fake_st, "Перевод длиннее, если считать весь корпус целиком") == "+7%"
     assert _metric(fake_st, "Строк интерфейса не влезает") == "50%"
     assert _metric(fake_st, "Не реже 2 раз") == 23
 

@@ -80,10 +80,12 @@ def test_apply_animation_build_populates_animation_history():
 
 
 def test_history_summary_reports_best_values():
+    weights = {"w0": 12.0, "w1": 2.0, "w2": 0.0, "w3": 0.0}
     history = [
         {"iteration": 0, "optimization_loss": 10.0, "true_optimization_loss": 9.0, "mse": 10.0, "true_mse": 9.0},
         {"iteration": 1, "optimization_loss": 5.0, "true_optimization_loss": 4.0, "mse": 5.0, "true_mse": 4.0},
     ]
+    history = [{**row, **weights} for row in history]
 
     summary = history_summary(history, tolerance=1e-6)
 
@@ -109,4 +111,4 @@ def test_public_entrypoint_reexports_core_functions():
     figure = public_app.loss_figure([], data, degree=1, tolerance=1e-6)
 
     assert public_app.Defaults().model_type == "Linear"
-    assert figure.layout.title.text == "Loss vs Iterations"
+    assert figure.layout.title.text == "Ошибка по шагам"

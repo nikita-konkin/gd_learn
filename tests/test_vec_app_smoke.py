@@ -19,7 +19,7 @@ def test_main_renders_without_errors(monkeypatch):
 
 def test_default_settings_reproduce_the_lab_number(monkeypatch):
     fake_st = _run(monkeypatch)
-    accuracy = next(value for label, value in fake_st.metrics if "Кросс-валидация" in label)
+    accuracy = next(value for label, value in fake_st.metrics if "Доля верных ответов" in label)
 
     assert accuracy.startswith("0.53")
 
@@ -27,18 +27,18 @@ def test_default_settings_reproduce_the_lab_number(monkeypatch):
 def test_reference_settings_report_nothing_flipped(monkeypatch):
     fake_st = _run(monkeypatch)
 
-    assert any("эталонная настройка" in message for message in fake_st.infos)
+    assert any("настройка по умолчанию" in message for message in fake_st.infos)
 
 
 def test_character_ngrams_beat_the_reference(monkeypatch):
     fake_st = _run(
         monkeypatch,
         overrides={
-            "Из чего строим признаки": "символы внутри слов",
-            "Длина n-граммы": (2, 4),
+            "На какие куски резать текст": "символы внутри слов",
+            "Длина куска, n": (2, 4),
         },
     )
-    accuracy = next(value for label, value in fake_st.metrics if "Кросс-валидация" in label)
+    accuracy = next(value for label, value in fake_st.metrics if "Доля верных ответов" in label)
 
     assert accuracy.startswith("0.74")
-    assert not any("эталонная настройка" in message for message in fake_st.infos)
+    assert not any("настройка по умолчанию" in message for message in fake_st.infos)

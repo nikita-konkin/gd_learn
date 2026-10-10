@@ -25,14 +25,16 @@ from nn_playground.network import (
     train,
 )
 from nn_playground.plotting import boundary_figure, history_figure
+from playground_common.explain import how_to_read, quick_start
+from playground_common.explain import reference as glossary
 from playground_common.links import other_playgrounds
 from playground_common.wording import as_printed, plural
 
 TITLE = "Нейросеть на NumPy"
 
-BUG_LABEL = "Ошибка в обратном проходе"
-RATE_LABEL = "Скорость обучения"
-EPOCHS_LABEL = "Эпох"
+BUG_LABEL = "Сломать одну строку обратного прохода"
+RATE_LABEL = "Размер шага (скорость обучения)"
+EPOCHS_LABEL = "Эпох — проходов по всем данным"
 HIDDEN_LABEL = "Нейронов в скрытом слое"
 SEED_LABEL = "Зерно инициализации весов"
 
@@ -64,17 +66,39 @@ def _controls() -> tuple[str, int, float, int, int]:
     """The sidebar. The formula, the optimiser and the architecture each get their own controls."""
     st.sidebar.header("Формулы")
     st.sidebar.caption("Эта ручка меняет одну строку обратного прохода.")
-    bug = st.sidebar.selectbox(BUG_LABEL, list(BUGS), index=0)
+    bug = st.sidebar.selectbox(
+        BUG_LABEL, list(BUGS), index=0,
+        help=(
+            "Главная ручка страницы. Каждый вариант портит ровно одну строку в формулах градиента — ровно так, как "
+            "это получается в собственном коде."
+        ),
+    )
 
     st.sidebar.header("Обучение")
     st.sidebar.caption("Эти ручки меняют только спуск.")
-    learning_rate = st.sidebar.select_slider(RATE_LABEL, RATES, value=DEFAULTS["learning_rate"])
-    epochs = st.sidebar.slider(EPOCHS_LABEL, 50, 1000, DEFAULTS["epochs"], step=50)
+    learning_rate = st.sidebar.select_slider(
+        RATE_LABEL, RATES, value=DEFAULTS["learning_rate"],
+        help="Насколько сильно сдвигать веса за один шаг. Слишком мало — сеть не успевает "
+        "обучиться, слишком много — потери скачут и растут.",
+    )
+    epochs = st.sidebar.slider(
+        EPOCHS_LABEL, 50, 1000, DEFAULTS["epochs"], step=50,
+        help="Одна эпоха — один проход по всей обучающей выборке. Здесь каждая эпоха "
+        "даёт ровно один шаг спуска: мини-пакетов нет.",
+    )
 
     st.sidebar.header("Сеть")
     st.sidebar.caption("Эти ручки меняют только начальную сеть.")
-    hidden = st.sidebar.select_slider(HIDDEN_LABEL, WIDTHS, value=DEFAULTS["hidden"])
-    seed = st.sidebar.slider(SEED_LABEL, 0, 10, DEFAULTS["seed"])
+    hidden = st.sidebar.select_slider(
+        HIDDEN_LABEL, WIDTHS, value=DEFAULTS["hidden"],
+        help="Сколько нейронов в среднем слое. Два — почти наверняка мало для двух "
+        "полумесяцев, шестьдесят четыре — заведомо с запасом.",
+    )
+    seed = st.sidebar.slider(
+        SEED_LABEL, 0, 10, DEFAULTS["seed"],
+        help="Веса сети перед обучением заполняются случайными числами. Зерно задаёт, "
+        "какими именно: от стартовой точки результат зависит.",
+    )
 
     st.sidebar.divider()
     st.sidebar.markdown(other_playgrounds("ml-practice/nn"))
@@ -83,9 +107,21 @@ def _controls() -> tuple[str, int, float, int, int]:
 
 def _training_section(run: Training, reference: Training | None) -> None:
     left, middle, right = st.columns(3)
-    left.metric("Потери до обучения", f"{run.initial_loss:.4f}")
-    middle.metric("Потери после", f"{run.final_loss:.4f}")
-    right.metric("Точность на отложенной выборке", as_printed(run.test_accuracy))
+    left.metric(
+        "Потери до обучения",
+        f"{run.initial_loss:.4f}",
+        help="Ошибка необученной сети со случайными весами — точка отсчёта.",
+    )
+    middle.metric(
+        "Потери после",
+        f"{run.final_loss:.4f}",
+        help="Та же ошибка после всех эпох. Её и уменьшает градиентный спуск.",
+    )
+    right.metric(
+        "Точность на отложенной выборке",
+        as_printed(run.test_accuracy),
+        help="Доля верных ответов на точках, которых сеть при обучении не видела.",
+    )
 
     if reference is not None:
         st.caption(
@@ -107,10 +143,28 @@ def _check_section(components: tuple[Component, ...], bug: str) -> None:
     wrong = [component for component in components if not component.agrees]
     worst = max(component.relative_error for component in components)
 
+    st.caption(
+        "Проверка устроена так: берётся один вес, его чуть сдвигают в обе стороны и смотрят, "
+        "как от этого изменилась ошибка. Получается тот же градиент, но добытый измерением, "
+        "а не формулой. Если формула верна, два числа совпадают почти до последнего знака."
+    )
     left, middle, right = st.columns(3)
-    left.metric("Аналитический W1[0, 0]", f"{first.analytic:.6f}")
-    middle.metric("Численный W1[0, 0]", f"{first.numeric:.6f}")
-    right.metric("Расходятся компонент", f"{len(wrong)} из {len(components)}")
+    left.metric(
+        "По формуле, вес W1[0, 0]",
+        f"{first.analytic:.6f}",
+        help="Градиент, который выдал обратный проход — то есть ваш код.",
+    )
+    middle.metric(
+        "Измерением, тот же вес",
+        f"{first.numeric:.6f}",
+        help="Градиент, посчитанный сдвигом веса на малую величину. Медленно, зато "
+        "не зависит от формул.",
+    )
+    right.metric(
+        "Расходятся весов",
+        f"{len(wrong)} из {len(components)}",
+        help=f"Расхождением считается относительная разница больше {TOLERANCE:g}.",
+    )
 
     if wrong:
         st.error(
@@ -155,6 +209,62 @@ def main() -> None:
     st.caption(
         "Двухслойная сеть: прямой проход, потери, градиенты по правилу цепочки и шаг спуска — "
         "без фреймворка. Здесь можно сломать одну строку обратного прохода и посмотреть, кто это заметит."
+    )
+
+    quick_start(
+        st,
+        purpose=(
+            "Нейросеть на NumPy, обученная прямо в браузере. Страница — о том, что будет, если ошибиться в "
+            "формулах обратного прохода."
+        ),
+        steps=(
+            "В **«Сломать одну строку обратного прохода»** выберите «забыта производная ReLU».",
+            "Посмотрите на потери и точность: обучение идёт, ошибку по ним не видно.",
+            "Спуститесь к численной проверке градиента: расходятся 15 весов из 21.",
+        ),
+        notice="неверный градиент не ломает обучение заметно — поймать его может только численная проверка.",
+    )
+    how_to_read(
+        st,
+        what=(
+            "Нейросеть целиком, без PyTorch: двадцать строк NumPy. Два входа, шестнадцать "
+            "нейронов в среднем слое, один выход. Чтобы обучаться, сеть должна знать, как "
+            "каждый её вес влияет на ошибку, — это и считает обратный проход. Страница "
+            "отвечает на практический вопрос: что будет, если в этих формулах ошибиться. "
+            "Ответ неприятный: обучение всё равно пойдёт, графики будут выглядеть "
+            "правдоподобно, и ничто снаружи не подскажет, что код неверен. Поймать это "
+            "может только численная проверка градиента — она здесь внизу."
+        ),
+        controls=(
+            "**Ошибка в обратном проходе** — главная ручка: выбирает, какую именно строку "
+            "формул сломать, или оставить их верными. Три варианта ошибки — те самые, что "
+            "чаще всего и получаются при самостоятельной реализации. **Обучение** — размер "
+            "шага и число эпох. **Сеть** — сколько нейронов в среднем слое и с каких "
+            "случайных весов начинать."
+        ),
+        watch=(
+            "Выберите «забыта производная ReLU». Сверху: потери падают, граница на картинке "
+            "выглядит осмысленной, точность приличная — по этим признакам ошибку не заметить. "
+            "Снизу: проверка градиента показывает расхождение сразу. Обратите внимание, "
+            "сколько весов при этом совпадают — проверка одного веса из второго слоя ошибку "
+            "бы пропустила, и именно так её обычно и пропускают. Пунктир на графике — "
+            "та же сеть с верными формулами, для сравнения."
+        ),
+        data=(
+            "«Два полумесяца» — стандартный учебный набор: два класса, которые нельзя "
+            "разделить прямой. Данные одни и те же при любых настройках, обучение идёт "
+            "в браузере по-настоящему."
+        ),
+    )
+    glossary(
+        st,
+        "backprop",
+        "gradient_check",
+        "gradient_descent",
+        "learning_rate",
+        "loss",
+        "epoch",
+        "accuracy",
     )
 
     bug, hidden, learning_rate, epochs, seed = _controls()

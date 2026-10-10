@@ -30,19 +30,31 @@ def animation_slider_label(iteration: int, max_iteration: int, max_labels: int =
 
 
 def metrics_text(row: dict, degree: int, transform: tuple[float, float], loss_function: str = "MSE") -> str:
+    """The hover text on a point of the trajectory.
+
+    MSE always gets its own pair of lines, except when it is the loss being
+    minimised: two identical lines in one tooltip only get in the way.
+    """
     params = params_from_row(row)
+    also_mse = (
+        ""
+        if loss_function == "MSE"
+        else (
+            f"MSE на данных: {row['mse']:.6f}\n"
+            f"MSE по истинной зависимости: {row['true_mse']:.6f}\n"
+        )
+    )
     return (
-        f"Iteration: {row['iteration']}\n"
+        f"Шаг: {row['iteration']}\n"
         f"{optimization_loss_label(loss_function)}: {row['optimization_loss']:.6f}\n"
-        f"{optimization_loss_label(loss_function, 'True-function')}: "
+        f"{optimization_loss_label(loss_function, 'по истинной зависимости')}: "
         f"{row['true_optimization_loss']:.6f}\n"
-        f"Observed MSE: {row['mse']:.6f}\n"
-        f"True MSE: {row['true_mse']:.6f}\n"
+        f"{also_mse}"
         f"RMSE: {row['rmse']:.6f}\n"
         f"MAE: {row['mae']:.6f}\n"
         f"|grad(loss)|: {row['grad_norm']:.6f}\n"
-        f"Model: {equation_text(params, degree, 'z')}\n"
-        f"Scaled feature: {normalized_feature_text(transform)}"
+        f"Модель: {equation_text(params, degree, 'z')}\n"
+        f"Признак в едином масштабе: {normalized_feature_text(transform)}"
     )
 
 
@@ -57,7 +69,7 @@ def model_figure(data, params, degree: int, title_suffix: str = "") -> go.Figure
             x=data["x"],
             y=data["y_true"],
             mode="lines",
-            name="Underlying distribution",
+            name="Истинная зависимость",
             line=dict(width=3, dash="dot"),
         )
     )
@@ -66,7 +78,7 @@ def model_figure(data, params, degree: int, title_suffix: str = "") -> go.Figure
             x=data["x"],
             y=data["y"],
             mode="markers",
-            name="Data points",
+            name="Точки данных",
             marker=dict(size=10),
         )
     )
@@ -94,7 +106,7 @@ def model_figure(data, params, degree: int, title_suffix: str = "") -> go.Figure
         )
 
     figure.update_layout(
-        title=f"Model Fit {title_suffix}".strip(),
+        title=f"Как кривая села на точки {title_suffix}".strip(),
         height=540,
         margin=dict(l=30, r=30, t=70, b=30),
         xaxis_title="x",
@@ -161,7 +173,7 @@ def loss_surface_figure(
             colorscale="Viridis",
             opacity=0.85,
             showscale=False,
-            name="Loss surface",
+            name="Поверхность ошибки",
             hovertemplate=(
                 f"{x_param}=%{{x:.4f}}<br>"
                 f"{y_param}=%{{y:.4f}}<br>"
@@ -177,7 +189,7 @@ def loss_surface_figure(
                 y=[row[y_param] for row in history],
                 z=[row["optimization_loss"] for row in history],
                 mode="lines+markers",
-                name="Gradient descent path",
+                name="Путь спуска",
                 line=dict(width=6, color="#ff8c42"),
                 marker=dict(size=4, color="#ffd166"),
                 hovertemplate=(
@@ -194,7 +206,7 @@ def loss_surface_figure(
                 y=[final_row[y_param]],
                 z=[final_row["optimization_loss"]],
                 mode="markers",
-                name="Current point",
+                name="Текущие веса",
                 marker=dict(size=7, color="#ef476f", symbol="diamond"),
                 text=[final_row["iteration"]],
                 hovertemplate=(
@@ -213,7 +225,7 @@ def loss_surface_figure(
                 y=[base_params[y_index]],
                 z=[current_loss],
                 mode="markers",
-                name="Current point",
+                name="Текущие веса",
                 marker=dict(size=7, color="#ef476f", symbol="diamond"),
                 hovertemplate=(
                     f"{x_param}=%{{x:.4f}}<br>{y_param}=%{{y:.4f}}<br>"
@@ -223,7 +235,7 @@ def loss_surface_figure(
         )
 
     figure.update_layout(
-        title=f"3D Loss Surface - {loss_function} over {x_param} and {y_param}",
+        title=f"Поверхность ошибки: {loss_function} в зависимости от {x_param} и {y_param}",
         height=620,
         margin=dict(l=0, r=0, t=70, b=0),
         scene=dict(
@@ -264,28 +276,28 @@ def loss_figure(
     divergence_iteration = detected_divergence if detected_divergence is not None else divergence_iteration
 
     if not history:
-        message = "Run training or build animation to show loss."
+        message = "Нажмите «Запустить» или «Показать анимацию» — здесь появится график ошибки."
         if divergence_iteration is not None:
             message = (
-                f"Training diverged at iteration {divergence_iteration}. "
-                "Lower the learning rate or simplify the model."
+                f"Обучение разошлось на шаге {divergence_iteration}. "
+                "Уменьшите размер шага или возьмите кривую попроще."
             )
-        return _empty_state_figure("Loss vs Iterations", 360, message)
+        return _empty_state_figure("Ошибка по шагам", 360, message)
 
     history_frame = pd.DataFrame(history)
     convergence_at = convergence_iteration(history, tolerance, metric_key="optimization_loss")
 
     if divergence_iteration is not None:
         subtitle = (
-            f"Diverged at iteration {divergence_iteration}; "
-            f"showing stable history through iteration {int(history_frame['iteration'].max())}"
+            f"Разошлось на шаге {divergence_iteration}; "
+            f"показана устойчивая часть — до шага {int(history_frame['iteration'].max())}"
         )
     elif convergence_at is not None:
-        subtitle = f"Estimated convergence at iteration {convergence_at} (delta {loss_function} < {tolerance:g})"
+        subtitle = f"Похоже, сошлось на шаге {convergence_at} (изменение {loss_function} за шаг < {tolerance:g})"
     else:
         subtitle = (
-            f"No convergence detected within {int(history_frame['iteration'].max())} iterations "
-            f"(delta {loss_function} < {tolerance:g})"
+            f"За {int(history_frame['iteration'].max())} шагов сходимости не видно "
+            f"(изменение {loss_function} за шаг < {tolerance:g})"
         )
 
     figure = go.Figure()
@@ -298,7 +310,7 @@ def loss_figure(
             line=dict(width=3),
             marker=dict(size=4),
             hovertemplate=(
-                f"Iteration=%{{x}}<br>{optimization_loss_label(loss_function)}=%{{y:.6f}}"
+                f"Шаг=%{{x}}<br>{optimization_loss_label(loss_function)}=%{{y:.6f}}"
                 "<extra></extra>"
             ),
         )
@@ -308,11 +320,11 @@ def loss_figure(
             x=history_frame["iteration"],
             y=history_frame["true_optimization_loss"],
             mode="lines",
-            name=optimization_loss_label(loss_function, "True-function"),
+            name=optimization_loss_label(loss_function, "по истинной зависимости"),
             line=dict(width=3, dash="dash"),
             hovertemplate=(
-                f"Iteration=%{{x}}<br>"
-                f"{optimization_loss_label(loss_function, 'True-function')}=%{{y:.6f}}<extra></extra>"
+                f"Шаг=%{{x}}<br>"
+                f"{optimization_loss_label(loss_function, 'по истинной зависимости')}=%{{y:.6f}}<extra></extra>"
             ),
         )
     )
@@ -326,7 +338,7 @@ def loss_figure(
                 x=[convergence_at],
                 y=[convergence_loss],
                 mode="markers",
-                name="Convergence point",
+                name="Шаг, на котором сошлось",
                 marker=dict(size=14, symbol="star"),
                 hovertemplate=(
                     f"Convergence iteration=%{{x}}<br>{loss_function}=%{{y:.6f}}<extra></extra>"
@@ -335,10 +347,10 @@ def loss_figure(
         )
 
     figure.update_layout(
-        title=f"Loss vs Iterations<br><sup>{subtitle}</sup>",
+        title=f"Ошибка по шагам<br><sup>{subtitle}</sup>",
         height=360,
         margin=dict(l=30, r=30, t=80, b=30),
-        xaxis_title="Iteration",
+        xaxis_title="Шаг",
         yaxis_title=loss_axis_title(loss_function),
         xaxis=dict(gridcolor="rgba(128,128,128,0.2)"),
         yaxis=dict(gridcolor="rgba(128,128,128,0.2)", tickformat=".3~s"),
@@ -358,13 +370,13 @@ def animated_dashboard_figure(
     divergence_iteration = detected_divergence if detected_divergence is not None else divergence_iteration
 
     if not history:
-        message = "Build animation to show model-fit and loss playback."
+        message = "Нажмите «Показать анимацию» — здесь спуск можно будет проиграть по шагам."
         if divergence_iteration is not None:
             message = (
-                f"Training diverged at iteration {divergence_iteration}. "
-                "Lower the learning rate or simplify the model."
+                f"Обучение разошлось на шаге {divergence_iteration}. "
+                "Уменьшите размер шага или возьмите кривую попроще."
             )
-        return _empty_state_figure("Gradient Descent Animation", 760, message)
+        return _empty_state_figure("Анимация градиентного спуска", 760, message)
 
     transform = feature_transform_from_data(data)
     x_curve = np.linspace(-4.3, 4.3, 200)
@@ -376,19 +388,19 @@ def animated_dashboard_figure(
 
     if divergence_iteration is not None:
         convergence_text = (
-            f"Diverged at iteration {divergence_iteration}; showing stable frames only"
+            f"Разошлось на шаге {divergence_iteration}; показаны только устойчивые кадры"
         )
     elif convergence_at is None:
-        convergence_text = f"No convergence detected within {max_iteration} iterations"
+        convergence_text = f"За {max_iteration} шагов сходимости не видно"
     else:
-        convergence_text = f"Estimated convergence: iteration {convergence_at}"
+        convergence_text = f"Похоже, сошлось на шаге {convergence_at}"
 
     figure = make_subplots(
         rows=2,
         cols=1,
         row_heights=[0.62, 0.38],
         specs=[[{"type": "xy"}], [{"type": "xy"}]],
-        subplot_titles=("Model fit", f"Loss vs Iterations - {convergence_text}"),
+        subplot_titles=("Как кривая села на точки", f"Ошибка по шагам — {convergence_text}"),
         vertical_spacing=0.16,
     )
 
@@ -397,7 +409,7 @@ def animated_dashboard_figure(
             x=data["x"],
             y=data["y_true"],
             mode="lines",
-            name="Underlying distribution",
+            name="Истинная зависимость",
             line=dict(width=3, dash="dot"),
         ),
         row=1,
@@ -408,7 +420,7 @@ def animated_dashboard_figure(
             x=data["x"],
             y=data["y"],
             mode="markers",
-            name="Data points",
+            name="Точки данных",
             marker=dict(size=9),
         ),
         row=1,
@@ -433,7 +445,7 @@ def animated_dashboard_figure(
             name=optimization_loss_label(loss_function),
             line=dict(width=3),
             hovertemplate=(
-                f"Iteration=%{{x}}<br>{optimization_loss_label(loss_function)}=%{{y:.6f}}"
+                f"Шаг=%{{x}}<br>{optimization_loss_label(loss_function)}=%{{y:.6f}}"
                 "<extra></extra>"
             ),
         ),
@@ -445,11 +457,11 @@ def animated_dashboard_figure(
             x=history_frame["iteration"],
             y=history_frame["true_optimization_loss"],
             mode="lines",
-            name=optimization_loss_label(loss_function, "True-function"),
+            name=optimization_loss_label(loss_function, "по истинной зависимости"),
             line=dict(width=3, dash="dash"),
             hovertemplate=(
-                f"Iteration=%{{x}}<br>"
-                f"{optimization_loss_label(loss_function, 'True-function')}=%{{y:.6f}}<extra></extra>"
+                f"Шаг=%{{x}}<br>"
+                f"{optimization_loss_label(loss_function, 'по истинной зависимости')}=%{{y:.6f}}<extra></extra>"
             ),
         ),
         row=2,
@@ -460,7 +472,7 @@ def animated_dashboard_figure(
             x=[first_row["iteration"]],
             y=[first_row["optimization_loss"]],
             mode="markers",
-            name="Current iteration",
+            name="Текущий шаг",
             marker=dict(size=14, symbol="circle"),
             hovertemplate=f"Current iteration=%{{x}}<br>{loss_function}=%{{y:.6f}}<extra></extra>",
         ),
@@ -477,7 +489,7 @@ def animated_dashboard_figure(
                 x=[convergence_at],
                 y=[convergence_loss],
                 mode="markers",
-                name="Convergence point",
+                name="Шаг, на котором сошлось",
                 marker=dict(size=15, symbol="star"),
                 hovertemplate=(
                     f"Convergence iteration=%{{x}}<br>{loss_function}=%{{y:.6f}}<extra></extra>"
@@ -526,7 +538,7 @@ def animated_dashboard_figure(
     )
     figure.update_yaxes(title_text="y", gridcolor="rgba(128,128,128,0.2)", row=1, col=1)
     figure.update_xaxes(
-        title_text="Iteration",
+        title_text="Шаг",
         gridcolor="rgba(128,128,128,0.2)",
         row=2,
         col=1,
@@ -588,7 +600,7 @@ def animated_dashboard_figure(
         sliders=[
             {
                 "active": 0,
-                "currentvalue": {"prefix": "Iteration: ", "font": {"size": 12}},
+                "currentvalue": {"prefix": "Шаг: ", "font": {"size": 12}},
                 "x": 0.14,
                 "y": -0.09,
                 "xanchor": "left",

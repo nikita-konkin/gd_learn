@@ -28,13 +28,14 @@ from metric_playground.metrics import (
     precision_recall_curve,
 )
 from metric_playground.plotting import confusion_figure, curve_figure
+from playground_common.explain import how_to_read, quick_start, reference
 from playground_common.links import other_playgrounds
 from playground_common.wording import as_printed
 
 TITLE = "Метрика и дисбаланс"
 
 POPULATION_LABEL = "Набор данных"
-THRESHOLD_LABEL = "Порог модели отказов"
+THRESHOLD_LABEL = "Порог: с какой уверенности объявлять отказ"
 MISS_COST_LABEL = "Пропуск отказа дороже ложной тревоги, раз"
 REMEDY_THRESHOLD_LABEL = "Порог для трёх способов"
 
@@ -69,15 +70,34 @@ def _controls() -> tuple[str, float, int, float]:
     """The sidebar: the data set to inspect, then each tab's own threshold, then the price of a miss."""
     names = [population.name for population in _populations()]
     st.sidebar.header("Ловушка")
-    population = st.sidebar.selectbox(POPULATION_LABEL, names, index=0)
+    population = st.sidebar.selectbox(
+        POPULATION_LABEL,
+        names,
+        index=0,
+        help="Три выборки с разной долей редкого класса — от двух процентов до шести. "
+        "Чем реже событие, тем сильнее ловушка.",
+    )
 
     st.sidebar.header("Порог")
     st.sidebar.caption("Порог меняет только решение модели; цена — только оценку решения.")
-    threshold = st.sidebar.slider(THRESHOLD_LABEL, 0.0, 1.0, DEFAULT_THRESHOLD, step=0.01)
-    miss = st.sidebar.slider(MISS_COST_LABEL, 1, 100, DEFAULT_MISS_COST)
+    threshold = st.sidebar.slider(
+        THRESHOLD_LABEL, 0.0, 1.0, DEFAULT_THRESHOLD, step=0.01,
+        help="Модель выдаёт не «да/нет», а число от 0 до 1 — свою уверенность. Порог "
+        "превращает это число в решение. Ниже порог — больше найденных отказов и больше "
+        "ложных тревог; выше — наоборот.",
+    )
+    miss = st.sidebar.slider(
+        MISS_COST_LABEL, 1, 100, DEFAULT_MISS_COST,
+        help="Во сколько раз пропустить настоящий отказ дороже, чем зря поднять тревогу. "
+        "Это число приходит из предметной области, а не из данных — и именно оно решает, "
+        "какой порог считать лучшим.",
+    )
 
     st.sidebar.header("Перекос классов")
-    remedy_threshold = st.sidebar.slider(REMEDY_THRESHOLD_LABEL, 0.05, 0.95, DEFAULT_THRESHOLD, step=0.05)
+    remedy_threshold = st.sidebar.slider(
+        REMEDY_THRESHOLD_LABEL, 0.05, 0.95, DEFAULT_THRESHOLD, step=0.05,
+        help="Отдельный порог для третьей вкладки: там три способа обучения сравниваются при одном и том же пороге.",
+    )
 
     st.sidebar.divider()
     st.sidebar.markdown(other_playgrounds("ml-practice/metric"))
@@ -91,10 +111,24 @@ def _trap_tab(name: str) -> None:
         f"({population.source}). Модель отвечает «отказа нет» всегда."
     )
     left, middle, right, last = st.columns(4)
-    left.metric("Доля правильных", f"{population.majority_accuracy * 100:.1f} %".replace(".", ","))
-    middle.metric("Найдено отказов", "0")
-    right.metric("Полнота", "0.000")
-    last.metric("PR-AUC случайной модели", f"{population.pr_auc_baseline:.3f}")
+    left.metric(
+        "Доля правильных",
+        f"{population.majority_accuracy * 100:.1f} %".replace(".", ","),
+        help="Сколько ответов из ста верны. Модель, которая всегда отвечает «отказа нет», "
+        "права почти всегда — просто потому, что отказы редки.",
+    )
+    middle.metric("Найдено отказов", "0", help="Ровно то, зачем модель и строили.")
+    right.metric(
+        "Полнота",
+        "0.000",
+        help="Какая доля настоящих отказов найдена. Здесь ноль: не найден ни один.",
+    )
+    last.metric(
+        "PR-AUC случайной модели",
+        f"{population.pr_auc_baseline:.3f}",
+        help="Уровень, который даёт слепое угадывание. Он равен доле редкого класса. "
+        "Любая оценка модели ниже этого числа означает, что модель хуже случайной.",
+    )
 
     if population.name == FAILURES:
         labels, _ = _failures()
@@ -123,9 +157,23 @@ def _threshold_tab(threshold: float, miss: int) -> None:
     )
 
     left, middle, right = st.columns(3)
-    left.metric("Полнота", as_printed(counts.recall))
-    middle.metric("Точность", as_printed(counts.precision))
-    right.metric("Доля правильных", as_printed(counts.accuracy))
+    left.metric(
+        "Полнота",
+        as_printed(counts.recall),
+        help="Из всех настоящих отказов — какую долю модель нашла. Растёт, когда порог опускают.",
+    )
+    middle.metric(
+        "Точность",
+        as_printed(counts.precision),
+        help="Из всех поднятых тревог — какая доля оказалась настоящим отказом. "
+        "Падает, когда порог опускают. Поднять обе сразу нельзя.",
+    )
+    right.metric(
+        "Доля правильных",
+        as_printed(counts.accuracy),
+        help="Сколько ответов верны вообще. На редких событиях это число почти ни о чём "
+        "не говорит — смотрите на два предыдущих.",
+    )
 
     figure_column, curve_column = st.columns([2, 3])
     with figure_column:
@@ -160,8 +208,18 @@ def _threshold_tab(threshold: float, miss: int) -> None:
     best = confusion(labels, scores, best_threshold)
     current_cost = counts.cost(miss)
     left, middle, right = st.columns(3)
-    left.metric("Стоимость при выбранном пороге", f"{current_cost:.0f}")
-    middle.metric("Самый дешёвый порог", f"{best_threshold:.3f}")
+    left.metric(
+        "Стоимость при выбранном пороге",
+        f"{current_cost:.0f}",
+        help="Пропуски и ложные тревоги, сложенные с учётом их цены. Единица — одна "
+        "ложная тревога.",
+    )
+    middle.metric(
+        "Самый дешёвый порог",
+        f"{best_threshold:.3f}",
+        help="Тот порог, при котором эта сумма минимальна. Он зависит от цены ошибки, "
+        "а не от самой модели.",
+    )
     right.metric("Его стоимость", f"{best_cost:.0f}")
     st.caption(
         f"Пропуск отказа стоит {miss} ложных тревог. При самом дешёвом пороге модель пропускает "
@@ -210,6 +268,64 @@ def main() -> None:
     st.caption(
         "Когда отказов два процента, модель, не нашедшая ни одного, верна в 98 случаях из 100. "
         "Здесь видно, какие метрики это скрывают и как порог превращает оценки модели в решения."
+    )
+
+    quick_start(
+        st,
+        purpose=(
+            "Когда событий одного класса единицы, доля верных ответов обманывает. Страница — про выбор метрики "
+            "и порога при перекошенных классах."
+        ),
+        steps=(
+            "Первая вкладка: доля правильных — 97,9 %, а найдено отказов — 0.",
+            "Вторая: двигайте **«Порог: с какой уверенности объявлять отказ»** и следите за полнотой и "
+            "точностью.",
+            "Поменяйте **«Пропуск отказа дороже ложной тревоги, раз»**: самый дешёвый порог сдвинется.",
+        ),
+        notice="полноту и точность сразу не поднять; порог выбирают по цене ошибок, а не по одной метрике.",
+    )
+    how_to_read(
+        st,
+        what=(
+            "Страница про выбор метрики, когда классы перекошены: событий одного рода много, "
+            "другого — считанные единицы. Отказ оборудования, брак на производстве, мошенничество — "
+            "все такие задачи выглядят одинаково. «Доля верных ответов» в них бесполезна: модель, "
+            "которая всегда отвечает «всё хорошо», права в 98 случаях из 100 и при этом не находит "
+            "ровно ничего. Три вкладки: сама ловушка, затем порог и цена двух видов ошибки, затем "
+            "три способа учесть перекос."
+        ),
+        controls=(
+            "**Набор данных** — для первой вкладки; меняет, насколько редок редкий класс. "
+            "**Порог** — главная ручка второй вкладки: модель выдаёт не ответ, а число от 0 до 1, "
+            "и порог превращает это число в решение. **Цена пропуска** — во сколько раз пропустить "
+            "отказ дороже ложной тревоги. **Порог для трёх способов** — отдельная ручка третьей "
+            "вкладки."
+        ),
+        watch=(
+            "На первой вкладке сравните два числа: доля правильных около 98 % и найдено отказов — "
+            "ноль. На второй двигайте порог и следите, как полнота и точность расходятся в разные "
+            "стороны: поднять обе сразу невозможно, и это не недостаток модели, а свойство задачи. "
+            "Таблица «нужная полнота и её цена» переводит это в рабочие слова: чтобы находить 95 % "
+            "отказов, придётся смириться с таким-то числом ложных тревог на каждый найденный. "
+            "Поменяйте цену пропуска — и самый дешёвый порог сдвинется, хотя модель осталась той же."
+        ),
+        data=(
+            "Оценки моделей посчитаны заранее на отложенных выборках и загружены готовыми — "
+            "поэтому страница быстрая. SECOM — реальный набор данных о браке на производстве "
+            "полупроводников; числа по нему те же, что в задании на РГР."
+        ),
+    )
+    reference(
+        st,
+        "imbalance",
+        "accuracy",
+        "baseline",
+        "confusion_matrix",
+        "precision_recall",
+        "f1",
+        "threshold",
+        "pr_auc",
+        "error_cost",
     )
 
     population, threshold, miss, remedy_threshold = _controls()

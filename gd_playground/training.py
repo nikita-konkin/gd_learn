@@ -13,12 +13,12 @@ def loss_function_options() -> list[str]:
     return list(LOSS_FUNCTIONS)
 
 
-def optimization_loss_label(loss_function: str, prefix: str = "Observed") -> str:
-    return f"{prefix} {loss_function}"
+def optimization_loss_label(loss_function: str, prefix: str = "на данных") -> str:
+    return f"{loss_function} {prefix}"
 
 
 def loss_axis_title(loss_function: str) -> str:
-    return f"Loss ({loss_function})"
+    return f"Ошибка ({loss_function})"
 
 
 def params_from_row(row: dict) -> np.ndarray:
@@ -286,12 +286,30 @@ def prepare_history_for_display(history, data, degree: int, loss_function: str =
     return stable_history, None
 
 
+# An update that moves the weights by less than this share of their size counts
+# as standing still.
+SETTLED_STEP = 1e-3
+
+
+def weight_step(previous: dict, current: dict) -> float:
+    """How far one update moved the weights, relative to their size."""
+    before, after = params_from_row(previous), params_from_row(current)
+    return float(np.linalg.norm(after - before) / (1.0 + np.linalg.norm(after)))
+
+
 def convergence_iteration(history, tolerance: float, metric_key: str = "optimization_loss") -> int | None:
+    """The first step after which the loss stopped changing because the weights stopped moving.
+
+    A flat loss alone is not enough. With a step too large for the slope, batch
+    descent jumps from one side of the minimum to the other and lands at the same
+    height every time: the loss does not change while the weights swing, and the
+    error stays where it started.
+    """
     if not history or len(history) < 2:
         return None
 
     for index in range(1, len(history)):
         delta = abs(history[index - 1][metric_key] - history[index][metric_key])
-        if delta < tolerance:
+        if delta < tolerance and weight_step(history[index - 1], history[index]) < SETTLED_STEP:
             return history[index]["iteration"]
     return None

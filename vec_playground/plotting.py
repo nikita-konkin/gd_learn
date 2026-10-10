@@ -47,7 +47,7 @@ def ngram_sweep_figure(points: list[SweepPoint], baseline: float) -> go.Figure:
         y=baseline,
         line_dash="dash",
         line_color=BASELINE_COLOR,
-        annotation_text=f"baseline {baseline:.2f}",
+        annotation_text=f"ответ наугад {baseline:.2f}",
         annotation_position="bottom right",
     )
     figure.update_layout(
@@ -79,7 +79,7 @@ def comparison_figure(table: pd.DataFrame, baseline: float, current: float | Non
         x=baseline,
         line_dash="dash",
         line_color=BASELINE_COLOR,
-        annotation_text=f"baseline {baseline:.2f}",
+        annotation_text=f"ответ наугад {baseline:.2f}",
     )
     if current is not None:
         figure.add_vline(

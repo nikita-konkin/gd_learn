@@ -33,6 +33,7 @@ from data_playground.cleaning import (
 )
 from data_playground.plotting import cleaned_histogram, timing_figure
 from data_playground.speed import DOT, SUM_SIZE, Memory, Timing, memory, results_agree, sum_of_squares
+from playground_common.explain import how_to_read, quick_start, reference
 from playground_common.links import other_playgrounds
 from playground_common.wording import plural
 
@@ -75,19 +76,54 @@ def _controls() -> tuple[str, str, ReadingsSettings, int]:
     """The sidebar: how to clean, what to clean, how much to time — three separate groups."""
     st.sidebar.header("Очистка")
     st.sidebar.caption("Эти ручки меняют только порядок и способ очистки.")
-    order = st.sidebar.radio(ORDER_LABEL, list(ORDERS), index=0)
-    statistic = st.sidebar.radio(STATISTIC_LABEL, list(STATISTICS), index=0)
+    order = st.sidebar.radio(
+        ORDER_LABEL,
+        list(ORDERS),
+        index=0,
+        help=(
+            "Главная ручка страницы. Пропуски нужно чем-то заполнить, и это «что-то» "
+            "считается по самому столбцу. Если считать до того, как убраны невозможные "
+            "значения, они войдут в расчёт — и очистка впишет в таблицу новую ошибку."
+        ),
+    )
+    statistic = st.sidebar.radio(
+        STATISTIC_LABEL,
+        list(STATISTICS),
+        index=0,
+        help=(
+            "Среднее чувствительно к выбросам: одно значение −900 тянет его за собой. "
+            "Медиана — значение посередине ряда, её выброс сдвигает на одну позицию."
+        ),
+    )
 
     st.sidebar.header("Тысяча строк")
     st.sidebar.caption("Эти ручки меняют только сами данные второй вкладки.")
-    rows = st.sidebar.slider(ROWS_LABEL, 200, 5000, DEFAULT_READINGS.rows, step=200)
-    missing = st.sidebar.slider(MISSING_LABEL, 0, 30, round(DEFAULT_READINGS.missing * 100))
-    outliers = st.sidebar.slider(OUTLIERS_LABEL, 0, 15, round(DEFAULT_READINGS.outliers * 100))
-    seed = st.sidebar.slider(SEED_LABEL, 0, 20, DEFAULT_READINGS.seed)
+    rows = st.sidebar.slider(
+        ROWS_LABEL, 200, 5000, DEFAULT_READINGS.rows, step=200,
+        help="Сколько показаний сгенерировать для второй вкладки.",
+    )
+    missing = st.sidebar.slider(
+        MISSING_LABEL, 0, 30, round(DEFAULT_READINGS.missing * 100),
+        help="Какую долю показаний «потерял» прибор — эти клетки придётся заполнять.",
+    )
+    outliers = st.sidebar.slider(
+        OUTLIERS_LABEL, 0, 15, round(DEFAULT_READINGS.outliers * 100),
+        help=(
+            "Какую долю показаний прибор вернул как −900 дБм. Это не слабый сигнал, "
+            "а код ошибки: уровень ниже −120 дБм физически невозможен."
+        ),
+    )
+    seed = st.sidebar.slider(
+        SEED_LABEL, 0, 20, DEFAULT_READINGS.seed,
+        help="Меняет жребий генерации: другое зерно — другие данные при тех же настройках.",
+    )
 
     st.sidebar.header("Скорость")
     st.sidebar.caption("Эта ручка меняет только размер замера.")
-    size = st.sidebar.select_slider(SIZE_LABEL, SIZES, value=SUM_SIZE)
+    size = st.sidebar.select_slider(
+        SIZE_LABEL, SIZES, value=SUM_SIZE,
+        help="Чем больше чисел, тем заметнее разница между циклом на Python и NumPy.",
+    )
 
     st.sidebar.divider()
     st.sidebar.markdown(other_playgrounds("ml-practice/data"))
@@ -114,8 +150,18 @@ def _defect_tab(order: str, statistic: str) -> None:
 
     left, middle, right = st.columns(3)
     left.metric("Пропусков", str(sum(found.missing.values())))
-    middle.metric("Полных дубликатов", str(found.duplicates))
-    right.metric("Вариантов статуса", str(len(found.statuses)))
+    middle.metric(
+        "Полных дубликатов",
+        str(found.duplicates),
+        help="Строки, совпадающие во всех столбцах. Одно показание, записанное дважды, "
+        "сдвинет любую статистику в свою сторону.",
+    )
+    right.metric(
+        "Вариантов статуса",
+        str(len(found.statuses)),
+        help="Сколько разных написаний встретилось в столбце статуса. Для человека «ok» и "
+        "«OK» — одно и то же, для программы — две разные категории.",
+    )
     st.caption(
         f"Пропуски по столбцам: {', '.join(f'{column} — {count}' for column, count in found.missing.items())}. "
         f"Статусы: {', '.join(found.statuses)} — «ok» и «OK» означают одно и то же."
@@ -126,8 +172,17 @@ def _defect_tab(order: str, statistic: str) -> None:
     st.dataframe(_cleaned_view(cleaned), use_container_width=True, hide_index=True)
 
     left, right = st.columns(2)
-    left.metric("Заполнено значением", f"{cleaned.fill_value:.2f}")
-    right.metric("Невозможных значений после очистки", str(cleaned.impossible_left))
+    left.metric(
+        "Заполнено значением",
+        f"{cleaned.fill_value:.2f}",
+        help="То число, которое очистка вписала во все пустые клетки столбца «сигнал».",
+    )
+    right.metric(
+        "Невозможных значений после очистки",
+        str(cleaned.impossible_left),
+        help=f"Сколько осталось показаний ниже физического предела {OUTLIER_LIMIT:.0f} дБм. "
+        "Должно быть ноль — но очистка умеет вписать их сама.",
+    )
 
     if (order, statistic) == (AFTER, MEDIAN):
         st.info(
@@ -158,9 +213,25 @@ def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> Non
     )
 
     left, middle, right = st.columns(3)
-    left.metric("Истинное среднее", f"{result.true_mean:.2f}")
-    middle.metric("Среднее после очистки", f"{result.cleaned_mean:.2f}")
-    right.metric("Ошибка очистки", f"{result.error:+.2f}")
+    left.metric(
+        "Истинное среднее",
+        f"{result.true_mean:.2f}",
+        help="Среднее по тем показаниям, какими они были до того, как в них внесли пропуски и −900.",
+    )
+    middle.metric(
+        "Среднее после очистки",
+        f"{result.cleaned_mean:.2f}",
+        help="Среднее по таблице, которую выдала очистка. Именно это число и ушло бы в отчёт.",
+    )
+    right.metric(
+        "Ошибка очистки",
+        f"{result.error:+.2f}",
+        help=(
+            "Разница между ними, в дБм. Ноль означает, что очистка не исказила данные. "
+            "Это та ошибка, которую в реальной задаче никто бы не заметил: истинного "
+            "среднего там неизвестно."
+        ),
+    )
 
     cleaned = clean_signal(readings.table, statistic, order)
     st.plotly_chart(
@@ -180,7 +251,8 @@ def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> Non
 
 
 def _speed_tab(size: int) -> None:
-    if st.button(REMEASURE_LABEL):
+    if st.button(REMEASURE_LABEL, help="Замер повторится заново — числа немного разойдутся, "
+                 "это нормальный разброс измерения."):
         _timings.cache_clear()
     timings = _timings(size)
     slowest = timings[0].seconds
@@ -206,8 +278,17 @@ def _speed_tab(size: int) -> None:
     st.subheader("Память: список против массива")
     used = _memory()
     left, middle, right = st.columns(3)
-    left.metric("Список, МБ", f"{used.list_bytes / 1024**2:.1f}")
-    middle.metric("Массив int64, МБ", f"{used.array_bytes / 1024**2:.1f}")
+    left.metric(
+        "Список, МБ",
+        f"{used.list_bytes / 1024**2:.1f}",
+        help="Обычный список Python: на каждое число — отдельный объект плюс указатель на него.",
+    )
+    middle.metric(
+        "Массив int64, МБ",
+        f"{used.array_bytes / 1024**2:.1f}",
+        help="Массив NumPy: одно непрерывное место в памяти, ровно восемь байт на число, "
+        "без объектов и указателей.",
+    )
     right.metric("Разница, раз", f"{used.ratio:.1f}")
     pointer = f"{used.pointer_bytes} {plural(used.pointer_bytes, 'байт', 'байта', 'байт')}"
     st.caption(
@@ -225,6 +306,53 @@ def main() -> None:
         "Очистка данных в правильном порядке и векторизация. "
         "Порядок шагов очистки здесь — параметр, а не договорённость."
     )
+
+    quick_start(
+        st,
+        purpose=(
+            "Очистка данных: одни и те же шаги в разном порядке дают разный результат, и ошибка не падает, а "
+            "молча портит таблицу."
+        ),
+        steps=(
+            "Поставьте **«Когда считать статистику для заполнения»** — «до удаления выбросов», **«Чем "
+            "заполнять пропуски»** — «средним»: страница покажет красным невозможные значения.",
+            "Смените «средним» на «медианой»: ошибка останется, но станет незаметной.",
+            "Вкладка «Векторизация и память» — почему NumPy быстрее цикла.",
+        ),
+        notice="порядок шагов очистки — часть результата: неверный порядок не даёт ошибки, а вносит искажение.",
+    )
+    how_to_read(
+        st,
+        what=(
+            "Любой расчёт начинается с приведения данных в порядок: в них есть пропуски, "
+            "дубликаты, разные написания одного и того же и явно невозможные значения. "
+            "Здесь показано, что одни и те же шаги очистки, сделанные в разном порядке, дают "
+            "разный результат — и неверный порядок не падает с ошибкой, а молча вписывает "
+            "в таблицу новое искажение. Третья вкладка про другое: почему те же вычисления "
+            "на массивах NumPy идут в десятки раз быстрее, чем в цикле на Python."
+        ),
+        controls=(
+            "Главные две ручки — вверху слева. **«Когда считать статистику»** — до или после "
+            "удаления невозможных значений; это и есть порядок шагов. **«Чем заполнять пропуски»** — "
+            "средним или медианой. Остальное меняет только данные второй вкладки (сколько строк, "
+            "сколько в них пропусков и ошибок прибора) и размер замера на третьей."
+        ),
+        watch=(
+            "Поставьте «до удаления выбросов» и «средним» — очистка впишет в таблицу значения "
+            "ниже физического предела, и страница скажет об этом красным. Поменяйте на «медианой» "
+            "при том же порядке: ошибка останется, но станет незаметной — это опаснее. "
+            "На второй вкладке следите за «ошибкой очистки»: сколько дБм очистка прибавила "
+            "к истинному среднему. На гистограмме оранжевый столбец — заполненные клетки; "
+            "если он стоит в стороне от остальных, искажение внесла сама очистка."
+        ),
+        data=(
+            "Шесть строк первой вкладки — таблица с четырьмя намеренными дефектами. Вторая "
+            "вкладка генерируется на месте: показания около −50 дБм, в которые подмешаны "
+            "пропуски и −900 (код ошибки приёмника). Замеры времени и памяти делаются "
+            "по-настоящему, прямо в браузере."
+        ),
+    )
+    reference(st, "missing_values", "outlier", "mean_median", "vectorisation")
 
     order, statistic, settings, size = _controls()
     small, larger, speed = st.tabs(["Шесть строк", "Тысяча строк", "Векторизация и память"])

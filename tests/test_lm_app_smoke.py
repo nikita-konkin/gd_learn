@@ -30,13 +30,13 @@ def test_default_order_generates_and_measures(monkeypatch):
 
 def test_long_context_raises_the_memorisation_warning(monkeypatch):
     """At n=8 the text is almost entirely copied, and the interface must say so."""
-    fake_st = _run(monkeypatch, overrides={"Порядок n — сколько символов контекста": 8})
+    fake_st = _run(monkeypatch, overrides={"Сколько предыдущих символов видит модель": 8})
 
     assert any("списано" in message or "Осторожно" in message for message in fake_st.warnings)
 
 
 def test_short_context_raises_the_opposite_notice(monkeypatch):
-    fake_st = _run(monkeypatch, overrides={"Порядок n — сколько символов контекста": 1})
+    fake_st = _run(monkeypatch, overrides={"Сколько предыдущих символов видит модель": 1})
 
     assert any("бессмыслен" in message for message in fake_st.infos)
 
