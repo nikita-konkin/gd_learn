@@ -49,13 +49,30 @@ def test_the_page_spells_out_what_it_ran_on(default_run):
     assert any("300 наблюдений, 2000 признаков" in caption for caption in default_run.captions)
 
 
+def test_the_page_says_what_the_data_is_before_any_number(default_run):
+    assert "Как выглядит таблица" in default_run.expanders
+    explained = next(text for text in default_run.markdowns if "**Сигнал**" in text)
+    assert "300 наблюдений (строки) и 2000 признаков" in explained
+    assert "Сейчас его нет" in explained
+    preview = default_run.dataframes[0]
+    assert list(preview.columns) == [f"#{index}" for index in range(8)] + ["класс"]
+
+
+def test_switched_on_signal_is_described_as_a_shift_of_the_mean(monkeypatch):
+    fake_st = _run(monkeypatch, overrides={SIGNAL_LABEL: 0.6})
+
+    explained = next(text for text in fake_st.markdowns if "**Сигнал**" in text)
+    assert "в столбцах #0–#4 в среднем на 0.60 больше" in explained
+    assert any("Среднее по столбцам #0–#4: у класса 0 — " in caption for caption in fake_st.captions)
+
+
 def test_the_multiple_comparisons_numbers_are_on_the_page(default_run):
     assert _metric(default_run, "Признаков с p < 0.05") == "108 из 2000"
     assert _metric(default_run, "Выдержали поправку Бонферрони") == "0"
 
 
 def test_the_page_reports_how_few_picks_survive_a_change_of_block(default_run):
-    assert _metric(default_run, "Переотобраны во всех 5 блоках") == "1 из 20"
+    assert _metric(default_run, "Отобраны снова во всех 5 блоках") == "1 из 20"
     assert _metric(default_run, "Настоящих признаков в данных") == "0"
 
 
@@ -80,7 +97,7 @@ def test_the_number_of_picks_moves_the_leaky_score(monkeypatch, default_run):
 def test_fewer_blocks_relabel_the_recurrence_metric(monkeypatch):
     fake_st = _run(monkeypatch, overrides={FOLDS_LABEL: 3})
 
-    assert _metric(fake_st, "Переотобраны во всех 3 блоках").endswith("из 20")
+    assert _metric(fake_st, "Отобраны снова во всех 3 блоках").endswith("из 20")
     assert any("блоков 3" in caption for caption in fake_st.captions)
 
 

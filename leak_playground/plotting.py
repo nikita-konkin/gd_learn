@@ -12,7 +12,10 @@ import numpy as np
 import plotly.graph_objects as go
 
 from leak_playground.experiment import Selection
-from playground_common.palette import BORDER, HONEST, LEAKY, TRUTH, layout
+from playground_common.palette import BORDER, FILLS, HONEST, LEAKY, TRUTH, layout
+
+# Pure-noise columns in the recurrence chart: lighter than the real ones.
+NOISE = FILLS[-1]
 
 
 def scores_figure(leaky_folds: tuple[float, ...], honest_folds: tuple[float, ...]) -> go.Figure:
@@ -54,30 +57,34 @@ def scores_figure(leaky_folds: tuple[float, ...], honest_folds: tuple[float, ...
     return figure
 
 
-def recurrence_figure(selected: Selection) -> go.Figure:
+def recurrence_figure(selected: Selection, informative: int = 0) -> go.Figure:
     """How many blocks re-pick each feature the whole-sample selection chose.
 
     A column carrying real signal is re-picked by every block, so the height of
     these bars is the closest thing to evidence the selection can offer. It is
     not proof: on the default pure noise one of the twenty does reach the top
     by luck. What the figure makes visible is how few get anywhere near it.
+
+    The first ``informative`` columns carry the signal and are drawn dark, the
+    noise light, so with signal switched on the reader can see which is which.
     """
     order = np.argsort(selected.recurrence)[::-1]
-    labels = [f"#{selected.indices[position]}" for position in order]
-    values = [selected.recurrence[position] for position in order]
+    indices = [selected.indices[position] for position in order]
+    real = [index < informative for index in indices]
 
     figure = go.Figure(
         go.Bar(
-            x=labels,
-            y=values,
-            marker_color=BORDER,
-            hovertemplate="признак %{x}: отобран заново в %{y} блоках<extra></extra>",
+            x=[f"#{index}" for index in indices],
+            y=[selected.recurrence[position] for position in order],
+            marker_color=[BORDER if flag else NOISE for flag in real],
+            customdata=["настоящий" if flag else "шум" for flag in real],
+            hovertemplate="признак %{x} (%{customdata}): отобран снова в %{y} блоках<extra></extra>",
         )
     )
     figure.add_hline(
         y=selected.folds,
         line={"color": LEAKY, "width": 2, "dash": "dash"},
-        annotation_text=f"переотобран во всех {selected.folds} блоках",
+        annotation_text=f"отобран снова во всех {selected.folds} блоках",
         annotation_position="top right",
     )
     figure.update_layout(

@@ -50,6 +50,10 @@ DEFAULT = NoiseSettings()
 DEFAULT_SELECT = 20
 DEFAULT_FOLDS = 5
 
+# The corner of the table shown under «Как выглядит таблица».
+PREVIEW_ROWS = 8
+PREVIEW_COLUMNS = 8
+
 
 @lru_cache(maxsize=32)
 def _data(settings: NoiseSettings):
@@ -97,8 +101,9 @@ def _controls() -> tuple[NoiseSettings, int, int]:
     )
     signal = st.sidebar.slider(
         SIGNAL_LABEL, 0.0, 1.0, DEFAULT.signal, step=0.05,
-        help="При нуле предсказывать в данных нечего вовсе, и любая оценка выше 0.500 "
-        "целиком придумана. Сдвиньте вправо — в первые столбцы подмешается настоящая связь.",
+        help=f"На сколько у объектов класса 1 в среднем больше значения в столбцах #0–#{INFORMATIVE - 1}. "
+        "При нуле связи признаков с классом нет, предсказывать нечего, и любая оценка выше 0.500 "
+        "целиком придумана. При 1 сдвиг равен разбросу шума — по этим столбцам классы различимы.",
     )
     seed = st.sidebar.slider(
         SEED_LABEL, 0, 20, DEFAULT.seed,
@@ -132,7 +137,55 @@ def _controls() -> tuple[NoiseSettings, int, int]:
     return NoiseSettings(observations=count, features=width, seed=seed, signal=signal), select, folds
 
 
+def _data_section(settings: NoiseSettings, select: int, folds: int) -> None:
+    """What the table is, what is predicted and what «signal» means, before any number about them."""
+    informative = min(INFORMATIVE, settings.features)
+    columns = f"#0–#{informative - 1}"
+    if settings.signal:
+        signal = (
+            f"Сейчас сила {settings.signal:.2f}: у объектов класса 1 значения в столбцах {columns} в среднем на "
+            f"{settings.signal:.2f} больше, чем у класса 0, — по этим {informative} столбцам классы действительно "
+            f"можно различить. Остальные {settings.features - informative} — по-прежнему шум."
+        )
+    else:
+        signal = (
+            "Сейчас его нет: сила 0, признаки и классы независимы, предсказывать нечего. Если поднять "
+            f"«{SIGNAL_LABEL}», скажем, до 0.6, у объектов класса 1 значения в столбцах {columns} станут в среднем "
+            "на 0.6 больше, чем у класса 0, и по этим столбцам классы можно будет различить."
+        )
+
+    st.subheader("Данные и задача")
+    st.markdown(
+        f"- **Таблица** — {observations(settings.observations)} (строки) и {features(settings.features)} "
+        f"(столбцы #0 … #{settings.features - 1}). Данные не реальные: каждое значение — случайное число "
+        "из нормального распределения со средним 0 и разбросом 1, таблица генерируется прямо на странице. "
+        "Поэтому правильный ответ известен заранее.\n"
+        "- **Что предсказываем** — класс каждой строки, 0 или 1. Классы тоже раздаются случайно, примерно "
+        "поровну. Модель — логистическая регрессия, оценка — доля верных ответов на кросс-валидации; "
+        f"угадывание наугад даёт {as_printed(TRUTH)}.\n"
+        f"- **Сигнал** — настоящая связь признаков с классом, то, что модели стоило бы найти. {signal}\n"
+        f"- **Где утечка.** Перед обучением из {features(settings.features)} оставляют {select}, сильнее всего "
+        "различающихся между классами. Если отобрать их один раз по всей таблице, отбор видит и строки, на "
+        "которых модель потом проверяют, и находит «различия» даже в чистом шуме. Честно — повторять отбор "
+        f"внутри каждого из {folds} блоков кросс-валидации, только по его обучающей части."
+    )
+
+    matrix, labels = _data(settings)
+    shown = min(PREVIEW_COLUMNS, settings.features)
+    preview = pd.DataFrame(matrix[:PREVIEW_ROWS, :shown].round(2), columns=[f"#{index}" for index in range(shown)])
+    preview["класс"] = labels[:PREVIEW_ROWS]
+    means = [float(matrix[labels == label, :informative].mean()) for label in (0, 1)]
+    with st.expander("Как выглядит таблица"):
+        st.dataframe(preview, use_container_width=True, hide_index=True)
+        st.caption(
+            f"Первые {PREVIEW_ROWS} строк и {shown} столбцов из {settings.features}. Среднее по столбцам "
+            f"{columns}: у класса 0 — {means[0]:.2f}, у класса 1 — {means[1]:.2f}. Это и есть сигнал: при силе 0 "
+            "средние почти совпадают, при силе s различаются примерно на s."
+        )
+
+
 def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) -> None:
+    st.subheader("Две оценки одной модели")
     left, middle, right = st.columns(3)
     left.metric(
         "С утечкой",
@@ -168,15 +221,23 @@ def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) 
 
 def _recurrence_section(selected: Selection, settings: NoiseSettings, select: int) -> None:
     st.subheader("Что именно отобралось")
-    st.plotly_chart(recurrence_figure(selected), use_container_width=True)
+    informative = min(INFORMATIVE, settings.features)
+    st.markdown(
+        f"Отбор по всей таблице выбрал {select} столбцов — их номера внизу графика. Насколько этот выбор "
+        f"надёжен? Повторим отбор {selected.folds} раз, как это делает честная ветвь: каждый раз только по "
+        "обучающей части одного блока. Высота столбика — в скольких блоках признак отобран снова.\n\n"
+        "Признак с настоящей связью выбирается почти при любом разбиении, и его столбик доходит до пунктира. "
+        "Признак, попавший в выбор по случайному совпадению, на других строках уже не выглядит лучшим, и "
+        "его столбик низкий."
+    )
+    st.plotly_chart(recurrence_figure(selected, informative if settings.signal else 0), use_container_width=True)
 
     chance = chance_overlap(select, settings.features)
     survived = sum(1 for value in selected.recurrence if value == selected.folds)
-    informative = min(INFORMATIVE, settings.features)
     found = sum(1 for index in selected.indices if index < informative)
 
     left, right = st.columns(2)
-    left.metric(f"Переотобраны во всех {selected.folds} блоках", f"{survived} из {select}")
+    left.metric(f"Отобраны снова во всех {selected.folds} блоках", f"{survived} из {select}")
     if settings.signal:
         right.metric("Из них настоящих", f"{found} из {informative}")
     else:
@@ -188,23 +249,25 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
         else:
             reached = f"и ни один из {select} не дотянулся"
         st.caption(
-            "Признак с настоящим сигналом переотбирается в каждом блоке. Высота столбца — "
-            "это всё, что отбор может предъявить в своё оправдание, и доказательством она "
-            f"не является: настоящих признаков здесь нет вовсе, {reached} до верха."
+            f"Настоящих признаков здесь нет вовсе, {reached} до верха — тоже по случайности. "
+            "Высокий столбик — повод присмотреться к признаку, но не доказательство."
         )
     else:
         st.caption(
-            f"Настоящий сигнал лежит в первых {informative} столбцах, и отбор нашёл {found} из них. "
-            f"Во всех {selected.folds} блоках переотобрались {survived} из {select} признаков: "
-            "переотбор отслеживает сигнал, но по нему одному настоящий признак от удачливого "
-            "шумового не отличить."
+            f"Настоящий сигнал лежит в столбцах #0–#{informative - 1} (на графике они тёмные), и отбор нашёл "
+            f"{found} из {informative}. Во всех {selected.folds} блоках отобраны снова {survived} из {select}: "
+            "настоящие признаки держатся устойчиво, но и шумовой может случайно дотянуться до верха, "
+            "так что по одной высоте столбика их не отличить."
         )
 
+    # Two training parts of a k-fold split share k - 2 of their k - 1 blocks.
+    shared = round(100 * (selected.folds - 2) / (selected.folds - 1))
     st.caption(
-        f"Два независимых отбора совпали бы по случайности в {chance:.2f} признака из {select}; "
-        f"два блока здесь совпадают в {selected.mean_pairwise_overlap:.1f} в среднем — выше "
-        "случайного, но лишь потому, что любые два блока делят между собой часть одних и тех же "
-        "строк. Именно эта общая часть и просачивается в оценку."
+        f"Для сравнения: если бы два отбора брали по {select} столбцов из {settings.features} наугад, общих у "
+        f"них было бы в среднем {chance:.2f}. Отборы на двух разных блоках здесь делят "
+        f"{selected.mean_pairwise_overlap:.1f} общих признака — больше, потому что обучающие части двух блоков "
+        f"на {shared} % состоят из одних и тех же строк и одни и те же случайные совпадения отбор находит в обеих"
+        + (", а настоящие признаки выбираются почти каждый раз." if settings.signal else ".")
     )
 
     table = pd.DataFrame(
@@ -217,6 +280,11 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
     )
     with st.expander(f"Таблица отобранных признаков ({select})"):
         st.dataframe(table, use_container_width=True, hide_index=True)
+        st.caption(
+            "F — насколько сильно среднее признака различается между классами по сравнению с разбросом "
+            "внутри классов: чем больше, тем «значимее» признак выглядит. p — вероятность увидеть такое "
+            "различие случайно, если связи на самом деле нет. Последний столбец — высота столбика на графике."
+        )
 
 
 def _pvalues_section(selected: Selection, settings: NoiseSettings, select: int) -> None:
@@ -295,7 +363,8 @@ def main() -> None:
         data=(
             "Таблица генерируется на месте из нормального шума, метки классов — тоже случайные "
             "и сбалансированные. Правильный ответ известен заранее: 0.500. Это и делает "
-            "страницу доказательством, а не иллюстрацией."
+            "страницу доказательством, а не иллюстрацией. Сигнал, если его включить, — сдвиг "
+            f"среднего у класса 1 в первых {INFORMATIVE} столбцах."
         ),
     )
     reference(
@@ -313,6 +382,7 @@ def main() -> None:
     result = _scores(settings, select, folds)
     selected = _selection(settings, select, folds)
 
+    _data_section(settings, select, folds)
     _headline(result, settings, select, folds)
     st.caption(
         f"{observations(settings.observations)}, {features(settings.features)}, отобрано {select}, блоков {folds}."
