@@ -266,8 +266,34 @@ def test_static_pages_need_no_python_runtime(render):
     html = render()
 
     assert "stlite" not in html
-    assert "<script" not in html
+    # The one script is the inline theme switch: nothing is fetched.
+    assert html.count("<script") == 1
+    assert "<script src" not in html
     assert 'lang="ru"' in html
+
+
+THEME_MARK = 'var KEY = "gd-learn-theme";'
+
+
+@pytest.mark.parametrize(
+    "html",
+    [render_index(app) for app in APPS] + [render_ist51_page(), render_catalog()],
+    ids=[app.slug or "root" for app in APPS] + ["ist51", "catalog"],
+)
+def test_every_page_carries_the_theme_switch_in_its_head(html):
+    assert html.count(THEME_MARK) == 1
+    assert html.index(THEME_MARK) < html.index("</head>")
+    # Streamlit reads the theme the moment it loads, so the switch must come first.
+    if "stlite.js" in html:
+        assert html.index(THEME_MARK) < html.index("stlite.js")
+
+
+@pytest.mark.parametrize(
+    "template", [TEMPLATE, IST51_TEMPLATE, CATALOG_TEMPLATE], ids=lambda path: path.relative_to(ROOT).as_posix()
+)
+def test_dark_colours_follow_the_switch_not_the_system_alone(template):
+    """A colour keyed to the system's theme would ignore the reader's choice."""
+    assert "prefers-color-scheme" not in template.read_text(encoding="utf-8")
 
 
 def test_build_writes_both_static_pages(tmp_path):

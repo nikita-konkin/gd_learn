@@ -59,20 +59,19 @@
           transform: rotate(360deg);
         }
       }
-      @media (prefers-color-scheme: dark) {
-        #boot {
-          background: #0e1117;
-          color: #fafafa;
-        }
-        #boot .spinner {
-          border-color: #262730;
-          border-top-color: #c4762f;
-        }
-        #boot a {
-          color: #9ec4d8;
-        }
+      :root[data-theme="dark"] #boot {
+        background: #0e1117;
+        color: #fafafa;
+      }
+      :root[data-theme="dark"] #boot .spinner {
+        border-color: #262730;
+        border-top-color: #c4762f;
+      }
+      :root[data-theme="dark"] #boot a {
+        color: #9ec4d8;
       }
     </style>
+    __THEME__
   </head>
   <body>
     <div id="boot">

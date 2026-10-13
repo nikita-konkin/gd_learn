@@ -56,17 +56,16 @@
           transform: rotate(360deg);
         }
       }
-      @media (prefers-color-scheme: dark) {
-        #boot {
-          background: #0e1117;
-          color: #fafafa;
-        }
-        #boot .spinner {
-          border-color: #262730;
-          border-top-color: #ff4b4b;
-        }
+      :root[data-theme="dark"] #boot {
+        background: #0e1117;
+        color: #fafafa;
+      }
+      :root[data-theme="dark"] #boot .spinner {
+        border-color: #262730;
+        border-top-color: #ff4b4b;
       }
     </style>
+    __THEME__
   </head>
   <body>
     <div id="boot">

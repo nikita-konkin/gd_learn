@@ -20,24 +20,24 @@
         --card: #ffffff;
         --page: #f7fafc;
       }
-      @media (prefers-color-scheme: dark) {
-        :root {
-          --fill: #1b2a33;
-          --border: #9ec4d8;
-          --text: #eef4f7;
-          --muted: #9ec4d8;
-          --accent: #e0a265;
-          --accent-fill: #2a2015;
-          --card: #141b21;
-          --page: #0e1117;
-        }
+      :root[data-theme="dark"] {
+        --fill: #1b2a33;
+        --border: #9ec4d8;
+        --text: #eef4f7;
+        --muted: #9ec4d8;
+        --accent: #e0a265;
+        --accent-fill: #2a2015;
+        --card: #141b21;
+        --page: #0e1117;
       }
       * {
         box-sizing: border-box;
       }
       body {
+        position: relative;
         margin: 0;
-        padding: 2.5rem 1rem 4rem;
+        /* Room at the top for the theme button in the corner. */
+        padding: 3.75rem 1rem 4rem;
         background: var(--page);
         color: var(--text);
         font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -124,6 +124,7 @@
         color: var(--muted);
       }
     </style>
+    __THEME__
   </head>
   <body>
     <main>
