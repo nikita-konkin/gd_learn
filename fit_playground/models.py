@@ -210,3 +210,9 @@ def penalty(alpha: float) -> Penalty:
 
 def feature_names() -> tuple[str, ...]:
     return tuple(diabetes()[0].columns)
+
+
+def correlation(first: str, second: str) -> float:
+    """Correlation of two diabetes features on the rows the models learn from."""
+    train_x = diabetes()[0]
+    return float(train_x[first].corr(train_x[second]))

@@ -22,9 +22,11 @@ from fit_playground.models import (  # noqa: E402  — must follow the stub patc
     ALPHAS,
     DEFAULT_DEPTH,
     MAX_DEGREE,
+    ZERO,
     Classifier,
     Penalty,
     PolynomialFit,
+    correlation,
     feature_names,
     fit_polynomial,
     fresh_data,
@@ -57,6 +59,21 @@ DEPTHS = ["1", "2", "3", "4", "5", "6", "8", "10", UNLIMITED]
 DEFAULT_DEGREE = 17
 DEFAULT_NEIGHBOURS = 1
 DEFAULT_ALPHA = ALPHAS[-1]
+
+# The ten columns of the diabetes table, as scikit-learn's description of the set names them;
+# the abbreviation in brackets is the one in the original study.
+FEATURE_MEANINGS = {
+    "age": "возраст, лет",
+    "sex": "пол",
+    "bmi": "индекс массы тела: вес, делённый на квадрат роста",
+    "bp": "среднее артериальное давление",
+    "s1": "общий холестерин в сыворотке крови (tc)",
+    "s2": "липопротеины низкой плотности, «плохой» холестерин (ldl)",
+    "s3": "липопротеины высокой плотности, «хороший» холестерин (hdl)",
+    "s4": "отношение общего холестерина к «хорошему» (tch)",
+    "s5": "уровень триглицеридов, вероятно в логарифме (ltg)",
+    "s6": "уровень сахара в крови (glu)",
+}
 
 
 @lru_cache(maxsize=MAX_DEGREE + 1)
@@ -236,10 +253,50 @@ def _neighbours_tab(count: int, depth: int | None) -> None:
     )
 
 
+def _weight(value: float) -> float:
+    """One decimal, and a weight Lasso has zeroed printed as 0 rather than −0."""
+    return 0.0 if abs(value) < ZERO else round(value, 1)
+
+
+def _features_expander(chosen: Penalty, names: tuple[str, ...]) -> None:
+    """What each line on the chart measures, and where it stands at the chosen penalty."""
+    with st.expander("Что означают признаки"):
+        st.dataframe(
+            {
+                "признак": list(names),
+                "что измерено": [FEATURE_MEANINGS[name] for name in names],
+                "вес, Ridge": [_weight(value) for value in chosen.ridge_weights],
+                "вес, Lasso": [_weight(value) for value in chosen.lasso_weights],
+            },
+            use_container_width=True,
+            hide_index=True,
+        )
+        # The largest penalty each feature survives in Lasso.
+        survives = {
+            name: max((value for value in ALPHAS if abs(_penalty(value).lasso_weights[index]) >= ZERO), default=0.0)
+            for index, name in enumerate(names)
+        }
+        first, second = sorted(names, key=survives.get, reverse=True)[:2]
+        weakest = _penalty(ALPHAS[0])
+        s1, s2 = (weakest.ridge_weights[names.index(name)] for name in ("s1", "s2"))
+        st.caption(
+            f"Веса — при выбранной alpha = {_alpha_label(chosen.alpha)}. "
+            "Таблица — 442 пациента с диабетом. Предсказывается, насколько болезнь продвинулась за год после "
+            "измерений: число от 25 до 346, чем больше, тем хуже. Признаки перед обучением стандартизованы, "
+            "поэтому вес — на сколько изменится прогноз, если признак вырастет на одно стандартное "
+            "отклонение, и веса разных признаков можно сравнивать между собой.\n\n"
+            f"Дольше всех Lasso держится за **{first}** и **{second}**: при сильном штрафе остаются только они. "
+            f"А **s1** и **s2** почти повторяют друг друга (корреляция {correlation('s1', 's2'):.2f}): при самом "
+            f"слабом штрафе Ridge даёт им веса {s1:.0f} и {s2:+.0f} — большие, разного знака и во многом "
+            "гасящие друг друга. Такие пары штраф сжимает первыми."
+        )
+
+
 def _penalty_tab(alpha: float) -> None:
     st.markdown(
-        "Ridge и Lasso на таблице diabetes, десять признаков, признаки стандартизованы. "
-        "Метрика — R² на отложенных 30 %."
+        "Ridge и Lasso на таблице diabetes: десять признаков пациента — возраст, пол, индекс массы тела, "
+        "давление и шесть анализов крови, — по которым предсказывается, как продвинется диабет за год. "
+        "Признаки стандартизованы, метрика — R² на отложенных 30 %. Расшифровка каждого признака — под графиком."
     )
     chosen = _penalty(alpha)
     ridge_paths = [_penalty(value).ridge_weights for value in ALPHAS]
@@ -262,6 +319,7 @@ def _penalty_tab(alpha: float) -> None:
     right.metric("R² Lasso", f"{chosen.lasso_r2:.3f}")
 
     st.plotly_chart(paths_figure(ALPHAS, ridge_paths, lasso_paths, names, alpha), use_container_width=True)
+    _features_expander(chosen, names)
 
     if 0 < chosen.lasso_zeroed < len(names):
         kept = len(names) - chosen.lasso_zeroed
@@ -334,8 +392,9 @@ def main() -> None:
         data=(
             "Первая вкладка — двадцать пять точек синусоиды с шумом, проверочные точки взяты "
             "из того же закона отдельным генератором. Вторая — триста точек «двух полумесяцев», "
-            "стандартный учебный набор. Третья — реальная таблица diabetes из scikit-learn, "
-            "десять признаков."
+            "стандартный учебный набор. Третья — реальная таблица diabetes из scikit-learn: "
+            "442 пациента, десять признаков и прогресс болезни через год; что означает каждый "
+            "признак, сказано на той же вкладке под графиком."
         ),
     )
     reference(

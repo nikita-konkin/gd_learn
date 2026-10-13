@@ -63,6 +63,18 @@ def test_a_middle_penalty_selects_instead_of_collapsing(monkeypatch):
     assert any("Lasso обнулил 6 признаков из 10 и оставил 4" in message for message in fake_st.infos)
 
 
+def test_every_diabetes_feature_is_explained(default_run):
+    from fit_playground.models import feature_names
+
+    assert set(fit_app.FEATURE_MEANINGS) == set(feature_names())
+    assert "Что означают признаки" in default_run.expanders
+    table = default_run.dataframes[-1]
+    assert table["признак"] == list(feature_names())
+    # At the default penalty Lasso has zeroed everything, and says so without a minus sign.
+    assert table["вес, Lasso"] == [0.0] * 10
+    assert any("Дольше всех Lasso держится за **bmi** и **s5**" in caption for caption in default_run.captions)
+
+
 def test_an_unlimited_tree_is_labelled(monkeypatch):
     fake_st = _run(monkeypatch, overrides={fit_app.DEPTH_LABEL: "без ограничения"})
 
