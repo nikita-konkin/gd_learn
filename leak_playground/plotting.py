@@ -42,14 +42,14 @@ def scores_figure(leaky_folds: tuple[float, ...], honest_folds: tuple[float, ...
     figure.add_hline(
         y=0.5,
         line={"color": TRUTH, "width": 2, "dash": "dash"},
-        annotation_text="истина 0.500",
+        annotation_text="истинное значение 0.500",
         annotation_position="top left",
     )
     figure.update_layout(
         **layout(
             height=340,
             barmode="group",
-            yaxis={"title": "доля правильных", "range": [0, 1]},
+            yaxis={"title": "доля правильных ответов", "range": [0, 1]},
             xaxis={"type": "category"},
             legend={"orientation": "h", "y": 1.12, "x": 0},
         )
@@ -78,7 +78,7 @@ def recurrence_figure(selected: Selection, informative: int = 0) -> go.Figure:
             y=[selected.recurrence[position] for position in order],
             marker_color=[BORDER if flag else NOISE for flag in real],
             customdata=["настоящий" if flag else "шум" for flag in real],
-            hovertemplate="признак %{x} (%{customdata}): отобран снова в %{y} блоках<extra></extra>",
+            hovertemplate=f"признак %{{x}} (%{{customdata}}): отобран снова в %{{y}} из {selected.folds} блоков<extra></extra>",
         )
     )
     figure.add_hline(
@@ -91,7 +91,7 @@ def recurrence_figure(selected: Selection, informative: int = 0) -> go.Figure:
         **layout(
             height=320,
             yaxis={
-                "title": "в скольких блоках отобран заново",
+                "title": "в скольких блоках отобран снова",
                 "range": [0, selected.folds + 0.6],
                 "dtick": 1,
             },
@@ -132,7 +132,7 @@ def pvalues_figure(p_values: np.ndarray, alpha: float = 0.05) -> go.Figure:
     figure.add_hline(
         y=expected,
         line={"color": TRUTH, "width": 2, "dash": "dash"},
-        annotation_text=f"ожидаемо без сигнала: {expected:.0f} на столбец",
+        annotation_text=f"ожидаемое без сигнала: {expected:.0f} на столбец",
         annotation_position="top right",
     )
     figure.update_layout(

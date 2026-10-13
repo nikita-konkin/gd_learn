@@ -1,12 +1,12 @@
 <!doctype html>
-<html lang="en">
+<html lang="ru">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>__TITLE__</title>
     <meta
       name="description"
-      content="__TITLE__ — interactive teaching playground. Runs entirely in your browser."
+      content="__TITLE__ — интерактивная учебная площадка. Python исполняется целиком в вашем браузере."
     />
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%93%89%3C/text%3E%3C/svg%3E" />
     <link
@@ -72,8 +72,8 @@
       <div class="spinner"></div>
       <p>
         <strong>__TITLE__</strong><br />
-        Starting Python in your browser &mdash; the first load downloads the
-        runtime and may take up to a minute.
+        Запускаем Python в браузере. Первая загрузка скачивает среду исполнения
+        и может занять до минуты; затем страница открывается быстро.
       </p>
     </div>
     <div id="root"></div>
@@ -104,7 +104,7 @@
         }).observe(root, { childList: true });
       } catch (error) {
         boot.innerHTML =
-          "<p><strong>Failed to start the app.</strong><br />" +
+          "<p><strong>Площадка не запустилась.</strong><br />" +
           String(error) +
           "</p>";
       }

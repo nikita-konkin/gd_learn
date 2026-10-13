@@ -56,7 +56,7 @@ class Course:
 
 ML_BASICS = Course(
     title="Основы машинного обучения",
-    lead="Другие playground'ы",
+    lead="Другие площадки",
     home="",
     home_text=None,
     pages=(

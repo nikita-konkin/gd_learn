@@ -31,15 +31,15 @@ def test_main_renders_without_errors(default_run):
 
 
 def test_the_trap_opens_on_equipment_failures(default_run):
-    assert _metric(default_run, "Доля правильных") == "97,9 %"
+    assert _metric(default_run, "Доля правильных ответов") == "97,9 %"
     assert _metric(default_run, "Найдено отказов") == "0"
-    assert any("0.979 — выглядит отлично" in message for message in default_run.infos)
+    assert any("0.979; результат выглядит отличным" in message for message in default_run.infos)
 
 
 def test_secom_shows_the_rgr_baseline(monkeypatch):
     fake_st = _run(monkeypatch, overrides={metric_app.POPULATION_LABEL: "SECOM: брак полупроводников (РГР)"})
 
-    assert _metric(fake_st, "Доля правильных") == "93,4 %"
+    assert _metric(fake_st, "Доля правильных ответов") == "93,4 %"
     assert _metric(fake_st, "PR-AUC случайной модели") == "0.066"
     assert any("задания на РГР" in message for message in fake_st.infos)
 
@@ -75,7 +75,7 @@ def test_the_remedies_table_and_the_warning_about_weights(default_run):
 
     assert "| Без учёта дисбаланса | 0.615 | 0.367 | 0.880 |" in table
     assert "| Веса классов | 0.622 | 0.333 | 0.952 |" in table
-    assert "| Уменьшение большинства 3:1 | 0.624 | 0.650 | 0.476 |" in table
+    assert "| Сокращение преобладающего класса 3:1 | 0.624 | 0.650 | 0.476 |" in table
     assert any("Веса классов здесь не подняли полноту" in message for message in default_run.warnings)
     assert any("Причина в устройстве леса" in message for message in default_run.warnings)
 

@@ -72,7 +72,7 @@ def test_every_diabetes_feature_is_explained(default_run):
     assert table["признак"] == list(feature_names())
     # At the default penalty Lasso has zeroed everything, and says so without a minus sign.
     assert table["вес, Lasso"] == [0.0] * 10
-    assert any("Дольше всех Lasso держится за **bmi** и **s5**" in caption for caption in default_run.captions)
+    assert any("Дольше всех Lasso сохраняет **bmi** и **s5**" in caption for caption in default_run.captions)
 
 
 def test_an_unlimited_tree_is_labelled(monkeypatch):

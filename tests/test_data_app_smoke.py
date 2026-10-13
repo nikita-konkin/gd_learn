@@ -4,6 +4,7 @@ import pytest
 
 from data_playground import app as data_app
 from data_playground.cleaning import BEFORE, MEAN
+from data_playground.speed import DOT, ELEMENTWISE, GENERATOR
 
 
 def _run(monkeypatch, overrides=None):
@@ -63,6 +64,13 @@ def test_the_larger_table_reports_its_error(default_run):
 
 def test_the_speed_tab_reports_agreement(default_run):
     assert _metric(default_run, "Результаты совпадают") == "да"
+
+
+def test_no_method_times_out_at_zero_on_the_smallest_sum(default_run):
+    # Ten thousand squares: NumPy takes microseconds, below a browser's clock tick.
+    for method in (GENERATOR, ELEMENTWISE, DOT):
+        value = _metric(default_run, method)
+        assert not value.startswith("0 ") and not value.startswith("0.0 "), (method, value)
 
 
 def test_the_memory_caption_explains_the_platform(default_run):

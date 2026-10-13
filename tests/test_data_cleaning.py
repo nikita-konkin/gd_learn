@@ -1,8 +1,12 @@
 """The cleaning chain must clean, and the order switch must do what the page says it does."""
 
+import math
+import time
+
 import numpy as np
 import pytest
 
+from data_playground import speed
 from data_playground.cleaning import (
     AFTER,
     BEFORE,
@@ -90,6 +94,33 @@ def test_an_array_costs_eight_bytes_a_value_and_a_list_a_pointer_and_an_object()
     # (Pyodide is 32-bit) and between Python versions, the ratio follows them.
     assert used.ratio == pytest.approx((used.pointer_bytes + used.int_object_bytes) / 8, rel=0.01)
     assert used.ratio > 2
+
+
+def test_a_call_faster_than_the_clock_tick_still_measures_its_time(monkeypatch):
+    # A browser's clock, as Firefox and Safari round it: whole milliseconds. A
+    # NumPy sum of ten thousand squares fits inside one tick and, timed call by
+    # call, measured zero — the page then printed «0.0 мс» and «×inf быстрее».
+    real = time.perf_counter
+    monkeypatch.setattr(speed.time, "perf_counter", lambda: math.floor(real() * 1000) / 1000)
+    data = np.random.default_rng(0).random(10_000)
+
+    seconds, result = speed.measure(lambda: float(data @ data), min_seconds=0.02)
+
+    assert 0 < seconds < 1e-3
+    assert result == pytest.approx(float(data @ data))
+
+
+def test_a_slow_call_is_not_batched():
+    calls = []
+
+    def slow():
+        calls.append(1)
+        time.sleep(0.03)
+        return 0.0
+
+    speed.measure(slow, repeats=3, min_seconds=0.02)
+
+    assert len(calls) == 3
 
 
 def test_the_three_sums_agree_and_numpy_wins():

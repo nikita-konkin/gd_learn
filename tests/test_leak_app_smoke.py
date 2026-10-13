@@ -53,7 +53,7 @@ def test_the_page_says_what_the_data_is_before_any_number(default_run):
     assert "Как выглядит таблица" in default_run.expanders
     explained = next(text for text in default_run.markdowns if "**Сигнал**" in text)
     assert "300 наблюдений (строки) и 2000 признаков" in explained
-    assert "Сейчас его нет" in explained
+    assert "Сейчас сигнала нет" in explained
     preview = default_run.dataframes[0]
     assert list(preview.columns) == [f"#{index}" for index in range(8)] + ["класс"]
 
@@ -63,7 +63,7 @@ def test_switched_on_signal_is_described_as_a_shift_of_the_mean(monkeypatch):
 
     explained = next(text for text in fake_st.markdowns if "**Сигнал**" in text)
     assert "в столбцах #0–#4 в среднем на 0.60 больше" in explained
-    assert any("Среднее по столбцам #0–#4: у класса 0 — " in caption for caption in fake_st.captions)
+    assert any("Среднее по столбцам #0–#4 у класса 0 равно " in caption for caption in fake_st.captions)
 
 
 def test_the_multiple_comparisons_numbers_are_on_the_page(default_run):
@@ -77,7 +77,7 @@ def test_the_page_reports_how_few_picks_survive_a_change_of_block(default_run):
 
 
 def test_the_recurrence_caption_agrees_with_its_number(default_run):
-    assert any("а 1 из 20 всё равно дотянулся до верха" in caption for caption in default_run.captions)
+    assert any("и всё же 1 из 20 дошёл до пунктира" in caption for caption in default_run.captions)
 
 
 def test_the_page_says_the_branches_differ_in_one_thing(default_run):
@@ -106,7 +106,7 @@ def test_real_signal_changes_what_the_page_says_about_the_gap(monkeypatch):
 
     assert _metric(fake_st, "Честно") == "0.630"
     assert _metric(fake_st, "Из них настоящих") == "5 из 5"
-    assert any("Сигнал подмешан" in caption for caption in fake_st.captions)
+    assert any("Сигнал добавлен" in caption for caption in fake_st.captions)
     assert not any("придуман отбором" in caption for caption in fake_st.captions)
 
 
