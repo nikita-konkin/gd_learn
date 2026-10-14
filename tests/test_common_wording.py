@@ -2,7 +2,31 @@
 
 import pytest
 
-from playground_common.wording import as_printed, features, observations, plural, round_as_pandas, segments
+from playground_common.wording import (
+    as_printed,
+    duration,
+    features,
+    observations,
+    plural,
+    round_as_pandas,
+    segments,
+)
+
+
+@pytest.mark.parametrize(
+    "seconds, expected",
+    [
+        (0.0000153, "15 мкс"),
+        (0.0000042, "4.2 мкс"),
+        (0.00042, "420 мкс"),
+        (0.0038, "3.8 мс"),
+        (0.12, "120 мс"),
+        (1.4, "1.4 с"),
+        (0.0, "0.0 мкс"),
+    ],
+)
+def test_a_duration_is_printed_in_the_unit_that_keeps_it_readable(seconds, expected):
+    assert duration(seconds) == expected
 
 
 @pytest.mark.parametrize(

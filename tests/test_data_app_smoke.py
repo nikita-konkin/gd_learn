@@ -4,6 +4,8 @@ import pytest
 
 from data_playground import app as data_app
 from data_playground.cleaning import BEFORE, MEAN
+from data_playground.plotting import timing_figure
+from data_playground.speed import DOT, ELEMENTWISE, GENERATOR, Timing
 
 
 def _run(monkeypatch, overrides=None):
@@ -65,6 +67,13 @@ def test_the_speed_tab_reports_agreement(default_run):
     assert _metric(default_run, "Результаты совпадают") == "да"
 
 
+def test_no_method_times_out_at_zero_on_the_smallest_sum(default_run):
+    # Ten thousand squares: NumPy takes microseconds, below a browser's clock tick.
+    for method in (GENERATOR, ELEMENTWISE, DOT):
+        value = _metric(default_run, method)
+        assert not value.startswith("0 ") and not value.startswith("0.0 "), (method, value)
+
+
 def test_the_memory_caption_explains_the_platform(default_run):
     assert any("указатель занимает" in caption and "3.4 МБ" in caption for caption in default_run.captions)
 
@@ -83,3 +92,32 @@ def test_every_slider_opens_on_its_default(default_run):
 
 def test_the_page_says_what_it_does_not_do(default_run):
     assert "Чего эта площадка не делает" in default_run.expanders
+
+
+def _timings(dot_seconds: float) -> tuple[Timing, ...]:
+    return (
+        Timing(GENERATOR, 0.028, 1.0),
+        Timing(ELEMENTWISE, 0.000379, 1.0),
+        Timing(DOT, dot_seconds, 1.0),
+    )
+
+
+def test_the_note_explains_a_faster_dot_product():
+    note = data_app._timing_note(_timings(dot_seconds=0.00002))
+
+    assert "обгоняет поэлементный вариант" in note
+    assert "не обогнал" not in note
+
+
+def test_the_note_does_not_promise_a_speed_the_browser_did_not_measure():
+    # What Pyodide measured: 550 µs for the dot product against 379 µs element-wise.
+    note = data_app._timing_note(_timings(dot_seconds=0.00055))
+
+    assert "не обогнал поэлементный вариант" in note
+    assert "обгоняет" not in note
+
+
+def test_the_longest_bar_keeps_its_label():
+    figure = timing_figure(_timings(dot_seconds=0.00055))
+
+    assert figure.data[0].cliponaxis is False

@@ -42,6 +42,20 @@ def observations(count: int) -> str:
     return f"{count} {plural(count, 'наблюдение', 'наблюдения', 'наблюдений')}"
 
 
+def duration(seconds: float) -> str:
+    """A span of time in the unit that keeps it readable: «15 мкс», «420 мкс», «3.8 мс», «120 мс», «1.4 с».
+
+    Two or three significant figures: a timing measured in a browser carries no more.
+    """
+    if seconds >= 1:
+        value, unit = seconds, "с"
+    elif seconds >= 1e-3:
+        value, unit = seconds * 1e3, "мс"
+    else:
+        value, unit = seconds * 1e6, "мкс"
+    return f"{value:.1f} {unit}" if value < 10 else f"{value:.0f} {unit}"
+
+
 def round_as_pandas(value: float, decimals: int = 3) -> float:
     """Round half to even, as ``DataFrame.round`` does in the lab notebooks."""
     return float(np.round(value, decimals))

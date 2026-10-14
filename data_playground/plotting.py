@@ -8,6 +8,7 @@ import plotly.graph_objects as go
 from data_playground.cleaning import OUTLIER_LIMIT
 from data_playground.speed import Timing
 from playground_common.palette import ACCENT, BORDER, TRUTH, layout
+from playground_common.wording import duration
 
 
 def cleaned_histogram(signal: np.ndarray, filled: np.ndarray, true_mean: float) -> go.Figure:
@@ -60,22 +61,28 @@ def cleaned_histogram(signal: np.ndarray, filled: np.ndarray, true_mean: float) 
 
 def timing_figure(timings: tuple[Timing, ...]) -> go.Figure:
     """Milliseconds per method, on a log axis: the gap spans orders of magnitude."""
+    labels = [duration(timing.seconds) for timing in timings]
     figure = go.Figure(
         go.Bar(
             x=[timing.seconds * 1000 for timing in timings],
             y=[timing.method for timing in timings],
             orientation="h",
             marker_color=[ACCENT, BORDER, BORDER],
-            text=[f"{timing.seconds * 1000:.1f} мс" for timing in timings],
+            text=labels,
             textposition="outside",
-            hovertemplate="%{y}: %{x:.2f} мс<extra></extra>",
+            # The longest bar spans the whole axis; without this its label is cut at the edge.
+            cliponaxis=False,
+            customdata=labels,
+            hovertemplate="%{y}: %{customdata}<extra></extra>",
         )
     )
     figure.update_layout(
         **layout(
             height=220,
             margin={"l": 220, "r": 60, "t": 20, "b": 50},
-            xaxis={"title": "миллисекунд, логарифмическая шкала", "type": "log"},
+            # One tick per power of ten: left to itself, plotly labels every digit
+            # of a narrow log range, «4 5 6 7 8 9 0.1 2 3 …», which reads as noise.
+            xaxis={"title": "время, мс (логарифмическая шкала)", "type": "log", "dtick": 1},
             yaxis={"autorange": "reversed", "type": "category"},
         )
     )
