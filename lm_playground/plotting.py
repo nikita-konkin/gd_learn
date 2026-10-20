@@ -75,7 +75,7 @@ def overfitting_figure(results: list[OrderResult], current_order: int) -> go.Fig
         )
 
     figure.update_layout(
-        title="Чем длиннее контекст, тем складнее текст — и тем больше списано",
+        title="Чем длиннее контекст, тем складнее текст и тем больше списано",
         xaxis_title="порядок модели n (символов контекста)",
         height=420,
         margin={"l": 60, "r": 60, "t": 60, "b": 40},
