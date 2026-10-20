@@ -123,8 +123,55 @@
       footer a {
         color: var(--muted);
       }
+      nav.letters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.35rem 0.75rem;
+        margin: 0 0 1rem;
+        font-weight: 600;
+      }
+      nav.letters a,
+      dl.terms a {
+        color: var(--border);
+      }
+      dl.terms {
+        margin: 0;
+      }
+      dl.terms dt {
+        font-weight: 600;
+        font-size: 1.05rem;
+        margin: 1.5rem 0 0.3rem;
+        scroll-margin-top: 1rem;
+      }
+      dl.terms dt:target {
+        color: var(--accent);
+      }
+      dl.terms dd {
+        margin: 0;
+        padding: 0 0 1.25rem;
+        border-bottom: 1px solid var(--fill);
+      }
+      dl.terms dd p {
+        margin: 0.4rem 0 0;
+      }
+      dl.terms .formula {
+        overflow-x: auto;
+        overflow-y: hidden;
+      }
+      dl.terms .remark,
+      dl.terms .pages {
+        font-size: 0.9rem;
+        color: var(--muted);
+      }
+      dl.terms code {
+        font-size: 0.9em;
+        background: var(--fill);
+        padding: 0 0.25rem;
+        border-radius: 0.2rem;
+      }
     </style>
     __THEME__
+    __HEAD__
   </head>
   <body>
     <main>

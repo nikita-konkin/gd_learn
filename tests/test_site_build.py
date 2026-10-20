@@ -4,17 +4,20 @@ from pathlib import Path
 
 import pytest
 
-from playground_common.links import CATALOG, IST51, TOPICS, page_of
+from playground_common.explain import GLOSSARY
+from playground_common.links import CATALOG, GLOSSARY_PAGE, IST51, TOPICS, page_of
 from scripts.build_site import (
     APPS,
     CATALOG_TEMPLATE,
     IST51_TEMPLATE,
+    KATEX_VERSION,
     SHARED_PACKAGE,
     STLITE_VERSION,
     TEMPLATE,
     build,
     collect_sources,
     render_catalog,
+    render_glossary,
     render_index,
     render_ist51_page,
     site_manifest,
@@ -266,6 +269,7 @@ def test_static_pages_need_no_python_runtime(render):
     html = render()
 
     assert "stlite" not in html
+    assert "katex" not in html
     # The one script is the inline theme switch: nothing is fetched.
     assert html.count("<script") == 1
     assert "<script src" not in html
@@ -277,8 +281,8 @@ THEME_MARK = 'var KEY = "gd-learn-theme";'
 
 @pytest.mark.parametrize(
     "html",
-    [render_index(app) for app in APPS] + [render_ist51_page(), render_catalog()],
-    ids=[app.slug or "root" for app in APPS] + ["ist51", "catalog"],
+    [render_index(app) for app in APPS] + [render_ist51_page(), render_catalog(), render_glossary()],
+    ids=[app.slug or "root" for app in APPS] + ["ist51", "catalog", "glossary"],
 )
 def test_every_page_carries_the_theme_switch_in_its_head(html):
     assert html.count(THEME_MARK) == 1
@@ -301,6 +305,7 @@ def test_build_writes_both_static_pages(tmp_path):
 
     assert (site / IST51.home / "index.html").read_text(encoding="utf-8") == render_ist51_page()
     assert (site / CATALOG / "index.html").read_text(encoding="utf-8") == render_catalog()
+    assert (site / GLOSSARY_PAGE / "index.html").read_text(encoding="utf-8") == render_glossary()
     assert CATALOG_TEMPLATE.exists()
 
 
@@ -322,3 +327,33 @@ def test_the_builder_needs_nothing_beyond_the_standard_library():
         text=True,
     )
     assert result.returncode == 0, result.stderr
+
+
+def test_the_glossary_defines_every_term_once():
+    html = render_glossary()
+
+    for key in GLOSSARY:
+        assert html.count(f'<dt id="{key}">') == 1, key
+    assert PLACEHOLDER.search(html) is None
+
+
+def test_the_glossary_links_each_term_to_the_pages_that_explain_it():
+    html = render_glossary()
+    entry = html.split('<dt id="leakage">', 1)[1].split("</dd>", 1)[0]
+
+    assert '<a href="../ml-practice/leak/">Утечка данных</a>' in entry
+
+
+def test_the_glossary_escapes_its_definitions():
+    html = render_glossary()
+    entry = html.split('<dt id="p_value">', 1)[1].split("</dd>", 1)[0]
+
+    assert "&lt;" in entry
+
+
+def test_the_glossary_pins_katex_for_its_formulas():
+    html = render_glossary()
+
+    assert re.fullmatch(r"\d+\.\d+\.\d+", KATEX_VERSION)
+    assert f"katex@{KATEX_VERSION}/dist/katex.min.js" in html
+    assert f"katex@{KATEX_VERSION}/dist/contrib/auto-render.min.js" in html

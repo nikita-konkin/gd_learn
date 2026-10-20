@@ -26,6 +26,10 @@ from dataclasses import dataclass
 CATALOG = "topics"
 CATALOG_TEXT = "все темы"
 
+# Every definition the pages show on hover, on one static page.
+GLOSSARY_PAGE = "glossary"
+GLOSSARY_TEXT = "глоссарий"
+
 # (key, title), in the order a newcomer would meet them.
 TOPICS = (
     ("models", "Задачи и модели"),
@@ -123,8 +127,8 @@ def other_playgrounds(current: str) -> str:
     topic = page_of(current).topic
     same_topic = [page for page in PAGES if page.topic == topic and page.path != current]
     neighbours = [_link(page.title, page.path, current) for page in same_topic]
-    catalog = _link(CATALOG_TEXT, CATALOG, current)
+    catalog = [_link(CATALOG_TEXT, CATALOG, current), _link(GLOSSARY_TEXT, GLOSSARY_PAGE, current)]
     return (
         f"{course.lead}: " + " · ".join(links) + "\n\n"
-        f"Тема «{topic_title(topic)}»: " + " · ".join([*neighbours, catalog])
+        f"Тема «{topic_title(topic)}»: " + " · ".join([*neighbours, *catalog])
     )

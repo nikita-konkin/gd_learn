@@ -9,10 +9,11 @@ repository sources.
 
 The gradient-descent app stays at the site root: it was published there first and
 that URL is in circulation. Further apps of its course get a subdirectory each.
-The ИСТ-51 course lives under ``ml-practice/``. Two pages carry no Python at all, so
-they load at once: the ИСТ-51 front page and the catalog of every app by topic
-at ``topics/``. Courses and topics themselves are registered in
-``playground_common/links.py``; this file only builds what is registered there.
+The ИСТ-51 course lives under ``ml-practice/``. Three pages carry no Python at all,
+so they load at once: the ИСТ-51 front page, the catalog of every app by topic
+at ``topics/`` and the glossary of every term the apps define at ``glossary/``.
+Courses and topics themselves are registered in ``playground_common/links.py``;
+this file only builds what is registered there.
 """
 
 from __future__ import annotations
@@ -21,6 +22,7 @@ import argparse
 import html
 import json
 import posixpath
+import re
 import shutil
 import sys
 from dataclasses import dataclass, field
@@ -29,12 +31,14 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 
-# The registry lives with the apps that ship it. Only links.py may be imported
-# here: CI's build job installs nothing, and the rest of playground_common
-# needs numpy.
+# The registry and the glossary live with the apps that ship them. Only links.py
+# and explain.py may be imported here: CI's build job installs nothing, and the
+# rest of playground_common needs numpy.
+from playground_common.explain import GLOSSARY  # noqa: E402
 from playground_common.links import (  # noqa: E402
     CATALOG,
     COURSES,
+    GLOSSARY_PAGE,
     IST51,
     TOPICS,
     course_of,
@@ -45,7 +49,7 @@ TEMPLATE = ROOT / "web" / "index.template.html"
 # The ИСТ-51 pages are in Russian throughout, in the course slides' colours,
 # and their loading screen links back to the course's front page.
 IST51_TEMPLATE = ROOT / "web" / "ist51" / "index.template.html"
-# Both static pages: the ИСТ-51 front page and the catalog by topic.
+# The static pages: the ИСТ-51 front page, the catalog by topic and the glossary.
 CATALOG_TEMPLATE = ROOT / "web" / "catalog.template.html"
 # The light/dark switch, inlined into the head of every page so that each one
 # stays a single file and the theme is set before anything is drawn.
@@ -53,6 +57,8 @@ THEME = ROOT / "web" / "theme.html"
 
 # Pinned so a CDN release cannot silently change the deployed runtime.
 STLITE_VERSION = "1.9.1"
+# The glossary's formulas, rendered in the browser as the apps render theirs.
+KATEX_VERSION = "0.16.11"
 
 # Helpers every app imports: the pyarrow stub patch, Russian numerals, the
 # links between the apps. Shipped with each app, since each is served alone.
@@ -347,7 +353,8 @@ def render_ist51_page() -> str:
         "от лекционных.</p>\n      "
         '<p class="note">Устанавливать ничего не нужно: Python исполняется в самом браузере. Первая '
         "загрузка страницы скачивает среду исполнения Python и занимает до минуты.</p>\n      "
-        f'<p>Площадки обоих курсов сайта по темам — в <a href="../{CATALOG}/">каталоге</a>.</p>'
+        f'<p>Площадки обоих курсов сайта по темам — в <a href="../{CATALOG}/">каталоге</a>, '
+        f'определения терминов — в <a href="../{GLOSSARY_PAGE}/">глоссарии</a>.</p>'
     )
     return _substitute(
         CATALOG_TEMPLATE,
@@ -357,6 +364,7 @@ def render_ist51_page() -> str:
             "__INTRO__": intro,
             "__SECTIONS__": _sections(apps, IST51.home, lambda app: app.source),
             "__FOOTER__": html.escape(IST51_FOOTER),
+            "__HEAD__": "",
         },
     )
 
@@ -370,7 +378,8 @@ def render_catalog() -> str:
         '<p class="note">Устанавливать ничего не нужно: Python исполняется в самом браузере. Первая '
         "загрузка страницы скачивает среду исполнения Python и занимает до минуты.</p>\n      "
         f'<p>Курсы целиком: <a href="../">«{html.escape(COURSES[0].title)}»</a> начинается с градиентного '
-        f'спуска, у <a href="../{IST51.home}/">«{html.escape(IST51.title)}»</a> есть своя страница.</p>'
+        f'спуска, у <a href="../{IST51.home}/">«{html.escape(IST51.title)}»</a> есть своя страница. '
+        f'Определения всех терминов — в <a href="../{GLOSSARY_PAGE}/">глоссарии</a>.</p>'
     )
     count = len(APPS)
     return _substitute(
@@ -381,6 +390,79 @@ def render_catalog() -> str:
             "__INTRO__": intro,
             "__SECTIONS__": _sections(list(APPS), CATALOG, _course_tag),
             "__FOOTER__": html.escape(FOOTER),
+            "__HEAD__": "",
+        },
+    )
+
+
+KATEX = (
+    f'<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@{KATEX_VERSION}/dist/katex.min.css" />\n'
+    f'    <script defer src="https://cdn.jsdelivr.net/npm/katex@{KATEX_VERSION}/dist/katex.min.js"></script>\n'
+    f'    <script defer src="https://cdn.jsdelivr.net/npm/katex@{KATEX_VERSION}/dist/contrib/auto-render.min.js"\n'
+    "      onload=\"renderMathInElement(document.body, {delimiters: [{left: '$$', right: '$$', display: true}, "
+    "{left: '$', right: '$', display: false}]})\"></script>"
+)
+
+# The terms a page explains on hover: the keys of its ``use_terms`` call.
+TERMS_CALL = re.compile(r"use_terms\(\s*st,([^)]*)\)")
+
+
+def _term_apps() -> dict[str, list[App]]:
+    """For each term, the apps that explain it on hover, in site order."""
+    found: dict[str, list[App]] = {key: [] for key in GLOSSARY}
+    for app in APPS:
+        source = (ROOT / app.package / "app.py").read_text(encoding="utf-8")
+        for call in TERMS_CALL.finditer(source):
+            for key in re.findall(r"\"(\w+)\"", call.group(1)):
+                found[key].append(app)
+    return found
+
+
+def _entry(key: str, apps: list[App]) -> str:
+    term = GLOSSARY[key]
+    parts = [f"<p>{html.escape(term.meaning[0].upper() + term.meaning[1:], quote=False)}</p>"]
+    if term.formula:
+        parts.append(f'<div class="formula">$${html.escape(term.formula, quote=False)}$$</div>')
+    if term.note:
+        parts.append(f'<p class="remark">{html.escape(term.note, quote=False)}</p>')
+    if apps:
+        links = ", ".join(
+            f'<a href="{_relative(app.slug, GLOSSARY_PAGE)}">{html.escape(page_of(app.slug).title)}</a>' for app in apps
+        )
+        parts.append(f'<p class="pages">Где встречается: {links}.</p>')
+    return f'<dt id="{key}">{html.escape(term.title)}</dt>\n        <dd>' + "".join(parts) + "</dd>"
+
+
+def render_glossary() -> str:
+    """The glossary: every term the apps define, alphabetically, each linked to the apps that use it."""
+    apps = _term_apps()
+    keys = sorted(GLOSSARY, key=lambda key: GLOSSARY[key].title.casefold())
+    letters: dict[str, list[str]] = {}
+    for key in keys:
+        letters.setdefault(GLOSSARY[key].title[0].upper(), []).append(key)
+    index = " ".join(f'<a href="#letter-{letter}">{letter}</a>' for letter in letters)
+    sections = "\n\n      ".join(
+        f'<h2 id="letter-{letter}">{letter}</h2>\n      <dl class="terms">\n        '
+        + "\n        ".join(_entry(key, apps[key]) for key in group)
+        + "\n      </dl>"
+        for letter, group in letters.items()
+    )
+    intro = (
+        '<p class="note">На площадках эти определения появляются при наведении на термин, подчёркнутый '
+        "пунктиром, а на телефоне — при нажатии на него. Здесь они собраны вместе: с формулами, "
+        "примечаниями и ссылками на площадки, где термин встречается.</p>\n      "
+        f'<p>Площадки по темам — в <a href="../{CATALOG}/">каталоге</a>.</p>\n      '
+        f'<nav class="letters">{index}</nav>'
+    )
+    return _substitute(
+        CATALOG_TEMPLATE,
+        {
+            "__TITLE__": "Глоссарий площадок",
+            "__SUBTITLE__": f"терминов: {len(GLOSSARY)} · площадок: {len(APPS)}",
+            "__INTRO__": intro,
+            "__SECTIONS__": sections,
+            "__FOOTER__": html.escape(FOOTER),
+            "__HEAD__": KATEX,
         },
     )
 
@@ -406,7 +488,8 @@ def build(output_dir: Path) -> Path:
     for app in APPS:
         build_app(app, output_dir)
 
-    for path, text in ((IST51.home, render_ist51_page()), (CATALOG, render_catalog())):
+    pages = ((IST51.home, render_ist51_page()), (CATALOG, render_catalog()), (GLOSSARY_PAGE, render_glossary()))
+    for path, text in pages:
         (output_dir / path).mkdir(parents=True, exist_ok=True)
         (output_dir / path / "index.html").write_text(text, encoding="utf-8")
 
@@ -442,6 +525,7 @@ def main() -> None:
         print(f"  /{app.slug + '/' if app.slug else ''} -> {app.title}")
     print(f"  /{IST51.home}/ -> страница курса ИСТ-51")
     print(f"  /{CATALOG}/ -> каталог по темам")
+    print(f"  /{GLOSSARY_PAGE}/ -> глоссарий")
 
 
 if __name__ == "__main__":

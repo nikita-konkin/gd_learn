@@ -9,6 +9,8 @@ from playground_common.links import (
     CATALOG,
     CATALOG_TEXT,
     COURSES,
+    GLOSSARY_PAGE,
+    GLOSSARY_TEXT,
     IST51,
     ML_BASICS,
     PAGES,
@@ -79,7 +81,8 @@ def test_the_topic_line_names_the_topic_and_links_every_neighbour_on_it(current)
 
     assert f"«{dict(TOPICS)[page.topic]}»" in line
     assert titles == [other.title for other in PAGES if other.topic == page.topic and other.path != current] + [
-        CATALOG_TEXT
+        CATALOG_TEXT,
+        GLOSSARY_TEXT,
     ]
 
 
@@ -97,6 +100,7 @@ def test_links_are_relative_to_the_page():
     assert from_leak["сложность модели"] == "../fit/"
     assert from_leak["Метрики машинного перевода"] == "../../mt/"
     assert from_leak[CATALOG_TEXT] == f"../../{CATALOG}/"
+    assert from_leak[GLOSSARY_TEXT] == f"../../{GLOSSARY_PAGE}/"
 
 
 def test_no_link_is_absolute():
