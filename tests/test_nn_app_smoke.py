@@ -66,7 +66,8 @@ def test_a_flipped_sign_is_reported(monkeypatch):
 def test_another_step_changes_the_result(monkeypatch, default_run):
     fake_st = _run(monkeypatch, overrides={nn_app.RATE_LABEL: 2.0})
 
-    assert _metric(fake_st, "Доля правильных ответов на отложенной выборке") != _metric(default_run, "Доля правильных ответов на отложенной выборке")
+    label = "Доля правильных ответов на отложенной выборке"
+    assert _metric(fake_st, label) != _metric(default_run, label)
 
 
 def test_every_slider_opens_on_its_default(default_run):
