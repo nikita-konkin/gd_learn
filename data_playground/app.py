@@ -33,7 +33,16 @@ from data_playground.cleaning import (
     make_readings,
 )
 from data_playground.plotting import cleaned_histogram, timing_figure
-from data_playground.speed import DOT, SUM_SIZE, Memory, Timing, memory, results_agree, sum_of_squares
+from data_playground.speed import (
+    DOT,
+    ELEMENTWISE,
+    SUM_SIZE,
+    Memory,
+    Timing,
+    memory,
+    results_agree,
+    sum_of_squares,
+)
 from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import duration, plural
@@ -295,6 +304,28 @@ def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> Non
         )
 
 
+def _timing_note(timings: tuple[Timing, ...]) -> str:
+    """What the measurement says, worded after the numbers this browser produced.
+
+    Native NumPy hands the dot product to an optimised linear-algebra library,
+    and there it beats the element-wise sum by an order of magnitude. The
+    browser build measured it slower: a fixed sentence promising the native
+    order sat right under numbers that contradicted it.
+    """
+    by_method = {timing.method: timing.seconds for timing in timings}
+    lead = (
+        "Время измерено только что, в этом браузере: здесь Python работает внутри WebAssembly, "
+        "и на вашем компьютере числа будут другими. "
+    )
+    if by_method[DOT] < by_method[ELEMENTWISE]:
+        return lead + f"«{DOT}» обгоняет поэлементный вариант: он не создаёт промежуточный массив квадратов."
+    return lead + (
+        f"«{DOT}» здесь не обогнал поэлементный вариант, хотя не создаёт промежуточного массива квадратов. "
+        "В обычном Python на компьютере он обычно в разы быстрее: скалярное произведение там считает "
+        "оптимизированная библиотека линейной алгебры. Сборка NumPy для браузера такого ускорения не даёт."
+    )
+
+
 def _speed_tab(size: int) -> None:
     if st.button(REMEASURE_LABEL, help="Замер будет выполнен повторно; числа немного изменятся, "
                  "это обычный разброс измерений."):
@@ -329,14 +360,7 @@ def _speed_tab(size: int) -> None:
             delta = f"×{slowest / timing.seconds:.0f} быстрее"
         column.metric(timing.method, duration(timing.seconds), delta)
     st.metric("Результаты совпадают", "да" if results_agree(timings) else "нет")
-    st.caption(
-        "Время измерено только что, в этом браузере. В обычном Python на вашем компьютере оно будет другим: "
-        "здесь Python работает внутри WebAssembly. Порядок величин "
-        f"сохраняется, как и причина, по которой «{DOT}» обгоняет поэлементный вариант: он не создаёт "
-        "промежуточный массив квадратов. Время указано на один вызов и усреднено по серии вызовов: браузер "
-        "округляет показания часов до 0.1 мс или грубее, и быстрый вызов, измеренный "
-        "отдельно, показал бы ноль."
-    )
+    st.caption(_timing_note(timings))
 
     st.subheader("3. Память: список против массива")
     prose(st,

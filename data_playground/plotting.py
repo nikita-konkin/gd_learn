@@ -70,6 +70,8 @@ def timing_figure(timings: tuple[Timing, ...]) -> go.Figure:
             marker_color=[ACCENT, BORDER, BORDER],
             text=labels,
             textposition="outside",
+            # The longest bar spans the whole axis; without this its label is cut at the edge.
+            cliponaxis=False,
             customdata=labels,
             hovertemplate="%{y}: %{customdata}<extra></extra>",
         )
