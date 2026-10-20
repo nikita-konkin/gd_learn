@@ -111,11 +111,11 @@ def test_lab_table_covers_every_documented_configuration(lab_table):
     names = set(lab_table["конфигурация"])
 
     assert {"TF-IDF по умолчанию", "стемминг", "символьные 2-4"} <= names
-    assert (lab_table["точность"] > 0.25).all(), "every configuration has to beat the baseline"
+    assert (lab_table["доля правильных ответов"] > 0.25).all(), "every configuration has to beat the baseline"
 
 
 def test_character_ngrams_win_the_comparison(lab_table):
-    best = lab_table.loc[lab_table["точность"].idxmax()]
+    best = lab_table.loc[lab_table["доля правильных ответов"].idxmax()]
 
     assert best["конфигурация"] == "символьные 2-4"
 
@@ -215,7 +215,7 @@ def test_with_naive_bayes_the_table_is_section_8_as_the_lab_prints_it(data):
     Two of the rows are exact ties (86/160, 98/160); they must round as the
     lab's pandas table rounds them, or the student sees 0.537 against 0.538.
     """
-    table = lab_comparison(*data, "наивный Байес").set_index("конфигурация")["точность"]
+    table = lab_comparison(*data, "наивный Байес").set_index("конфигурация")["доля правильных ответов"]
 
     assert table.to_dict() == {
         "TF-IDF по умолчанию": 0.444,

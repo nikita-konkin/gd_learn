@@ -47,13 +47,13 @@ def ngram_sweep_figure(points: list[SweepPoint], baseline: float) -> go.Figure:
         y=baseline,
         line_dash="dash",
         line_color=BASELINE_COLOR,
-        annotation_text=f"ответ наугад {baseline:.2f}",
+        annotation_text=f"базовая модель {baseline:.2f}",
         annotation_position="bottom right",
     )
     figure.update_layout(
         title="Символьные n-граммы обгоняют словарные",
         xaxis_title="максимальная длина n-граммы",
-        yaxis_title="точность (5-кратная кросс-валидация)",
+        yaxis_title="доля правильных ответов (5 блоков)",
         yaxis_range=[0, 1],
         height=420,
         margin={"l": 60, "r": 20, "t": 60, "b": 40},
@@ -66,7 +66,7 @@ def comparison_figure(table: pd.DataFrame, baseline: float, current: float | Non
     """Bars per configuration — the same picture as section 8 of the lab."""
     figure = go.Figure(
         go.Bar(
-            x=table["точность"],
+            x=table["доля правильных ответов"],
             y=table["конфигурация"],
             orientation="h",
             marker_color=CHAR_COLOR,
@@ -79,7 +79,7 @@ def comparison_figure(table: pd.DataFrame, baseline: float, current: float | Non
         x=baseline,
         line_dash="dash",
         line_color=BASELINE_COLOR,
-        annotation_text=f"ответ наугад {baseline:.2f}",
+        annotation_text=f"базовая модель {baseline:.2f}",
     )
     if current is not None:
         figure.add_vline(
@@ -91,7 +91,7 @@ def comparison_figure(table: pd.DataFrame, baseline: float, current: float | Non
         )
     figure.update_layout(
         title="Признаки решают больше, чем модель",
-        xaxis_title="точность",
+        xaxis_title="доля правильных ответов",
         xaxis_range=[0, 1],
         height=420,
         margin={"l": 10, "r": 30, "t": 60, "b": 40},

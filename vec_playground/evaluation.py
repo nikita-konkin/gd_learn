@@ -179,7 +179,7 @@ def lab_comparison(texts, labels, classifier: str) -> pd.DataFrame:
         rows.append(
             {
                 "конфигурация": name,
-                "точность": round_as_pandas(score.accuracy),
+                "доля правильных ответов": round_as_pandas(score.accuracy),
                 "разброс": round_as_pandas(score.deviation),
                 "признаков": score.features,
             }
