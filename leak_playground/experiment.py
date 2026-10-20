@@ -155,6 +155,12 @@ def selection(matrix: np.ndarray, labels: np.ndarray, k: int, folds: int) -> Sel
     )
 
 
+def block_sizes(labels: np.ndarray, folds: int) -> tuple[int, ...]:
+    """How many rows each held-out block has, in the order the scores report them."""
+    placeholder = np.zeros((len(labels), 1))
+    return tuple(len(test) for _, test in _splitter(folds).split(placeholder, labels))
+
+
 def chance_overlap(k: int, features: int) -> float:
     """Picks two independent selections would share if both chose at random."""
     return k * k / features if features else 0.0

@@ -32,8 +32,8 @@ def default_run(monkeypatch):
 def test_main_renders_without_errors(default_run):
     assert default_run.page_config["page_title"] == "Утечка данных"
     assert not default_run.errors
-    # per-block accuracy, recurrence, p-value histogram
-    assert len(default_run.figures) == 3
+    # cross-validation scheme, per-block accuracy, recurrence, p-value histogram
+    assert len(default_run.figures) == 4
 
 
 def test_the_headline_shows_an_invented_gap(default_run):
@@ -72,7 +72,7 @@ def test_the_multiple_comparisons_numbers_are_on_the_page(default_run):
 
 
 def test_the_page_reports_how_few_picks_survive_a_change_of_block(default_run):
-    assert _metric(default_run, "Отобраны снова во всех 5 блоках") == "1 из 20"
+    assert _metric(default_run, "Выбраны снова во всех 5 повторных отборах") == "1 из 20"
     assert _metric(default_run, "Настоящих признаков в данных") == "0"
 
 
@@ -97,7 +97,7 @@ def test_the_number_of_picks_moves_the_leaky_score(monkeypatch, default_run):
 def test_fewer_blocks_relabel_the_recurrence_metric(monkeypatch):
     fake_st = _run(monkeypatch, overrides={FOLDS_LABEL: 3})
 
-    assert _metric(fake_st, "Отобраны снова во всех 3 блоках").endswith("из 20")
+    assert _metric(fake_st, "Выбраны снова во всех 3 повторных отборах").endswith("из 20")
     assert any("блоков 3" in caption for caption in fake_st.captions)
 
 

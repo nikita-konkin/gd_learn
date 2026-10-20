@@ -25,13 +25,14 @@ from leak_playground.experiment import (  # noqa: E402  — must follow the stub
     Scores,
     Selection,
     all_p_values,
+    block_sizes,
     chance_overlap,
     expected_false_positives,
     scores,
     selection,
 )
 from leak_playground.noise import INFORMATIVE, NoiseSettings, make_data  # noqa: E402
-from leak_playground.plotting import pvalues_figure, recurrence_figure, scores_figure  # noqa: E402
+from leak_playground.plotting import pvalues_figure, recurrence_figure, scores_figure, split_figure  # noqa: E402
 from playground_common.explain import how_to_read, quick_start, reference  # noqa: E402
 from playground_common.links import other_playgrounds  # noqa: E402
 from playground_common.wording import as_printed, features, observations, plural  # noqa: E402
@@ -138,7 +139,7 @@ def _controls() -> tuple[NoiseSettings, int, int]:
     return NoiseSettings(observations=count, features=width, seed=seed, signal=signal), select, folds
 
 
-def _data_section(settings: NoiseSettings, select: int, folds: int) -> None:
+def _data_section(settings: NoiseSettings, select: int) -> None:
     """What the table is, what is predicted and what «signal» means, before any number about them."""
     informative = min(INFORMATIVE, settings.features)
     columns = f"#0–#{informative - 1}"
@@ -157,7 +158,7 @@ def _data_section(settings: NoiseSettings, select: int, folds: int) -> None:
             "станут в среднем на 0.6 больше, чем у класса 0, и по этим столбцам классы можно будет различить."
         )
 
-    st.subheader("Данные и задача")
+    st.subheader("1. Данные и задача")
     st.markdown(
         f"- **Таблица** — {observations(settings.observations)} (строки) и {features(settings.features)} "
         f"(столбцы #0 … #{settings.features - 1}). Данные синтетические: каждое значение — случайное число "
@@ -167,11 +168,10 @@ def _data_section(settings: NoiseSettings, select: int, folds: int) -> None:
         "Модель — логистическая регрессия, качество измеряется долей правильных ответов на кросс-валидации; "
         f"при угадывании наугад она равна {as_printed(TRUTH)}.\n"
         f"- **Сигнал** — настоящая связь признаков с классом, которую модели и следовало бы найти. {signal}\n"
-        f"- **Утечка** — ошибка в порядке шагов. Перед обучением из {features(settings.features)} оставляют "
-        f"{select}, сильнее всего различающихся между классами. Если отобрать их один раз по всей таблице, "
-        "отбор учтёт и строки, на которых модель затем проверяют, и найдёт «различия» даже в чистом шуме. "
-        f"Честная оценка требует повторять отбор внутри каждого из {folds} блоков кросс-валидации, только "
-        "по обучающей части."
+        f"- **Отбор признаков** — перед обучением из {features(settings.features)} оставляют {select}, "
+        "сильнее всего различающихся между классами: модели проще работать с немногими столбцами, "
+        "чем с тысячами. Утечка возникает, если этот шаг сделан не в том месте; разделы 2 и 3 показывают, "
+        "в каком."
     )
 
     matrix, labels = _data(settings)
@@ -188,20 +188,79 @@ def _data_section(settings: NoiseSettings, select: int, folds: int) -> None:
         )
 
 
+def _split_section(settings: NoiseSettings, folds: int) -> None:
+    """Cross-validation itself, drawn before any score that is counted in its blocks."""
+    _, labels = _data(settings)
+    sizes = block_sizes(labels, folds)
+    low, high = min(sizes), max(sizes)
+    size = f"{low}" if low == high else f"{low}–{high}"
+    st.subheader("2. Как проверяют модель: кросс-валидация")
+    st.markdown(
+        f"Проверять модель на тех же строках, на которых она обучалась, бессмысленно: так она «узнаёт» "
+        f"ответы, а не предсказывает их. Поэтому {observations(settings.observations)} делят на {folds} "
+        f"блоков по {size} {plural(high, 'строке', 'строки', 'строк')} и обучают модель {folds} раз. Каждый "
+        "раз один блок откладывают для проверки, а по остальным обучают. Получается "
+        f"{folds} {plural(folds, 'оценка', 'оценки', 'оценок')}, по одной на блок; итоговая оценка — их среднее."
+    )
+    st.plotly_chart(split_figure(sizes), use_container_width=True)
+    st.caption(
+        "Строка схемы — одно обучение, столбец — один блок строк. Тёмная клетка — блок, отложенный "
+        "для проверки: модель его не видит, пока не обучится; по светлым клеткам модель обучают. "
+        "Число блоков задаёт настройка "
+        f"«{FOLDS_LABEL}»."
+    )
+
+
+def _pipelines_section(settings: NoiseSettings, select: int, folds: int) -> None:
+    """The two orders of steps side by side; the only difference is where the selection sits."""
+    st.subheader("3. Где возникает утечка: два порядка шагов")
+    st.markdown(
+        "Кросс-валидация честна, только если всё, что модель узнаёт о данных, она узнаёт по обучающим "
+        "блокам. Отбор признаков тоже чему-то учится по данным: он смотрит, какие столбцы различают классы. "
+        "Значит, и его нужно делать внутри каждого обучения."
+    )
+    left, right = st.columns(2)
+    left.markdown(
+        ":orange[**С утечкой**]\n\n"
+        f"1. Отобрать {select} признаков по всем {settings.observations} строкам, включая те, на которых "
+        "модель потом проверят.\n"
+        f"2. Для каждого из {folds} блоков: обучить модель на остальных блоках и проверить на этом.\n\n"
+        "Отбор заранее «видел» проверочные блоки и выбрал столбцы, которые случайно различают классы "
+        "именно на них."
+    )
+    right.markdown(
+        ":blue[**Честно**]\n\n"
+        f"1. Для каждого из {folds} блоков:\n"
+        f"    - отобрать {select} признаков только по остальным блокам;\n"
+        "    - обучить модель на тех же блоках;\n"
+        "    - проверить на отложенном блоке.\n\n"
+        "Отобранные столбцы в каждом обучении свои, а проверочный блок не участвует ни в отборе, "
+        "ни в обучении."
+    )
+    st.caption(
+        "Обе ветви масштабируют признаки и обучают одну и ту же модель на одних и тех же блоках; различаются "
+        "они только тем, где сделан отбор."
+    )
+
+
 def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) -> None:
-    st.subheader("Две оценки одной модели")
+    st.subheader("4. Результат кросс-валидации")
+    st.markdown(
+        f"Обе ветви прошли одни и те же {folds} {plural(folds, 'обучение', 'обучения', 'обучений')}. Ниже — "
+        f"их итоговые оценки, т. е. средняя доля правильных ответов по {folds} проверочным блокам."
+    )
     left, middle, right = st.columns(3)
     left.metric(
         "С утечкой",
         as_printed(result.leaky),
-        help="Доля правильных ответов, когда отбор признаков сделан один раз по всей таблице, "
-        "т. е. с учётом отложенных строк.",
+        help="Средняя доля правильных ответов на проверочных блоках, когда отбор признаков сделан "
+        "один раз по всей таблице, т. е. с учётом проверочных строк.",
     )
     middle.metric(
         "Честно",
         as_printed(result.honest),
-        help="Та же модель, но отбор признаков повторяется внутри каждого блока, "
-        "только по обучающей части. Таков правильный порядок.",
+        help="Та же модель на тех же блоках, но отбор признаков повторяется в каждом обучении "
+        "и только по обучающим блокам. Таков правильный порядок.",
     )
     right.metric(
         "Разрыв",
@@ -213,7 +272,7 @@ def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) 
     if settings.signal == 0:
         st.caption(
             f"Истинное значение — {as_printed(TRUTH)}: классы сбалансированы, а признаки никак не связаны "
-            f"с целью. Разрыв в {as_printed(result.gap)} создан отбором, который видел отложенные строки."
+            f"с целью. Разрыв в {as_printed(result.gap)} создан отбором, который видел проверочные строки."
         )
     else:
         st.caption(
@@ -221,19 +280,37 @@ def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) 
             "Теперь честная оценка выше 0.500 обоснованно, а утечка по-прежнему добавляет к ней свою "
             "прибавку, и по одному числу эти две прибавки не различить."
         )
+    st.caption(
+        f"{observations(settings.observations)}, {features(settings.features)}, отобрано {select}, блоков {folds}."
+    )
+
+    st.markdown(
+        "Среднее легко списать на одно удачное разбиение, поэтому на диаграмме те же оценки показаны "
+        "по отдельности: пара столбцов — один проверочный блок, т. е. одна строка схемы из раздела 2."
+    )
+    st.plotly_chart(scores_figure(result.leaky_folds, result.honest_folds), use_container_width=True)
+    st.caption(
+        "Высота столбца — доля правильных ответов модели на строках этого блока. Оранжевый — ветвь "
+        "с утечкой, синий — честная, пунктир — истинное значение. Числа над диаграммой — средние по "
+        "столбцам своего цвета. Разрыв сохраняется в каждом блоке, а не возникает в среднем из-за "
+        "удачного разбиения."
+    )
 
 
 def _recurrence_section(selected: Selection, settings: NoiseSettings, select: int) -> None:
-    st.subheader("Что именно отобралось")
+    st.subheader("5. Откуда разрыв: что именно отобралось")
     informative = min(INFORMATIVE, settings.features)
     st.markdown(
-        f"Отбор по всей таблице выбрал {select} столбцов; их номера подписаны под графиком. Чтобы проверить, "
-        f"насколько надёжен этот выбор, повторим отбор {selected.folds} раз, как это делает честная ветвь, — "
-        "каждый раз только по обучающей части одного блока. Высота столбика показывает, в скольких блоках "
-        "признак отобран снова.\n\n"
-        "Признак, действительно связанный с классом, отбирается почти при любом разбиении, и его столбик "
-        "доходит до пунктира. Признак, попавший в выбор из-за случайного совпадения, на других строках уже "
-        "не выделяется, и его столбик остаётся низким."
+        f"Ветвь с утечкой работает с {select} признаками, отобранными по всей таблице. Связаны ли они "
+        "с классом на самом деле? Настоящий признак выделяется на любой части данных, поэтому отбор, "
+        "повторённый без части строк, выберет его снова. Честная ветвь как раз повторяет отбор "
+        f"{selected.folds} раз — в каждом обучении, без проверочного блока. Диаграмма показывает для каждого "
+        f"из {select} признаков ветви с утечкой, сколько из этих {selected.folds} повторных отборов выбрали "
+        "его снова.\n\n"
+        "Настоящий признак доходит до пунктира почти при любом разбиении. Признак, попавший в отбор из-за "
+        "случайного совпадения, без части строк перестаёт выделяться, и его столбец остаётся низким. "
+        "Такие признаки «различают» классы лишь на тех строках, по которым их отобрали, в том числе на "
+        "проверочных. Поэтому модель с утечкой угадывает проверочные строки лучше, чем позволяют данные."
     )
     st.plotly_chart(recurrence_figure(selected, informative if settings.signal else 0), use_container_width=True)
 
@@ -242,7 +319,7 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
     found = sum(1 for index in selected.indices if index < informative)
 
     left, right = st.columns(2)
-    left.metric(f"Отобраны снова во всех {selected.folds} блоках", f"{survived} из {select}")
+    left.metric(f"Выбраны снова во всех {selected.folds} повторных отборах", f"{survived} из {select}")
     if settings.signal:
         right.metric("Из них настоящих", f"{found} из {informative}")
     else:
@@ -260,7 +337,8 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
     else:
         st.caption(
             f"Настоящий сигнал заложен в столбцы #0–#{informative - 1} (на графике они тёмные), и отбор нашёл "
-            f"{found} из {informative}. Во всех {selected.folds} блоках снова отобраны {survived} из {select}: "
+            f"{found} из {informative}. Во всех {selected.folds} повторных отборах снова выбраны {survived} "
+            f"из {select}: "
             "настоящие признаки отбираются устойчиво, но и шумовой может случайно дойти до пунктира, "
             "поэтому по одной высоте столбика их не различить."
         )
@@ -269,7 +347,7 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
     shared = round(100 * (selected.folds - 2) / (selected.folds - 1))
     st.caption(
         f"Для сравнения: два отбора по {select} столбцов из {settings.features}, сделанные наугад, имели бы "
-        f"в среднем {chance:.2f} общих признака. Отборы на двух разных блоках здесь имеют в среднем "
+        f"в среднем {chance:.2f} общих признака. Два повторных отбора здесь имеют в среднем "
         f"{selected.mean_pairwise_overlap:.1f} общих признака. Их больше, потому что обучающие части двух "
         f"блоков на {shared} % состоят из одних и тех же строк и отбор находит в них одни и те же случайные "
         "совпадения" + (", а настоящие признаки отбираются почти каждый раз." if settings.signal else ".")
@@ -294,10 +372,19 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
 
 
 def _pvalues_section(selected: Selection, settings: NoiseSettings, select: int) -> None:
-    st.subheader("Почему отбор нашёл «значимое»")
+    st.subheader("6. Почему шум выглядит значимым")
+    expected = expected_false_positives(selected.tested)
+    st.markdown(
+        "Отбор оценивает каждый столбец F-тестом: насколько различаются средние двух классов. Результат "
+        "теста — p-значение, т. е. вероятность получить такое различие случайно, если связи нет. Отбор "
+        f"берёт {select} столбцов с наименьшим p.\n\n"
+        f"Гистограмма показывает p-значения всех {features(selected.tested)}, сгруппированные по интервалам "
+        "шириной 0.05. Без сигнала они распределены равномерно: в каждый интервал попадает около "
+        f"{expected:.0f} столбцов. Оранжевый столбец — признаки с p < 0.05. Их около {expected:.0f}, "
+        f"{'почти все' if settings.signal else 'все'} они случайны, и именно из них отбор берёт свои {select}."
+    )
     st.plotly_chart(pvalues_figure(np.asarray(_p_values(settings))), use_container_width=True)
 
-    expected = expected_false_positives(selected.tested)
     left, right = st.columns(2)
     left.metric(
         "Признаков с p < 0.05",
@@ -335,9 +422,10 @@ def main() -> None:
             "Здесь данные — чистый шум, и честный результат — 0.5."
         ),
         steps=(
-            "Сравните два числа наверху: **«С утечкой»** — 0.757, **«Честно»** — 0.510.",
+            "Прочитайте разделы 2 и 3: как модель проверяют и где в этой проверке утечка.",
+            "В разделе 4 сравните **«С утечкой»** — 0.757 и **«Честно»** — 0.510.",
             "Меняйте **«Сколько признаков отбирать»** и **«Блоков кросс-валидации»**: разрыв не исчезает.",
-            "Сдвиньте вправо **«Сила настоящего сигнала»**: честная оценка вырастет, на этот раз обоснованно.",
+            "Сдвиньте вправо **«Сила настоящего сигнала»**: честная оценка обоснованно вырастет.",
         ),
         notice="отбор признаков, сделанный до разбиения выборки, находит закономерность даже в чистом шуме.",
     )
@@ -359,7 +447,8 @@ def main() -> None:
             "делить выборку."
         ),
         watch=(
-            "Смотрите на два первых числа: «С утечкой» и «Честно». Пока сигнал выключен, второе "
+            "Разделы идут по порядку: данные, устройство кросс-валидации, два порядка шагов, результат "
+            "и две причины разрыва. Главные числа — «С утечкой» и «Честно» в разделе 4. Пока сигнал выключен, второе "
             "при любых настройках остаётся около 0.500, потому что предсказывать нечего. Первое "
             "заметно выше, и разрыв между ними не исчезает ни при смене зерна, ни при изменении "
             "числа блоков. Если увеличить силу настоящего сигнала, честная оценка обоснованно "
@@ -388,18 +477,10 @@ def main() -> None:
     result = _scores(settings, select, folds)
     selected = _selection(settings, select, folds)
 
-    _data_section(settings, select, folds)
+    _data_section(settings, select)
+    _split_section(settings, folds)
+    _pipelines_section(settings, select, folds)
     _headline(result, settings, select, folds)
-    st.caption(
-        f"{observations(settings.observations)}, {features(settings.features)}, отобрано {select}, блоков {folds}."
-    )
-
-    st.plotly_chart(scores_figure(result.leaky_folds, result.honest_folds), use_container_width=True)
-    st.caption(
-        "Разрыв сохраняется в каждом блоке, а не возникает в среднем из-за удачного разбиения. "
-        "Обе ветви масштабируют признаки и обучают одну и ту же модель; различаются они "
-        "только тем, где сделан отбор."
-    )
 
     _recurrence_section(selected, settings, select)
     _pvalues_section(selected, settings, select)
