@@ -102,7 +102,7 @@ def learning_figure(curves: dict[str, Curve], baseline: float, catch_up: int | N
     figure.update_layout(
         title="Кривая обучения: качество на новых данных по мере разметки",
         xaxis_title="обучающих сегментов",
-        yaxis_title="точность",
+        yaxis_title="доля правильных ответов",
         yaxis_range=[0, 1.05],
         legend={"orientation": "h", "y": -0.2},
         **LAYOUT,
@@ -118,7 +118,7 @@ def newsgroups_figure(newsgroups: pd.DataFrame, ours: Curve) -> go.Figure:
             x=newsgroups["train_size"],
             y=newsgroups["accuracy"],
             mode="lines+markers",
-            name="20 Newsgroups, 4 класса (посчитано в ноутбуке)",
+            name="20 Newsgroups, 4 класса (вычислено в Jupyter)",
             line={"color": NEWSGROUPS_COLOR, "width": 3},
             hovertemplate="%{x} документов: %{y:.3f}<extra></extra>",
         )
@@ -128,7 +128,7 @@ def newsgroups_figure(newsgroups: pd.DataFrame, ours: Curve) -> go.Figure:
             x=ours.sizes,
             y=ours.test,
             mode="lines+markers",
-            name="наш корпус (посчитано здесь)",
+            name="наш корпус (вычислено здесь)",
             line={"color": CHARACTERS_COLOR, "width": 2},
             customdata=[segments(size) for size in ours.sizes],
             hovertemplate="%{customdata}: %{y:.3f}<extra></extra>",
@@ -137,7 +137,7 @@ def newsgroups_figure(newsgroups: pd.DataFrame, ours: Curve) -> go.Figure:
     figure.update_layout(
         title="Тот же метод — разный объём данных",
         xaxis_title="обучающих примеров",
-        yaxis_title="точность",
+        yaxis_title="доля правильных ответов",
         yaxis_range=[0, 1.0],
         legend={"orientation": "h", "y": -0.2},
         **LAYOUT,
