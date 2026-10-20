@@ -106,7 +106,7 @@ def model_figure(data, params, degree: int, title_suffix: str = "") -> go.Figure
         )
 
     figure.update_layout(
-        title=f"Как кривая села на точки {title_suffix}".strip(),
+        title=f"Как кривая приближает точки {title_suffix}".strip(),
         height=540,
         margin=dict(l=30, r=30, t=70, b=30),
         xaxis_title="x",
@@ -400,7 +400,7 @@ def animated_dashboard_figure(
         cols=1,
         row_heights=[0.62, 0.38],
         specs=[[{"type": "xy"}], [{"type": "xy"}]],
-        subplot_titles=("Как кривая села на точки", f"Ошибка по шагам — {convergence_text}"),
+        subplot_titles=("Как кривая приближает точки", f"Ошибка по шагам — {convergence_text}"),
         vertical_spacing=0.16,
     )
 

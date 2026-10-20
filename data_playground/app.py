@@ -143,7 +143,8 @@ def _cleaned_view(cleaned: Cleaned) -> pd.DataFrame:
 def _steps(order: str, statistic: str) -> str:
     """The cleaning chain as the reader should see it, in the order the chosen setting runs it."""
     noun = {MEDIAN: "медиану", MEAN: "среднее"}[statistic]
-    replace = f"заменить невозможные значения (ниже {OUTLIER_LIMIT:.0f} дБм) пропусками"
+    limit = f"{OUTLIER_LIMIT:.0f}".replace("-", "−")
+    replace = f"заменить невозможные значения (ниже {limit} дБм) пропусками"
     compute = f"вычислить {noun} столбца «сигнал»"
     middle = (replace, compute) if order == AFTER else (compute, replace)
     chain = (

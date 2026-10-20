@@ -28,7 +28,7 @@ def test_status_lines_agree_with_their_numbers(monkeypatch):
     fake_st = FakeStreamlit(
         pressed={"Запустить"},
         overrides={
-            "Сколько точек смотреть перед одним шагом": "Mini-batch SGD",
+            "Сколько точек учитывать перед одним шагом": "Mini-batch SGD",
             "Размер пакета": 3,
             "Шагов по кнопке «Запустить»": 1,
         },
@@ -41,24 +41,24 @@ def test_status_lines_agree_with_their_numbers(monkeypatch):
         "Перед каждым шагом усредняется 3 случайные точки." in fake_st.captions
     )
     assert fake_st.warnings == [
-        "За 1 итерацию ошибка всё ещё заметно падает — "
+        "За 1 итерацию ошибка всё ещё заметно убывает: "
         "спуск не дошёл до дна. Дайте больше шагов или увеличьте их размер."
     ]
 
 
 def test_a_step_that_overshoots_is_not_called_convergence(monkeypatch):
     """Step 1 on the default data: the loss repeats while the weights swing across the minimum."""
-    fake_st = FakeStreamlit(pressed={"Запустить"}, overrides={"Размер шага (learning rate)": 1.0})
+    fake_st = FakeStreamlit(pressed={"Запустить"}, overrides={"Размер шага (скорость обучения)": 1.0})
     monkeypatch.setattr(streamlit_app, "st", fake_st)
 
     streamlit_app.main()
 
     assert not fake_st.successes
-    assert fake_st.warnings[0].startswith("Ошибка не падает: шаг так велик")
+    assert fake_st.warnings[0].startswith("Ошибка не убывает: шаг так велик")
 
 
 def test_a_crawling_descent_is_told_to_take_bigger_steps(monkeypatch):
-    fake_st = FakeStreamlit(pressed={"Запустить"}, overrides={"Размер шага (learning rate)": 1e-5})
+    fake_st = FakeStreamlit(pressed={"Запустить"}, overrides={"Размер шага (скорость обучения)": 1e-5})
     monkeypatch.setattr(streamlit_app, "st", fake_st)
 
     streamlit_app.main()
