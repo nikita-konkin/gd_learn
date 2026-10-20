@@ -17,6 +17,8 @@ from nn_playground.network import (
     BUGS,
     NO_BUG,
     RELU_BUG,
+    SIGN_BUG,
+    SIZE_BUG,
     TOLERANCE,
     Component,
     Training,
@@ -105,7 +107,45 @@ def _controls() -> tuple[str, int, float, int, int]:
     return bug, hidden, learning_rate, epochs, seed
 
 
+# The backward pass as the page prints it, one line per gradient; a bug swaps exactly one line.
+BACKWARD = (
+    ("out", "d_out = (p - y) / n               # ошибка выхода, усреднённая по n точкам"),
+    ("", "d_W2 = hidden.T @ d_out"),
+    ("", "d_hidden = d_out @ W2.T"),
+    ("relu", "d_raw = d_hidden * (raw > 0)      # производная ReLU: 1, где нейрон был активен"),
+    ("", "d_W1 = x.T @ d_raw"),
+    ("", "W1 -= rate * d_W1; W2 -= rate * d_W2  # шаг спуска против градиента"),
+)
+BROKEN = {
+    SIZE_BUG: ("out", "d_out = (p - y)                   # ← ОШИБКА: не поделено на n"),
+    SIGN_BUG: ("out", "d_out = (y - p) / n               # ← ОШИБКА: знак перепутан"),
+    RELU_BUG: ("relu", "d_raw = d_hidden                  # ← ОШИБКА: производная ReLU забыта"),
+}
+
+
+def _network_section(hidden: int, bug: str) -> None:
+    """What the network is and which line of its gradient the chosen bug breaks."""
+    st.subheader("1. Сеть и задача")
+    st.markdown(
+        "Задача — отнести точку плоскости к одному из двух классов «двух полумесяцев». Сеть получает две "
+        f"координаты точки, передаёт их в скрытый слой из {hidden} "
+        f"{plural(hidden, 'нейрона', 'нейронов', 'нейронов')} с функцией ReLU (отрицательное обнуляется, "
+        "положительное проходит без изменений), а выходной нейрон с сигмоидой выдаёт вероятность класса 1. "
+        "Ошибку сети измеряют потерями — перекрёстной энтропией: чем увереннее сеть ошибается, тем они больше."
+    )
+    st.markdown(
+        "Обучение повторяет четыре шага: **прямой проход** (вычислить ответ), **потери**, **обратный "
+        "проход** (вычислить по правилу цепочки, как потери зависят от каждого веса, т. е. градиент) и "
+        "**шаг спуска** (сдвинуть веса против градиента). Ниже — обратный проход и шаг спуска в той форме, "
+        "в какой их пишут вручную; выбранная слева ошибка заменяет ровно одну строку."
+    )
+    place, replacement = BROKEN.get(bug, ("", ""))
+    lines = (replacement if place and key == place else line for key, line in BACKWARD)
+    st.code("\n".join(lines), language="python")
+
+
 def _training_section(run: Training, reference: Training | None) -> None:
+    st.subheader("2. Обучение")
     left, middle, right = st.columns(3)
     left.metric(
         "Потери до обучения",
@@ -129,6 +169,11 @@ def _training_section(run: Training, reference: Training | None) -> None:
             f"и потери {reference.final_loss:.4f}. Пунктир на графике — их кривая."
         )
 
+    st.markdown(
+        "Слева — потери на каждой эпохе: у исправной сети они быстро падают. Горизонтальная линия ln 2 — "
+        "потери сети, которая для любой точки отвечает «вероятность 0.5». Справа — точки отложенной "
+        "выборки на фоне областей, которые сеть относит к каждому классу."
+    )
     curve, boundary = st.columns(2)
     with curve:
         st.plotly_chart(history_figure(run.history, reference.history if reference else None), use_container_width=True)
@@ -138,7 +183,7 @@ def _training_section(run: Training, reference: Training | None) -> None:
 
 
 def _check_section(components: tuple[Component, ...], bug: str) -> None:
-    st.subheader("Численная проверка градиента")
+    st.subheader("3. Численная проверка градиента")
     first = components[0]
     wrong = [component for component in components if not component.agrees]
     worst = max(component.relative_error for component in components)
@@ -270,6 +315,7 @@ def main() -> None:
     bug, hidden, learning_rate, epochs, seed = _controls()
     run = _train(hidden, learning_rate, epochs, seed, bug)
     reference = _train(hidden, learning_rate, epochs, seed, NO_BUG) if bug != NO_BUG else None
+    _network_section(hidden, bug)
     _training_section(run, reference)
     _check_section(_check(bug), bug)
 
