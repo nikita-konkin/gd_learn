@@ -32,12 +32,12 @@ def test_main_renders_without_errors(monkeypatch):
 def test_the_defaults_are_the_slides_numbers(monkeypatch):
     fake_st = _run(monkeypatch)
 
-    assert _metric(fake_st, "Точность дерева") == "0.631"
+    assert _metric(fake_st, "Доля правильных ответов дерева") == "0.631"
     assert _metric(fake_st, "Для сравнения: модель на буквах") == "0.744"
     assert _metric(fake_st, "Насколько предсказуема длина (R²)") == "0.79"
     assert _metric(fake_st, "Перевод длиннее, в среднем по сегменту") == "+10%"
     assert _metric(fake_st, "Перевод длиннее, если считать весь корпус целиком") == "+7%"
-    assert _metric(fake_st, "Строк интерфейса не влезает") == "50%"
+    assert _metric(fake_st, "Строк интерфейса не помещается") == "50%"
     assert _metric(fake_st, "Не реже 2 раз") == 23
 
 
@@ -45,22 +45,22 @@ def test_the_caption_names_the_idle_features(monkeypatch):
     fake_st = _run(monkeypatch)
 
     assert any("Не понадобились" in caption and "начинается с инфинитива" in caption for caption in fake_st.captions)
-    assert any("не влезает 20 строк интерфейса из 40" in caption for caption in fake_st.captions)
+    assert any("не помещается 20 строк интерфейса из 40" in caption for caption in fake_st.captions)
     assert not any("«есть «" in caption for caption in fake_st.captions), "no guillemets inside guillemets"
     # «Save changes»: the forecast says 18 characters, the course's own translation takes 19.
     assert any("«Сохранить изменения» — 19 симв." in caption for caption in fake_st.captions)
 
 
 def test_a_deeper_tree(monkeypatch):
-    assert _metric(_run(monkeypatch, {DEPTH_LABEL: 4}), "Точность дерева") == "0.644"
+    assert _metric(_run(monkeypatch, {DEPTH_LABEL: 4}), "Доля правильных ответов дерева") == "0.644"
 
 
 def test_dropping_the_full_stop_is_explained(monkeypatch):
     rest = ["words", "infinitive", "placeholder", "polite_you", "legal_markers"]
     fake_st = _run(monkeypatch, {FEATURES_LABEL: rest})
 
-    assert _metric(fake_st, "Точность дерева") == "0.506"
-    assert any("Без финальной точки точность 0.506 вместо 0.631" in message for message in fake_st.infos)
+    assert _metric(fake_st, "Доля правильных ответов дерева") == "0.506"
+    assert any("Без финальной точки доля правильных ответов 0.506 вместо 0.631" in message for message in fake_st.infos)
 
 
 def test_no_features_is_refused_politely(monkeypatch):
@@ -72,7 +72,7 @@ def test_no_features_is_refused_politely(monkeypatch):
 
 def test_even_half_again_leaves_one_button_in_ten_short(monkeypatch):
     """Interface strings grow by up to +47 % at the 90th percentile, so +50 % still misses some."""
-    assert _metric(_run(monkeypatch, {MARGIN_LABEL: 50}), "Строк интерфейса не влезает") == "10%"
+    assert _metric(_run(monkeypatch, {MARGIN_LABEL: 50}), "Строк интерфейса не помещается") == "10%"
 
 
 def test_pmi_without_a_threshold_is_warned_about(monkeypatch):

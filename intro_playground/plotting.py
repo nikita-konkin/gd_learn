@@ -48,9 +48,9 @@ def depth_figure(sweep: pd.DataFrame, depth: int, baseline: float, reference: fl
         annotation_position="bottom right",
     )
     figure.update_layout(
-        title="Точность и глубина дерева",
+        title="Доля правильных ответов и глубина дерева",
         xaxis={"title": "глубина дерева", "dtick": 1},
-        yaxis={"title": "точность", "range": [0, 1]},
+        yaxis={"title": "доля правильных ответов", "range": [0, 1]},
         **LAYOUT,
     )
     return figure
@@ -111,7 +111,7 @@ def overflow_figure(shares: pd.Series, margin: float) -> go.Figure:
         )
     )
     figure.update_layout(
-        title=f"Не влезает при запасе {margin:.0%}",
+        title=f"Не помещается при запасе {margin:.0%}",
         yaxis={"title": "доля сегментов", "range": [0, 1.1], "tickformat": ".0%"},
         **LAYOUT,
     )
