@@ -412,6 +412,8 @@ def main() -> None:
         "decision_tree",
         "regularisation",
         "ridge_lasso",
+        "feature",
+        "standardisation",
     )
     quick_start(
         st,

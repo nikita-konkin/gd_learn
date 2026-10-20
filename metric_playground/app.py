@@ -323,6 +323,7 @@ def main() -> None:
         "pr_auc",
         "error_cost",
         "holdout",
+        "logistic_regression",
     )
     quick_start(
         st,

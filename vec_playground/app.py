@@ -335,6 +335,7 @@ def main():
         "stemming",
         "min_df",
         "sublinear_tf",
+        "feature",
     )
     quick_start(
         st,

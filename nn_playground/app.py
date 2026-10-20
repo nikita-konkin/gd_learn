@@ -266,6 +266,9 @@ def main() -> None:
         "epoch",
         "accuracy",
         "holdout",
+        "relu",
+        "sigmoid",
+        "cross_entropy",
     )
     quick_start(
         st,

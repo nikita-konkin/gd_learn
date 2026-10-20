@@ -404,6 +404,7 @@ def main():
         "cross_validation",
         "r2",
         "pmi",
+        "feature",
     )
     quick_start(
         st,

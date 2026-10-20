@@ -536,6 +536,7 @@ def main():
         "convergence",
         "rmse_mae",
         "overfitting",
+        "feature",
     )
     quick_start(
         st,

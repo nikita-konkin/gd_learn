@@ -350,6 +350,7 @@ def main():
         "mqm",
         "threshold",
         "cosine",
+        "placeholder",
     )
     quick_start(
         st,

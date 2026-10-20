@@ -486,6 +486,7 @@ def main():
         "mqm",
         "kappa",
         "ngram",
+        "feature",
     )
     quick_start(
         st,

@@ -388,6 +388,7 @@ def main():
         "svd",
         "ari",
         "threshold",
+        "clustering",
     )
     quick_start(
         st,

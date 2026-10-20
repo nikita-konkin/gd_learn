@@ -195,6 +195,7 @@ def main() -> None:
         "dag",
         "topological_order",
         "retry",
+        "feature",
     )
     quick_start(
         st,

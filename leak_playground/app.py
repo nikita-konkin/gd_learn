@@ -425,6 +425,8 @@ def main() -> None:
         "p_value",
         "multiple_testing",
         "holdout",
+        "feature",
+        "logistic_regression",
     )
     quick_start(
         st,

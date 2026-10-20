@@ -1,5 +1,7 @@
 """The interface renders, and its numbers say what the page claims they say."""
 
+import re
+
 import pytest
 
 from leak_playground import app as leak_app
@@ -51,7 +53,7 @@ def test_the_page_spells_out_what_it_ran_on(default_run):
 
 def test_the_page_says_what_the_data_is_before_any_number(default_run):
     assert "Как выглядит таблица" in default_run.expanders
-    explained = next(text for text in default_run.markdowns if "**Сигнал**" in text)
+    explained = re.sub(r"<[^>]+>", "", next(text for text in default_run.markdowns if "**Сигнал**" in text))
     assert "300 наблюдений (строки) и 2000 признаков" in explained
     assert "Сейчас сигнала нет" in explained
     preview = default_run.dataframes[0]
