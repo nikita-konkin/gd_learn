@@ -27,7 +27,7 @@ from dag_playground.scheduler import (
     simulate,
     task_names,
 )
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import plural
 
@@ -190,6 +190,12 @@ def main() -> None:
         "и пропуск задач, чьи зависимости не выполнены."
     )
 
+    use_terms(
+        st,
+        "dag",
+        "topological_order",
+        "retry",
+    )
     quick_start(
         st,
         purpose=(
@@ -242,7 +248,7 @@ def main() -> None:
     outcome = _simulate(scenario)
 
     st.subheader("1. Конвейер как граф задач")
-    st.markdown(
+    prose(st,
         "Конвейер обучения модели состоит из задач: выгрузить данные, очистить их, собрать признаки, "
         "построить отчёт о качестве данных, обучить модель, оценить её и опубликовать. Стрелка A → B "
         "означает, что задача B использует результат A и потому запускается только после успеха A. "
@@ -264,7 +270,7 @@ def main() -> None:
         return
 
     edges = scenario.edges()
-    st.markdown(
+    prose(st,
         "Ниже — граф после запуска. Задачи идут слева направо в порядке выполнения; цвет показывает итог "
         "каждой задачи."
     )
@@ -284,7 +290,7 @@ def main() -> None:
     _verdict(outcome, scenario)
 
     st.subheader("3. Как шёл запуск")
-    st.markdown(
+    prose(st,
         "Слева — порядок, который планировщик вывел из стрелок: задачи одного шага не зависят друг "
         "от друга. Справа — журнал: чем закончилась каждая задача и со скольких попыток."
     )
@@ -295,7 +301,7 @@ def main() -> None:
         _journal(outcome)
 
     with st.expander("Чего эта площадка не делает"):
-        st.markdown(
+        prose(st,
             "- Не исполняет задачи одновременно: уровни выполняются по очереди, задачи внутри "
             "уровня — тоже. Параллелизм здесь показан, но не используется.\n"
             "- Не ждёт между попытками: пауза в браузере ничего бы не показала.\n"

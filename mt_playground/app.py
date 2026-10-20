@@ -21,7 +21,7 @@ from mt_playground.plotting import (
     distribution_figure,
     metric_comparison_figure,
 )
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 
 
@@ -261,7 +261,7 @@ def _render_corpus_tabs(
     current: dict[str, float],
 ) -> None:
     st.subheader("5. Весь корпус")
-    st.markdown(
+    prose(st,
         "До сих пор речь шла об одном сегменте. Вкладки ниже показывают, как то же самое выглядит на всех "
         "160 сегментах: сколько поломок метрика пропускает, сколько работы стоит ручная проверка и как "
         "распределены оценки."
@@ -339,6 +339,18 @@ def main():
         "портит строку, почти не меняя BLEU, и правку, которая снижает BLEU, не меняя смысла."
     )
 
+    use_terms(
+        st,
+        "bleu",
+        "chrf",
+        "ter",
+        "ngram",
+        "formal_checks",
+        "embedding",
+        "mqm",
+        "threshold",
+        "cosine",
+    )
     quick_start(
         st,
         purpose=(
@@ -400,7 +412,7 @@ def main():
     _ensure_segment_state(segment)
 
     st.subheader("1. Задача")
-    st.markdown(
+    prose(st,
         "Сегмент — одна строка интерфейса, документации, рекламы или юридического текста. У каждого есть "
         "английский **оригинал**, **эталон** — перевод человека — и **выход модели** машинного перевода. "
         "Метрики BLEU, chrF и TER сравнивают проверяемый перевод с эталоном по совпадению слов или букв "
@@ -417,7 +429,7 @@ def main():
         _render_verdict(segment, current, baseline, negation_rule, bleu_threshold)
 
     st.subheader("4. Ваш вариант против выхода модели")
-    st.markdown(
+    prose(st,
         "Пары столбцов: значение каждой метрики для выхода модели и для текущего текста. У BLEU и chrF "
         "выше значит лучше, у TER — наоборот."
     )

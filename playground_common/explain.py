@@ -22,9 +22,22 @@ line breaks the layout of a list. The text itself is Russian: it is UI.
 
 from __future__ import annotations
 
+import html
+import re
 from dataclasses import dataclass
 
-__all__ = ["GLOSSARY", "Term", "how_to_read", "quick_start", "reference", "term"]
+__all__ = [
+    "GLOSSARY",
+    "MENTIONS",
+    "Term",
+    "annotate",
+    "how_to_read",
+    "prose",
+    "quick_start",
+    "reference",
+    "term",
+    "use_terms",
+]
 
 
 @dataclass(frozen=True)
@@ -494,7 +507,7 @@ def quick_start(
     """
     numbered = "\n".join(f"{index}. {step}" for index, step in enumerate(steps, start=1))
     with st.expander(title, expanded=True):
-        st.markdown(f"{purpose}\n\n{numbered}\n\n**Главное:** {notice}")
+        st.markdown(f"{annotate(purpose)}\n\n{numbered}\n\n**Главное:** {notice}", unsafe_allow_html=True)
 
 
 def how_to_read(
@@ -514,10 +527,11 @@ def how_to_read(
     """
     with st.expander(title, expanded=expanded):
         st.markdown(
-            f"**Что здесь показано.** {what}\n\n"
+            f"**Что здесь показано.** {annotate(what)}\n\n"
             f"**Что можно менять.** {controls}\n\n"
             f"**Куда смотреть.** {watch}"
-            + (f"\n\n**Откуда данные.** {data}" if data else "")
+            + (f"\n\n**Откуда данные.** {annotate(data)}" if data else ""),
+            unsafe_allow_html=True,
         )
 
 
@@ -535,3 +549,147 @@ def reference(
             "\n\n---\n\n".join(item.as_markdown() for item in terms),
             unsafe_allow_html=True,
         )
+
+
+# How each term shows up in running Russian text: a case-insensitive pattern
+# that catches its inflected forms. Only terms a page declares with
+# ``use_terms`` are looked for on it, because some words mean one thing on one
+# page and another elsewhere: «пропуск» is a gap in the data on the cleaning
+# page and a missed failure on the metrics page.
+MENTIONS: dict[str, str] = {
+    "accuracy": r"дол[яиюе] правильных ответов",
+    "baseline": r"базов\w+ модел\w+",
+    "cross_validation": r"кросс-валидаци\w*",
+    "fold_spread": r"разброс\w* между блоками",
+    "confusion_matrix": r"матриц\w+ ошибок",
+    "precision_recall": r"полнот\w+|точност\w+",
+    "f1": r"\bF1\b",
+    "roc_auc": r"ROC-AUC",
+    "pr_auc": r"PR-AUC",
+    "ari": r"\bARI\b",
+    "kappa": r"капп\w+(?: Коэна)?",
+    "r2": r"R²",
+    "decision_tree": r"дерев\w+ решений",
+    "pmi": r"\bPMI\b",
+    "learning_curve": r"крив\w+ обучения",
+    "bag_of_words": r"меш\w+ слов",
+    "tf_idf": r"TF-IDF",
+    "ngram": r"n-грамм\w*",
+    "stemming": r"стемминг\w*",
+    "min_df": r"\bmin_df\b",
+    "sublinear_tf": r"\bsublinear_tf\b",
+    "cosine": r"косинус\w*",
+    "levenshtein": r"Левенштейн\w*",
+    "match_percent": r"процент\w* совпадения",
+    "embedding": r"эмбеддинг\w*",
+    "svd": r"\b(?:SVD|PCA|LSA)\b|главн\w+ компонент\w*",
+    "bleu": r"\bBLEU\b",
+    "chrf": r"\bchrF\b",
+    "ter": r"\bTER\b",
+    "mqm": r"\bMQM\b",
+    "formal_checks": r"формальн\w+ провер\w+",
+    "temperature": r"температур\w+",
+    "top_k_p": r"top-k|top-p",
+    "perplexity": r"перплекси\w+",
+    "gradient_descent": r"градиентн\w+ спуск\w*",
+    "learning_rate": r"размер\w* шага|скорост\w+ обучения",
+    "loss": r"функци\w+ потерь|\bпотер(?:и|ь|ям|ях)\b",
+    "batching": r"мини-пакет\w*|\bSGD\b",
+    "overfitting": r"переобучени\w+|недообучени\w+",
+    "gradient_norm": r"норм\w+ градиента|крутизн\w+ склона",
+    "rmse_mae": r"\bRMSE\b|\bMAE\b",
+    "convergence": r"сходимост\w+",
+    "missing_values": r"пропуск\w*",
+    "outlier": r"выброс\w*",
+    "mean_median": r"медиан\w+",
+    "vectorisation": r"векторизаци\w+",
+    "feature_selection": r"отбор\w* признаков",
+    "p_value": r"p-значени\w+",
+    "multiple_testing": r"поправк\w+ Бонферрони",
+    "error_cost": r"цен\w+ ошибк\w+",
+    "knn": r"метод\w* ближайших соседей",
+    "ridge_lasso": r"\bRidge\b|\bLasso\b",
+    "holdout": r"отложенн\w+ выборк\w+",
+    "backprop": r"обратн\w+ проход\w*",
+    "gradient_check": r"численн\w+ проверк\w+ градиента",
+    "epoch": r"эпох\w*",
+    "topological_order": r"топологическ\w+",
+    "retry": r"\bповтор(?:ы|ов|ам|ами)\b",
+    "regularisation": r"регуляризаци\w+|штраф\w*",
+    "leakage": r"утечк\w+",
+    "imbalance": r"дисбаланс\w*|перекос\w* классов",
+    "threshold": r"порог\w*",
+    "dag": r"граф\w* задач|\bDAG\b",
+}
+
+# Spans a definition must never be spliced into: a control's label quoted in
+# bold, inline code, a formula, an HTML tag that is already there.
+_PROTECTED = re.compile(r"\*\*«[^»]*»\*\*|`[^`]*`|\$[^$]*\$|<[^>]+>[^<]*</[^>]+>|<[^>]+>")
+
+# The terms the page in progress has declared; ``use_terms`` sets them on every run.
+_ACTIVE: list[str] = []
+
+TOOLTIP_STYLE = """<style>
+.gl-term { border-bottom: 1px dotted currentColor; cursor: help; position: relative; outline: none; }
+.gl-term::after {
+  content: attr(data-tip); display: none; position: absolute; left: 0; top: calc(100% + 6px); z-index: 1000;
+  width: max-content; max-width: min(24rem, 80vw); padding: 0.55rem 0.7rem; border-radius: 0.4rem;
+  background: #262730; color: #fafafa; font-size: 0.82rem; line-height: 1.45; font-weight: 400;
+  font-style: normal; text-transform: none; letter-spacing: normal; white-space: normal;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+}
+.gl-term:hover::after, .gl-term:focus::after { display: block; }
+@media (max-width: 640px) {
+  .gl-term:hover::after { display: none; }
+  .gl-term:focus::after {
+    display: block; position: fixed; left: 16px; right: 16px; top: auto; bottom: 16px;
+    width: auto; max-width: none;
+  }
+}
+</style>"""
+
+
+def use_terms(st, *keys: str) -> None:
+    """Declare the terms this page explains on hover, and add the style that shows them.
+
+    Called once at the top of a page, before any prose: every later
+    ``annotate`` on the page underlines the first mention of each term.
+    """
+    unknown = [key for key in keys if key not in MENTIONS]
+    if unknown:
+        raise KeyError(f"no mention pattern for {', '.join(unknown)}")
+    _ACTIVE[:] = keys
+    st.markdown(TOOLTIP_STYLE, unsafe_allow_html=True)
+
+
+def _tip(key: str) -> str:
+    """The plain text of a tooltip: the term's name and what it means, without markdown."""
+    entry = GLOSSARY[key]
+    return re.sub(r"\*\*|`", "", f"{entry.title}: {entry.meaning}")
+
+
+def annotate(text: str, keys: tuple[str, ...] | None = None) -> str:
+    """Underline the first mention of each declared term; hovering or tapping it shows the definition.
+
+    Mentions inside a bolded control label, code, a formula or existing HTML
+    are left alone. A text that mentions none of the terms comes back unchanged.
+    """
+    spans = [(match.start(), match.end()) for match in _PROTECTED.finditer(text)]
+    found = []
+    for key in keys if keys is not None else _ACTIVE:
+        for match in re.finditer(MENTIONS[key], text, flags=re.IGNORECASE):
+            start, end = match.span()
+            clashes = any(start < right and left < end for left, right in spans)
+            if not clashes:
+                found.append((start, end, key))
+                spans.append((start, end))
+                break
+    for start, end, key in sorted(found, reverse=True):
+        tip = html.escape(_tip(key), quote=True)
+        text = f'{text[:start]}<span class="gl-term" tabindex="0" data-tip="{tip}">{text[start:end]}</span>{text[end:]}'
+    return text
+
+
+def prose(target, text: str) -> None:
+    """``target.markdown`` for explanatory text, with the page's terms explained on hover."""
+    target.markdown(annotate(text), unsafe_allow_html=True)

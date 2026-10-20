@@ -15,11 +15,14 @@ import pytest
 from playground_common.explain import (
     DETAILS_TITLE,
     GLOSSARY,
+    MENTIONS,
     QUICK_START_TITLE,
     Term,
+    annotate,
     how_to_read,
     quick_start,
     reference,
+    use_terms,
 )
 from tests.fake_streamlit import FakeStreamlit
 
@@ -158,3 +161,35 @@ def test_every_term_a_page_asks_for_exists(path: pathlib.Path):
         for argument in node.args[1:]:
             if isinstance(argument, ast.Constant) and isinstance(argument.value, str):
                 assert argument.value in GLOSSARY, f"{path.parent.name}: {argument.value}"
+
+
+def test_every_term_has_a_mention_pattern():
+    assert set(MENTIONS) == set(GLOSSARY)
+
+
+def test_annotate_underlines_only_the_first_mention():
+    text = annotate("Кросс-валидация делит данные. Кросс-валидацию повторяют.", ("cross_validation",))
+    assert text.count('class="gl-term"') == 1
+    assert text.startswith('<span class="gl-term" tabindex="0" data-tip="')
+
+
+def test_annotate_leaves_control_labels_and_code_alone():
+    text = annotate("**«Порог»** и `порог` не трогаем.", ("threshold",))
+    assert "gl-term" not in text
+
+
+def test_annotate_escapes_the_definition():
+    text = annotate("Метрика PMI.", ("pmi",))
+    tip = text.split('data-tip="', 1)[1].split('"', 1)[0]
+    assert "<" not in tip and "**" not in tip
+
+
+def test_use_terms_refuses_a_term_without_a_pattern():
+    with pytest.raises(KeyError):
+        use_terms(FakeStreamlit(), "нет-такого-понятия")
+
+
+@pytest.mark.parametrize("path", APPS, ids=lambda path: path.parent.name)
+def test_every_page_declares_its_terms_before_any_prose(path: pathlib.Path):
+    source = path.read_text(encoding="utf-8")
+    assert source.index("    use_terms(") < source.index("    quick_start(")

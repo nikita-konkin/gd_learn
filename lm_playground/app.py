@@ -19,7 +19,7 @@ from lm_playground.generation import generate, split_segments
 from lm_playground.model import CharNgramLM
 from lm_playground.plotting import distribution_figure, overfitting_figure
 from lm_playground.sampling import prepare
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import plural
 
@@ -342,6 +342,14 @@ def main():
         "и за долей дословно скопированного."
     )
 
+    use_terms(
+        st,
+        "ngram",
+        "perplexity",
+        "temperature",
+        "top_k_p",
+        "overfitting",
+    )
     quick_start(
         st,
         purpose=(
@@ -390,7 +398,7 @@ def main():
     model = _model(settings["content_types"], settings["order"])
 
     st.subheader("1. Как модель порождает текст")
-    st.markdown(
+    prose(st,
         f"Модель прочитала обучающие тексты и для каждой цепочки из n = {settings['order']} "
         f"{plural(settings['order'], 'символа', 'символов', 'символов')} запомнила, какие символы и как часто "
         "шли следом. Чтобы породить текст, она берёт последние n символов, получает из таблицы "

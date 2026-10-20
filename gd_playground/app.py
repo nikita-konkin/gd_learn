@@ -32,7 +32,7 @@ from gd_playground.workflow import (
     current_metrics,
     history_summary,
 )
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import plural
 
@@ -526,6 +526,17 @@ def main():
         "ошибка на одном экране."
     )
 
+    use_terms(
+        st,
+        "gradient_descent",
+        "loss",
+        "learning_rate",
+        "batching",
+        "gradient_norm",
+        "convergence",
+        "rmse_mae",
+        "overfitting",
+    )
     quick_start(
         st,
         purpose=(
@@ -610,7 +621,7 @@ def main():
         apply_animation_build(st.session_state, data, degree, controls["shuffle_each_epoch"])
 
     st.subheader("1. Задача и способ решения")
-    st.markdown(
+    prose(st,
         "Слева задана зависимость y от x; из неё генерируются точки с шумом. Модель — кривая выбранного "
         "вида с весами w₀…w₃: например, прямая y = w₀ + w₁·x. Насколько кривая промахивается мимо точек, "
         "измеряет **функция потерь** (MSE — средний квадрат промаха, MAE — средний модуль промаха). "
@@ -623,7 +634,7 @@ def main():
         _render_metrics_panel(data, degree)
     with left:
         st.subheader("2. Кривая и ошибка")
-        st.markdown(
+        prose(st,
             "Верхний график: точки данных, пунктиром — истинная зависимость, линией — текущая кривая "
             "модели. Нижний: ошибка после каждого шага; если спуск идёт правильно, она убывает и "
             "выходит на плато."

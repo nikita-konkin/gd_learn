@@ -33,7 +33,7 @@ from leak_playground.experiment import (  # noqa: E402  — must follow the stub
 )
 from leak_playground.noise import INFORMATIVE, NoiseSettings, make_data  # noqa: E402
 from leak_playground.plotting import pvalues_figure, recurrence_figure, scores_figure, split_figure  # noqa: E402
-from playground_common.explain import how_to_read, quick_start, reference  # noqa: E402
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms  # noqa: E402
 from playground_common.links import other_playgrounds  # noqa: E402
 from playground_common.wording import as_printed, features, observations, plural  # noqa: E402
 
@@ -159,7 +159,7 @@ def _data_section(settings: NoiseSettings, select: int) -> None:
         )
 
     st.subheader("1. Данные и задача")
-    st.markdown(
+    prose(st,
         f"- **Таблица** — {observations(settings.observations)} (строки) и {features(settings.features)} "
         f"(столбцы #0 … #{settings.features - 1}). Данные синтетические: каждое значение — случайное число "
         "из нормального распределения со средним 0 и стандартным отклонением 1, а сама таблица генерируется "
@@ -195,7 +195,7 @@ def _split_section(settings: NoiseSettings, folds: int) -> None:
     low, high = min(sizes), max(sizes)
     size = f"{low}" if low == high else f"{low}–{high}"
     st.subheader("2. Как проверяют модель: кросс-валидация")
-    st.markdown(
+    prose(st,
         f"Проверять модель на тех же строках, на которых она обучалась, бессмысленно: так она «узнаёт» "
         f"ответы, а не предсказывает их. Поэтому {observations(settings.observations)} делят на {folds} "
         f"блоков по {size} {plural(high, 'строке', 'строки', 'строк')} и обучают модель {folds} раз. Каждый "
@@ -214,13 +214,13 @@ def _split_section(settings: NoiseSettings, folds: int) -> None:
 def _pipelines_section(settings: NoiseSettings, select: int, folds: int) -> None:
     """The two orders of steps side by side; the only difference is where the selection sits."""
     st.subheader("3. Где возникает утечка: два порядка шагов")
-    st.markdown(
+    prose(st,
         "Кросс-валидация честна, только если всё, что модель узнаёт о данных, она узнаёт по обучающим "
         "блокам. Отбор признаков тоже чему-то учится по данным: он смотрит, какие столбцы различают классы. "
         "Значит, и его нужно делать внутри каждого обучения."
     )
     left, right = st.columns(2)
-    left.markdown(
+    prose(left,
         ":orange[**С утечкой**]\n\n"
         f"1. Отобрать {select} признаков по всем {settings.observations} строкам, включая те, на которых "
         "модель потом проверят.\n"
@@ -228,7 +228,7 @@ def _pipelines_section(settings: NoiseSettings, select: int, folds: int) -> None
         "Отбор заранее «видел» проверочные блоки и выбрал столбцы, которые случайно различают классы "
         "именно на них."
     )
-    right.markdown(
+    prose(right,
         ":blue[**Честно**]\n\n"
         f"1. Для каждого из {folds} блоков:\n"
         f"    - отобрать {select} признаков только по остальным блокам;\n"
@@ -245,7 +245,7 @@ def _pipelines_section(settings: NoiseSettings, select: int, folds: int) -> None
 
 def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) -> None:
     st.subheader("4. Результат кросс-валидации")
-    st.markdown(
+    prose(st,
         f"Обе ветви прошли одни и те же {folds} {plural(folds, 'обучение', 'обучения', 'обучений')}. Ниже — "
         f"их итоговые оценки, т. е. средняя доля правильных ответов по {folds} проверочным блокам."
     )
@@ -284,7 +284,7 @@ def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) 
         f"{observations(settings.observations)}, {features(settings.features)}, отобрано {select}, блоков {folds}."
     )
 
-    st.markdown(
+    prose(st,
         "Среднее легко списать на одно удачное разбиение, поэтому на диаграмме те же оценки показаны "
         "по отдельности: пара столбцов — один проверочный блок, т. е. одна строка схемы из раздела 2."
     )
@@ -300,7 +300,7 @@ def _headline(result: Scores, settings: NoiseSettings, select: int, folds: int) 
 def _recurrence_section(selected: Selection, settings: NoiseSettings, select: int) -> None:
     st.subheader("5. Откуда разрыв: что именно отобралось")
     informative = min(INFORMATIVE, settings.features)
-    st.markdown(
+    prose(st,
         f"Ветвь с утечкой работает с {select} признаками, отобранными по всей таблице. Связаны ли они "
         "с классом на самом деле? Настоящий признак выделяется на любой части данных, поэтому отбор, "
         "повторённый без части строк, выберет его снова. Честная ветвь как раз повторяет отбор "
@@ -374,7 +374,7 @@ def _recurrence_section(selected: Selection, settings: NoiseSettings, select: in
 def _pvalues_section(selected: Selection, settings: NoiseSettings, select: int) -> None:
     st.subheader("6. Почему шум выглядит значимым")
     expected = expected_false_positives(selected.tested)
-    st.markdown(
+    prose(st,
         "Отбор оценивает каждый столбец F-тестом: насколько различаются средние двух классов. Результат "
         "теста — p-значение, т. е. вероятность получить такое различие случайно, если связи нет. Отбор "
         f"берёт {select} столбцов с наименьшим p.\n\n"
@@ -415,6 +415,17 @@ def main() -> None:
         "Здесь её последствия измерены на данных, в которых предсказывать нечего."
     )
 
+    use_terms(
+        st,
+        "leakage",
+        "feature_selection",
+        "cross_validation",
+        "accuracy",
+        "baseline",
+        "p_value",
+        "multiple_testing",
+        "holdout",
+    )
     quick_start(
         st,
         purpose=(
@@ -486,7 +497,7 @@ def main() -> None:
     _pvalues_section(selected, settings, select)
 
     with st.expander("Чего эта площадка не делает"):
-        st.markdown(
+        prose(st,
             "- Не показывает другие виды утечки: признак, вычисленный из будущего, "
             "дубликаты между обучающей и отложенной частями, целевое кодирование без "
             "вложенной проверки. Механизм у них тот же, а данные нужны другие.\n"

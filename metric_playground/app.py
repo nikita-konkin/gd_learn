@@ -28,7 +28,7 @@ from metric_playground.metrics import (
     precision_recall_curve,
 )
 from metric_playground.plotting import confusion_figure, curve_figure
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import as_printed, plural
 
@@ -107,14 +107,14 @@ def _controls() -> tuple[str, float, int, float]:
 def _trap_tab(name: str) -> None:
     population = next(item for item in _populations() if item.name == name)
     st.subheader("1. Задача")
-    st.markdown(
+    prose(st,
         f"Набор «{population.name}» ({population.source}): {population.total} объектов, из них "
         f"{population.positive} относятся к редкому классу — это отказы или брак, которые и нужно находить. "
         "Здесь нет никакого обучения: «модель» на любой объект отвечает «отказа нет». Это простейшая "
         "базовая модель, и с ней полезно сравнивать любую настоящую."
     )
     st.subheader("2. Четыре метрики одной и той же модели")
-    st.markdown(
+    prose(st,
         "**Доля правильных ответов** — какая часть всех ответов совпала с действительностью. "
         "**Полнота** — какую часть настоящих отказов модель нашла. **PR-AUC** — площадь под кривой "
         "«точность — полнота» (вторая вкладка); у модели, угадывающей наугад, она равна доле редкого класса."
@@ -161,7 +161,7 @@ def _threshold_tab(threshold: float, miss: int) -> None:
     labels, scores = _failures()
     counts = confusion(labels, scores, threshold)
     st.subheader("1. Модель и порог")
-    st.markdown(
+    prose(st,
         "Теперь модель настоящая: логистическая регрессия с весами классов, обученная на данных об отказах "
         f"оборудования. Её проверяют на отложенной выборке из {counts.total} объектов, среди которых "
         f"{int(labels.sum())} отказов. Для каждого объекта модель выдаёт число от 0 до 1 — свою уверенность "
@@ -189,7 +189,7 @@ def _threshold_tab(threshold: float, miss: int) -> None:
     )
 
     st.subheader("3. Ошибки и кривая «точность — полнота»")
-    st.markdown(
+    prose(st,
         "Слева — матрица ошибок: строки — что было на деле, столбцы — что ответила модель; в клетках число "
         "объектов, а подпись в клетке говорит, что это: найденные отказы, пропущенные отказы, ложные "
         "тревоги или верно признанные исправными. Справа — кривая «точность — полнота»: каждая её точка "
@@ -211,7 +211,7 @@ def _threshold_tab(threshold: float, miss: int) -> None:
         )
 
     st.subheader("4. Нужная полнота и её цена")
-    st.markdown(
+    prose(st,
         "Обычно задача ставится так: найти не меньше заданной доли отказов. Таблица показывает для "
         "нескольких таких требований, какую полноту удаётся получить на самом деле, какой при этом будет "
         "точность и какой нужен порог."
@@ -230,7 +230,7 @@ def _threshold_tab(threshold: float, miss: int) -> None:
     )
 
     st.subheader("5. Сколько стоит ошибка")
-    st.markdown(
+    prose(st,
         "Пропущенный отказ и ложная тревога стоят по-разному. Если пропуск в "
         f"{miss} {plural(miss, 'раз', 'раза', 'раз')} дороже тревоги, общая стоимость при пороге — это "
         f"{miss} × число пропусков + число ложных тревог. Лучший порог — тот, при котором она минимальна."
@@ -262,7 +262,7 @@ def _threshold_tab(threshold: float, miss: int) -> None:
 def _remedies_tab(threshold: float) -> None:
     labels, scores = _rare_class()
     st.subheader("1. Три способа учесть перекос")
-    st.markdown(
+    prose(st,
         f"Случайный лес на данных, где редкий класс составляет {labels.mean():.2%}. Его обучают тремя "
         "способами: **без учёта дисбаланса**; с **весами классов**, при которых ошибка на редком объекте "
         "обходится дороже; с **сокращением преобладающего класса**, когда из обучающей выборки удаляют "
@@ -280,7 +280,7 @@ def _remedies_tab(threshold: float) -> None:
         rows.append(f"| {name} | {area:.3f} | {counts.recall:.3f} | {counts.precision:.3f} |")
     st.markdown("| способ | PR-AUC | полнота | точность |\n|---|---|---|---|\n" + "\n".join(rows))
     st.subheader("3. Кривые «точность — полнота»")
-    st.markdown(
+    prose(st,
         "Кривая для каждого способа; выделенные точки — работа при выбранном пороге, пунктир — уровень "
         "случайного угадывания. Чем ближе кривая к правому верхнему углу, тем лучше модель ранжирует объекты."
     )
@@ -311,6 +311,19 @@ def main() -> None:
         "Здесь видно, какие метрики это скрывают и как порог превращает оценки модели в решения."
     )
 
+    use_terms(
+        st,
+        "imbalance",
+        "accuracy",
+        "baseline",
+        "confusion_matrix",
+        "precision_recall",
+        "f1",
+        "threshold",
+        "pr_auc",
+        "error_cost",
+        "holdout",
+    )
     quick_start(
         st,
         purpose=(
@@ -382,7 +395,7 @@ def main() -> None:
         _remedies_tab(remedy_threshold)
 
     with st.expander("Чего эта площадка не делает"):
-        st.markdown(
+        prose(st,
             "- Не обучает модели в браузере: оценки моделей вычислены заранее, здесь по ним "
             "считаются только метрики. Поэтому странице не нужен scikit-learn, и она быстро загружается.\n"
             "- Не использует набор AI4I 2020: модель на нём у каждого студента своя, а механизм тот же.\n"

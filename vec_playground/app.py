@@ -6,7 +6,7 @@ from functools import lru_cache
 
 import streamlit as st
 
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import as_printed
 from vec_playground.corpus import CONTENT_TYPES, texts_and_labels
@@ -322,6 +322,20 @@ def main():
         "сегменты из-за этого меняют ответ."
     )
 
+    use_terms(
+        st,
+        "accuracy",
+        "baseline",
+        "cross_validation",
+        "fold_spread",
+        "confusion_matrix",
+        "bag_of_words",
+        "tf_idf",
+        "ngram",
+        "stemming",
+        "min_df",
+        "sublinear_tf",
+    )
     quick_start(
         st,
         purpose=(
@@ -364,7 +378,7 @@ def main():
     settings, classifier = _render_sidebar()
 
     st.subheader("1. Задача")
-    st.markdown(
+    prose(st,
         "Каждый из 160 сегментов нужно отнести к одному из четырёх типов: интерфейс, документация, "
         "маркетинг, юридический текст. Сначала текст превращают в числа: делят на фрагменты (слова или "
         "цепочки букв) и для каждого фрагмента записывают, сколько раз он встретился, с поправкой на то, "
@@ -376,7 +390,7 @@ def main():
     with left:
         _render_score(settings, classifier)
     with right:
-        st.markdown(
+        prose(st,
             "**Длина n-граммы.** Доля правильных ответов при n от 1 до максимума для слов и для букв; "
             "пунктир — базовая модель."
         )

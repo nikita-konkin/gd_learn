@@ -7,7 +7,7 @@ from functools import lru_cache
 import pandas as pd
 import streamlit as st
 
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from tm_playground.clustering import agreement_table, cluster, corpus_map, crosstab
 from tm_playground.corpus import (
@@ -233,7 +233,7 @@ def _render_query(query: str, top_n: int, threshold: float) -> None:
             )
 
     with right:
-        st.markdown(
+        prose(st,
             "**Две меры на одном графике.** Каждая точка — сегмент памяти: по горизонтали процент "
             "совпадения с запросом по Левенштейну, по вертикали косинус по символьным n-граммам. "
             "Выделены лучшие подсказки каждой меры, пунктир — порог."
@@ -377,6 +377,18 @@ def main():
         "подсказки и ошибаются по-разному."
     )
 
+    use_terms(
+        st,
+        "levenshtein",
+        "match_percent",
+        "cosine",
+        "ngram",
+        "tf_idf",
+        "embedding",
+        "svd",
+        "ari",
+        "threshold",
+    )
     quick_start(
         st,
         purpose=(
@@ -429,7 +441,7 @@ def main():
 
     query, top_n, threshold = _render_sidebar()
     st.subheader("1. Задача: четыре меры сходства")
-    st.markdown(
+    prose(st,
         "Переводчику пришёл новый сегмент. Программа ищет в памяти уже переведённый сегмент, самый похожий "
         "на него, и показывает его перевод как подсказку. «Похожий» можно понимать по-разному:\n\n"
         "- **Левенштейн** — сколько символов нужно вставить, удалить или заменить, чтобы получить "

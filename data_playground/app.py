@@ -34,7 +34,7 @@ from data_playground.cleaning import (
 )
 from data_playground.plotting import cleaned_histogram, timing_figure
 from data_playground.speed import DOT, SUM_SIZE, Memory, Timing, memory, results_agree, sum_of_squares
-from playground_common.explain import how_to_read, quick_start, reference
+from playground_common.explain import how_to_read, prose, quick_start, reference, use_terms
 from playground_common.links import other_playgrounds
 from playground_common.wording import duration, plural
 
@@ -161,7 +161,7 @@ def _defect_tab(order: str, statistic: str) -> None:
     raw = defect_table()
     found = inspect(raw)
     st.subheader("1. Исходная таблица")
-    st.markdown(
+    prose(st,
         "Шесть показаний узлов связи. **узел** — имя приёмника, **сигнал** — уровень принятого сигнала "
         "в дБм (децибелах относительно 1 мВт; чем ближе к нулю, тем сильнее сигнал, реальные значения лежат "
         "примерно от −30 до −120), **статус** — исправен ли приёмник. В таблицу намеренно внесены четыре "
@@ -192,7 +192,7 @@ def _defect_tab(order: str, statistic: str) -> None:
 
     cleaned = clean_defect_table(statistic, order)
     st.subheader("3. Очистка")
-    st.markdown(
+    prose(st,
         "Очистка — цепочка шагов. При выбранных настройках они выполняются в таком порядке:\n\n"
         + _steps(order, statistic)
         + "\n\nПорядок шагов 4 и 5 задаёт настройка «"
@@ -240,7 +240,7 @@ def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> Non
     readings = _readings(settings)
     result = _estimate(settings, statistic, order)
     st.subheader("1. Данные")
-    st.markdown(
+    prose(st,
         f"Та же задача на {settings.rows} показаниях трёх узлов. Сначала генерируются истинные уровни "
         "сигнала около −50 дБм, затем часть из них заменяется пропусками, а часть — кодом ошибки −900. "
         f"Сейчас в данных {int(readings.missing_mask.sum())} пропусков и "
@@ -274,7 +274,7 @@ def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> Non
 
     cleaned = clean_signal(readings.table, statistic, order)
     st.subheader("3. Распределение после очистки")
-    st.markdown(
+    prose(st,
         "Гистограмма: по горизонтали уровень сигнала после очистки, по вертикали число строк с таким "
         "уровнем. Синие столбцы — измеренные значения, оранжевый — заполненные пропуски. Вертикальные "
         "линии отмечают истинное среднее и физический предел."
@@ -304,7 +304,7 @@ def _speed_tab(size: int) -> None:
     spaced = f"{size:,}".replace(",", " ")
 
     st.subheader("1. Задача")
-    st.markdown(
+    prose(st,
         f"Одна и та же сумма квадратов {spaced} чисел вычисляется тремя способами. Алгоритм у них один; "
         "различается лишь то, кто выполняет цикл: интерпретатор Python, перебирающий числа по одному, "
         "или скомпилированный код внутри NumPy."
@@ -316,7 +316,7 @@ def _speed_tab(size: int) -> None:
         language="python",
     )
     st.subheader("2. Время одного вызова")
-    st.markdown(
+    prose(st,
         "Длина полосы — время одного вызова. Шкала логарифмическая: каждое деление в десять раз больше "
         "предыдущего, поэтому разница на одно деление — это разница в десять раз."
     )
@@ -339,7 +339,7 @@ def _speed_tab(size: int) -> None:
     )
 
     st.subheader("3. Память: список против массива")
-    st.markdown(
+    prose(st,
         "Кроме скорости, массив выигрывает и в памяти. Список Python хранит не сами числа, а указатели "
         "на отдельные объекты-числа; массив NumPy хранит числа подряд, по восемь байт на каждое."
     )
@@ -374,6 +374,13 @@ def main() -> None:
         "Порядок шагов очистки здесь — параметр, а не договорённость."
     )
 
+    use_terms(
+        st,
+        "missing_values",
+        "outlier",
+        "mean_median",
+        "vectorisation",
+    )
     quick_start(
         st,
         purpose=(
@@ -431,7 +438,7 @@ def main() -> None:
         _speed_tab(size)
 
     with st.expander("Чего эта площадка не делает"):
-        st.markdown(
+        prose(st,
             "- Не заполняет пропуски по группам (медиана своего узла) и не интерполирует временной ряд: "
             "одна статистика на весь столбец.\n"
             "- Не ищет выбросы статистически: правило одно — физический предел −120 дБм. Значения, "

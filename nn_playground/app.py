@@ -27,7 +27,7 @@ from nn_playground.network import (
     train,
 )
 from nn_playground.plotting import boundary_figure, history_figure
-from playground_common.explain import how_to_read, quick_start
+from playground_common.explain import how_to_read, prose, quick_start, use_terms
 from playground_common.explain import reference as glossary
 from playground_common.links import other_playgrounds
 from playground_common.wording import as_printed, plural
@@ -126,14 +126,14 @@ BROKEN = {
 def _network_section(hidden: int, bug: str) -> None:
     """What the network is and which line of its gradient the chosen bug breaks."""
     st.subheader("1. Сеть и задача")
-    st.markdown(
+    prose(st,
         "Задача — отнести точку плоскости к одному из двух классов «двух полумесяцев». Сеть получает две "
         f"координаты точки, передаёт их в скрытый слой из {hidden} "
         f"{plural(hidden, 'нейрона', 'нейронов', 'нейронов')} с функцией ReLU (отрицательное обнуляется, "
         "положительное проходит без изменений), а выходной нейрон с сигмоидой выдаёт вероятность класса 1. "
         "Ошибку сети измеряют потерями — перекрёстной энтропией: чем увереннее сеть ошибается, тем они больше."
     )
-    st.markdown(
+    prose(st,
         "Обучение повторяет четыре шага: **прямой проход** (вычислить ответ), **потери**, **обратный "
         "проход** (вычислить по правилу цепочки, как потери зависят от каждого веса, т. е. градиент) и "
         "**шаг спуска** (сдвинуть веса против градиента). Ниже — обратный проход и шаг спуска в той форме, "
@@ -169,7 +169,7 @@ def _training_section(run: Training, reference: Training | None) -> None:
             f"и потери {reference.final_loss:.4f}. Пунктир на графике — их кривая."
         )
 
-    st.markdown(
+    prose(st,
         "Слева — потери на каждой эпохе: у исправной сети они быстро падают. Горизонтальная линия ln 2 — "
         "потери сети, которая для любой точки отвечает «вероятность 0.5». Справа — точки отложенной "
         "выборки на фоне областей, которые сеть относит к каждому классу."
@@ -256,6 +256,17 @@ def main() -> None:
         "без фреймворка. Здесь можно сломать одну строку обратного прохода и посмотреть, кто это заметит."
     )
 
+    use_terms(
+        st,
+        "backprop",
+        "gradient_check",
+        "gradient_descent",
+        "learning_rate",
+        "loss",
+        "epoch",
+        "accuracy",
+        "holdout",
+    )
     quick_start(
         st,
         purpose=(
@@ -320,7 +331,7 @@ def main() -> None:
     _check_section(_check(bug), bug)
 
     with st.expander("Чего эта площадка не делает"):
-        st.markdown(
+        prose(st,
             "- Не использует мини-пакеты: каждый шаг считается по всей обучающей выборке.\n"
             "- Не использует оптимизаторы сложнее простого градиентного спуска: ни импульса, ни Adam. "
             "Их удобнее пробовать во фреймворке, например в PyTorch.\n"
