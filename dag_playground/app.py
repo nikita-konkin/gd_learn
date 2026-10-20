@@ -119,7 +119,7 @@ def _scenario_note(scenario: Scenario) -> None:
 
 
 def _levels(outcome: Outcome) -> None:
-    st.subheader("Порядок выполнения")
+    st.markdown("**Порядок выполнения**")
     lines = []
     for number, level in enumerate(outcome.levels, 1):
         tasks = ", ".join(task.replace("_", " ") for task in level)
@@ -129,7 +129,7 @@ def _levels(outcome: Outcome) -> None:
 
 
 def _journal(outcome: Outcome) -> None:
-    st.subheader("Журнал запуска")
+    st.markdown("**Журнал запуска**")
     table = pd.DataFrame(
         {
             "задача": [entry.task.replace("_", " ") for entry in outcome.log],
@@ -241,6 +241,20 @@ def main() -> None:
     scenario = _controls()
     outcome = _simulate(scenario)
 
+    st.subheader("1. Конвейер как граф задач")
+    st.markdown(
+        "Конвейер обучения модели состоит из задач: выгрузить данные, очистить их, собрать признаки, "
+        "построить отчёт о качестве данных, обучить модель, оценить её и опубликовать. Стрелка A → B "
+        "означает, что задача B использует результат A и потому запускается только после успеха A. "
+        "Планировщик следует трём правилам:\n\n"
+        "1. **Порядок** — запускать задачу, только когда все задачи, от которых она зависит, выполнены "
+        "(такой порядок называется топологическим).\n"
+        "2. **Повторы** — после сбоя запускать задачу снова, пока не кончатся попытки.\n"
+        "3. **Пропуск** — не запускать задачу, если хотя бы одна из её зависимостей провалилась.\n\n"
+        "Слева можно выбрать, какая задача даёт сбой и сколько раз, сколько попыток даёт планировщик, "
+        "и изменить сами стрелки."
+    )
+
     if outcome.cycle_error:
         st.error(
             f"{outcome.cycle_error}. Ребро «{_arrow(CYCLE_EDGE)}» требует опубликовать модель "
@@ -249,10 +263,11 @@ def main() -> None:
         )
         return
 
-    _scenario_note(scenario)
-    _verdict(outcome, scenario)
-
     edges = scenario.edges()
+    st.markdown(
+        "Ниже — граф после запуска. Задачи идут слева направо в порядке выполнения; цвет показывает итог "
+        "каждой задачи."
+    )
     st.plotly_chart(graph_figure(outcome.levels, edges, outcome.status), use_container_width=True)
     tasks, dependencies = len(outcome.status), len(edges)
     st.caption(
@@ -264,6 +279,15 @@ def main() -> None:
     if not scenario.guard:
         st.caption(f"Ребро «{_arrow(GUARD_EDGE)}» убрано.")
 
+    st.subheader("2. Итог запуска")
+    _scenario_note(scenario)
+    _verdict(outcome, scenario)
+
+    st.subheader("3. Как шёл запуск")
+    st.markdown(
+        "Слева — порядок, который планировщик вывел из стрелок: задачи одного шага не зависят друг "
+        "от друга. Справа — журнал: чем закончилась каждая задача и со скольких попыток."
+    )
     left, right = st.columns([1, 2])
     with left:
         _levels(outcome)
