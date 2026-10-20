@@ -30,7 +30,7 @@ from metric_playground.metrics import (
 from metric_playground.plotting import confusion_figure, curve_figure
 from playground_common.explain import how_to_read, quick_start, reference
 from playground_common.links import other_playgrounds
-from playground_common.wording import as_printed
+from playground_common.wording import as_printed, plural
 
 TITLE = "Метрика и дисбаланс"
 
@@ -106,9 +106,18 @@ def _controls() -> tuple[str, float, int, float]:
 
 def _trap_tab(name: str) -> None:
     population = next(item for item in _populations() if item.name == name)
+    st.subheader("1. Задача")
     st.markdown(
-        f"{population.name}: {population.positive} положительных из {population.total} "
-        f"({population.source}). Модель всегда отвечает «отказа нет»."
+        f"Набор «{population.name}» ({population.source}): {population.total} объектов, из них "
+        f"{population.positive} относятся к редкому классу — это отказы или брак, которые и нужно находить. "
+        "Здесь нет никакого обучения: «модель» на любой объект отвечает «отказа нет». Это простейшая "
+        "базовая модель, и с ней полезно сравнивать любую настоящую."
+    )
+    st.subheader("2. Четыре метрики одной и той же модели")
+    st.markdown(
+        "**Доля правильных ответов** — какая часть всех ответов совпала с действительностью. "
+        "**Полнота** — какую часть настоящих отказов модель нашла. **PR-AUC** — площадь под кривой "
+        "«точность — полнота» (вторая вкладка); у модели, угадывающей наугад, она равна доле редкого класса."
     )
     left, middle, right, last = st.columns(4)
     left.metric(
@@ -151,11 +160,15 @@ def _trap_tab(name: str) -> None:
 def _threshold_tab(threshold: float, miss: int) -> None:
     labels, scores = _failures()
     counts = confusion(labels, scores, threshold)
+    st.subheader("1. Модель и порог")
     st.markdown(
-        "Логистическая регрессия с весами классов, отложенная выборка из "
-        f"{counts.total} объектов, из них {int(labels.sum())} отказов."
+        "Теперь модель настоящая: логистическая регрессия с весами классов, обученная на данных об отказах "
+        f"оборудования. Её проверяют на отложенной выборке из {counts.total} объектов, среди которых "
+        f"{int(labels.sum())} отказов. Для каждого объекта модель выдаёт число от 0 до 1 — свою уверенность "
+        f"в отказе. Порог (сейчас {threshold:.2f}) превращает это число в решение: всё, что выше порога, "
+        "объявляется отказом, т. е. поднимается тревога."
     )
-
+    st.subheader("2. Метрики при выбранном пороге")
     left, middle, right = st.columns(3)
     left.metric(
         "Полнота",
@@ -175,6 +188,14 @@ def _threshold_tab(threshold: float, miss: int) -> None:
         "не говорит; смотрите на две предыдущие метрики.",
     )
 
+    st.subheader("3. Ошибки и кривая «точность — полнота»")
+    st.markdown(
+        "Слева — матрица ошибок: строки — что было на деле, столбцы — что ответила модель; в клетках число "
+        "объектов, а подпись в клетке говорит, что это: найденные отказы, пропущенные отказы, ложные "
+        "тревоги или верно признанные исправными. Справа — кривая «точность — полнота»: каждая её точка "
+        "соответствует одному порогу, "
+        "выделенная точка — выбранному. Пунктир — уровень модели, угадывающей наугад."
+    )
     figure_column, curve_column = st.columns([2, 3])
     with figure_column:
         st.plotly_chart(confusion_figure(counts), use_container_width=True)
@@ -189,7 +210,12 @@ def _threshold_tab(threshold: float, miss: int) -> None:
             use_container_width=True,
         )
 
-    st.subheader("Нужная полнота и её цена")
+    st.subheader("4. Нужная полнота и её цена")
+    st.markdown(
+        "Обычно задача ставится так: найти не меньше заданной доли отказов. Таблица показывает для "
+        "нескольких таких требований, какую полноту удаётся получить на самом деле, какой при этом будет "
+        "точность и какой нужен порог."
+    )
     rows = []
     points = [nearest_recall(labels, scores, wanted) for wanted in WANTED_RECALLS]
     for point in points:
@@ -203,7 +229,12 @@ def _threshold_tab(threshold: float, miss: int) -> None:
         f"{last.precision:.2f}, т. е. примерно {alarms:.0f} ложных тревог на каждый найденный отказ."
     )
 
-    st.subheader("Сколько стоит ошибка")
+    st.subheader("5. Сколько стоит ошибка")
+    st.markdown(
+        "Пропущенный отказ и ложная тревога стоят по-разному. Если пропуск в "
+        f"{miss} {plural(miss, 'раз', 'раза', 'раз')} дороже тревоги, общая стоимость при пороге — это "
+        f"{miss} × число пропусков + число ложных тревог. Лучший порог — тот, при котором она минимальна."
+    )
     best_threshold, best_cost = _cheapest(miss)
     best = confusion(labels, scores, best_threshold)
     current_cost = counts.cost(miss)
@@ -230,10 +261,15 @@ def _threshold_tab(threshold: float, miss: int) -> None:
 
 def _remedies_tab(threshold: float) -> None:
     labels, scores = _rare_class()
+    st.subheader("1. Три способа учесть перекос")
     st.markdown(
-        f"Случайный лес на данных с {labels.mean():.2%} редкого класса, три способа обучения, "
-        f"отложенная выборка — {len(labels)} объектов, {int(labels.sum())} редких."
+        f"Случайный лес на данных, где редкий класс составляет {labels.mean():.2%}. Его обучают тремя "
+        "способами: **без учёта дисбаланса**; с **весами классов**, при которых ошибка на редком объекте "
+        "обходится дороже; с **сокращением преобладающего класса**, когда из обучающей выборки удаляют "
+        "часть частых объектов, пока их не станет втрое больше редких. Проверяют все три на одной "
+        f"отложенной выборке: {len(labels)} объектов, из них {int(labels.sum())} редких."
     )
+    st.subheader(f"2. Метрики при пороге {threshold:.2f}")
     curves, points, rows = {}, {}, []
     for key, name in REMEDIES.items():
         counts = confusion(labels, scores[key], threshold)
@@ -243,6 +279,11 @@ def _remedies_tab(threshold: float) -> None:
         points[key] = (counts.recall, counts.precision)
         rows.append(f"| {name} | {area:.3f} | {counts.recall:.3f} | {counts.precision:.3f} |")
     st.markdown("| способ | PR-AUC | полнота | точность |\n|---|---|---|---|\n" + "\n".join(rows))
+    st.subheader("3. Кривые «точность — полнота»")
+    st.markdown(
+        "Кривая для каждого способа; выделенные точки — работа при выбранном пороге, пунктир — уровень "
+        "случайного угадывания. Чем ближе кривая к правому верхнему углу, тем лучше модель ранжирует объекты."
+    )
     st.plotly_chart(curve_figure(curves, points, float(labels.mean())), use_container_width=True)
 
     if np.isclose(threshold, DEFAULT_THRESHOLD):
