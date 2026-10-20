@@ -16,6 +16,7 @@ import streamlit as st
 
 from data_playground.cleaning import (
     AFTER,
+    MEAN,
     MEDIAN,
     ORDERS,
     OUTLIER_LIMIT,
@@ -139,14 +140,35 @@ def _cleaned_view(cleaned: Cleaned) -> pd.DataFrame:
     return view
 
 
+def _steps(order: str, statistic: str) -> str:
+    """The cleaning chain as the reader should see it, in the order the chosen setting runs it."""
+    noun = {MEDIAN: "медиану", MEAN: "среднее"}[statistic]
+    replace = f"заменить невозможные значения (ниже {OUTLIER_LIMIT:.0f} дБм) пропусками"
+    compute = f"вычислить {noun} столбца «сигнал»"
+    middle = (replace, compute) if order == AFTER else (compute, replace)
+    chain = (
+        "удалить полные дубликаты",
+        "привести статус к нижнему регистру",
+        "удалить строки без узла",
+        *middle,
+        f"вписать {'её' if statistic == MEDIAN else 'его'} во все пустые ячейки столбца «сигнал»",
+    )
+    return "\n".join(f"{index}. {step[0].upper()}{step[1:]}." for index, step in enumerate(chain, start=1))
+
+
 def _defect_tab(order: str, statistic: str) -> None:
     raw = defect_table()
     found = inspect(raw)
+    st.subheader("1. Исходная таблица")
     st.markdown(
-        "Шесть показаний узлов связи с четырьмя намеренными дефектами: пропуски, дубликат, "
-        "разнобой в регистре и физически невозможное значение."
+        "Шесть показаний узлов связи. **узел** — имя приёмника, **сигнал** — уровень принятого сигнала "
+        "в дБм (децибелах относительно 1 мВт; чем ближе к нулю, тем сильнее сигнал, реальные значения лежат "
+        "примерно от −30 до −120), **статус** — исправен ли приёмник. В таблицу намеренно внесены четыре "
+        "дефекта: пропуски, дубликат, разное написание статуса и физически невозможное значение −900."
     )
     st.dataframe(raw, use_container_width=True, hide_index=True)
+
+    st.subheader("2. Что нашла проверка")
 
     left, middle, right = st.columns(3)
     left.metric("Пропусков", str(sum(found.missing.values())))
@@ -168,7 +190,16 @@ def _defect_tab(order: str, statistic: str) -> None:
     )
 
     cleaned = clean_defect_table(statistic, order)
-    st.subheader("После очистки")
+    st.subheader("3. Очистка")
+    st.markdown(
+        "Очистка — цепочка шагов. При выбранных настройках они выполняются в таком порядке:\n\n"
+        + _steps(order, statistic)
+        + "\n\nПорядок шагов 4 и 5 задаёт настройка «"
+        + ORDER_LABEL
+        + "», а статистику — «"
+        + STATISTIC_LABEL
+        + "». Результат — таблица ниже; заполненные ячейки отмечены справа."
+    )
     st.dataframe(_cleaned_view(cleaned), use_container_width=True, hide_index=True)
 
     left, right = st.columns(2)
@@ -207,10 +238,17 @@ def _defect_tab(order: str, statistic: str) -> None:
 def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> None:
     readings = _readings(settings)
     result = _estimate(settings, statistic, order)
+    st.subheader("1. Данные")
     st.markdown(
-        f"{settings.rows} показаний трёх узлов, истинный уровень около −50 дБм. В них внесено "
-        f"{int(readings.missing_mask.sum())} пропусков и {int(readings.outlier_mask.sum())} значений −900."
+        f"Та же задача на {settings.rows} показаниях трёх узлов. Сначала генерируются истинные уровни "
+        "сигнала около −50 дБм, затем часть из них заменяется пропусками, а часть — кодом ошибки −900. "
+        f"Сейчас в данных {int(readings.missing_mask.sum())} пропусков и "
+        f"{int(readings.outlier_mask.sum())} значений −900; их доли задают настройки слева. Истинные "
+        "уровни известны, поэтому можно измерить, насколько очистка исказила данные. Очистка та же, что "
+        "на первой вкладке, с теми же настройками."
     )
+
+    st.subheader("2. Насколько очистка исказила среднее")
 
     left, middle, right = st.columns(3)
     left.metric(
@@ -234,6 +272,12 @@ def _readings_tab(settings: ReadingsSettings, order: str, statistic: str) -> Non
     )
 
     cleaned = clean_signal(readings.table, statistic, order)
+    st.subheader("3. Распределение после очистки")
+    st.markdown(
+        "Гистограмма: по горизонтали уровень сигнала после очистки, по вертикали число строк с таким "
+        "уровнем. Синие столбцы — измеренные значения, оранжевый — заполненные пропуски. Вертикальные "
+        "линии отмечают истинное среднее и физический предел."
+    )
     st.plotly_chart(
         cleaned_histogram(cleaned.table["сигнал"].to_numpy(), np.asarray(cleaned.filled, dtype=bool), result.true_mean),
         use_container_width=True,
@@ -258,8 +302,22 @@ def _speed_tab(size: int) -> None:
     slowest = timings[0].seconds
     spaced = f"{size:,}".replace(",", " ")
 
+    st.subheader("1. Задача")
     st.markdown(
-        f"Сумма квадратов {spaced} чисел тремя способами. Различаются они не алгоритмом, а тем, кто выполняет цикл."
+        f"Одна и та же сумма квадратов {spaced} чисел вычисляется тремя способами. Алгоритм у них один; "
+        "различается лишь то, кто выполняет цикл: интерпретатор Python, перебирающий числа по одному, "
+        "или скомпилированный код внутри NumPy."
+    )
+    st.code(
+        "sum(x * x for x in numbers)   # генератор Python: цикл в интерпретаторе\n"
+        "np.sum(array ** 2)            # NumPy поэлементно: массив квадратов, затем сумма\n"
+        "array @ array                 # NumPy, скалярное произведение: всё за один проход",
+        language="python",
+    )
+    st.subheader("2. Время одного вызова")
+    st.markdown(
+        "Длина полосы — время одного вызова. Шкала логарифмическая: каждое деление в десять раз больше "
+        "предыдущего, поэтому разница на одно деление — это разница в десять раз."
     )
     st.plotly_chart(timing_figure(timings), use_container_width=True)
     columns = st.columns(len(timings))
@@ -279,7 +337,11 @@ def _speed_tab(size: int) -> None:
         "отдельно, показал бы ноль."
     )
 
-    st.subheader("Память: список против массива")
+    st.subheader("3. Память: список против массива")
+    st.markdown(
+        "Кроме скорости, массив выигрывает и в памяти. Список Python хранит не сами числа, а указатели "
+        "на отдельные объекты-числа; массив NumPy хранит числа подряд, по восемь байт на каждое."
+    )
     used = _memory()
     left, middle, right = st.columns(3)
     left.metric(
