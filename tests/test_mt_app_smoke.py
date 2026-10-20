@@ -99,7 +99,7 @@ def test_broken_placeholder_raises_the_blind_spot_warning(monkeypatch):
     """A broken placeholder at a high BLEU — the lab's main point."""
     fake_st = _verdict(monkeypatch, "s002", 'Удалить файл «(name}»?')
 
-    assert any("Вот оно" in message for message in fake_st.warnings)
+    assert any("Метрика пропустила поломку" in message for message in fake_st.warnings)
     assert any("плейсхолдеры" in message for message in fake_st.errors)
 
 
@@ -111,14 +111,14 @@ def test_warning_fires_even_when_the_model_output_was_already_broken(monkeypatch
     """
     fake_st = _verdict(monkeypatch, "s002", 'Удалить файл "(имя}"?')
 
-    assert any("Вот оно" in message for message in fake_st.warnings)
+    assert any("Метрика пропустила поломку" in message for message in fake_st.warnings)
 
 
 def test_synonym_swap_raises_the_opposite_notice(monkeypatch):
     """Meaning preserved, BLEU below the threshold, checks silent."""
     fake_st = _verdict(monkeypatch, "s001", "Записать изменения", bleu_threshold=0.8)
 
-    assert any("И наоборот" in message for message in fake_st.infos)
+    assert any("Ложная тревога" in message for message in fake_st.infos)
     assert fake_st.successes, "проверки обязаны молчать"
 
 

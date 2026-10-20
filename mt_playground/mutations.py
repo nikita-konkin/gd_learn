@@ -44,7 +44,7 @@ def break_placeholder(text: str) -> tuple[str, str] | None:
     if match is None or not match.group().startswith("{"):
         return None
     broken = "(" + match.group()[1:]
-    return text[: match.start()] + broken + text[match.end() :], "плейсхолдер сломан"
+    return text[: match.start()] + broken + text[match.end() :], "плейсхолдер испорчен"
 
 
 def drop_negation(text: str) -> tuple[str, str] | None:
@@ -87,8 +87,8 @@ def shuffle_words(text: str) -> tuple[str, str] | None:
 
 # This order is the order of the buttons in the interface.
 MUTATIONS = (
-    ("Сломать плейсхолдер", break_placeholder, "критическая поломка, почти незаметная для BLEU"),
-    ("Убрать отрицание", drop_negation, "смысл на противоположный"),
+    ("Испортить плейсхолдер", break_placeholder, "критическая поломка, почти незаметная для BLEU"),
+    ("Убрать отрицание", drop_negation, "смысл меняется на противоположный"),
     ("Потерять предложение", drop_last_sentence, "часть текста исчезает"),
     ("Заменить синонимом", swap_synonym, "смысл сохранён, BLEU падает"),
     ("Переставить слова", shuffle_words, "те же слова, другой порядок"),

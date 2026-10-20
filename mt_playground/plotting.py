@@ -91,7 +91,7 @@ def blind_spot_figure(corpus: pd.DataFrame, bleu_threshold: float, selected_id: 
             x=clean["BLEU"],
             y=clean["semantic"],
             mode="markers",
-            name="проверки молчат",
+            name="проверки не сработали",
             marker={"color": OK_COLOR, "size": 7, "opacity": 0.45},
             customdata=clean[["id", "ru_mt"]],
             hovertemplate="%{customdata[0]}<br>BLEU %{x:.2f} · семантика %{y:.2f}<extra></extra>",
