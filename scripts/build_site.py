@@ -54,6 +54,8 @@ CATALOG_TEMPLATE = ROOT / "web" / "catalog.template.html"
 # The light/dark switch, inlined into the head of every page so that each one
 # stays a single file and the theme is set before anything is drawn.
 THEME = ROOT / "web" / "theme.html"
+# Visit counting, inlined into the head of every page as one image request.
+VISITS = ROOT / "web" / "visits.html"
 
 # Pinned so a CDN release cannot silently change the deployed runtime.
 STLITE_VERSION = "1.9.1"
@@ -284,7 +286,11 @@ def site_manifest(app: App) -> dict[str, dict[str, str]]:
 
 def _substitute(template: Path, replacements: dict[str, str]) -> str:
     text = template.read_text(encoding="utf-8")
-    replacements = {"__THEME__": THEME.read_text(encoding="utf-8").rstrip(), **replacements}
+    replacements = {
+        "__THEME__": THEME.read_text(encoding="utf-8").rstrip(),
+        "__VISITS__": VISITS.read_text(encoding="utf-8").rstrip(),
+        **replacements,
+    }
     for placeholder, value in replacements.items():
         if placeholder not in text:
             raise SystemExit(f"placeholder {placeholder} missing from {template}")
