@@ -270,8 +270,8 @@ def test_static_pages_need_no_python_runtime(render):
 
     assert "stlite" not in html
     assert "katex" not in html
-    # The one script is the inline theme switch: nothing is fetched.
-    assert html.count("<script") == 1
+    # The two scripts are the inline theme switch and the visit counter: nothing is fetched.
+    assert html.count("<script") == 2
     assert "<script src" not in html
     assert 'lang="ru"' in html
 
@@ -290,6 +290,28 @@ def test_every_page_carries_the_theme_switch_in_its_head(html):
     # Streamlit reads the theme the moment it loads, so the switch must come first.
     if "stlite.js" in html:
         assert html.index(THEME_MARK) < html.index("stlite.js")
+
+
+VISITS_MARK = "https://konkin-nikita.goatcounter.com/count?p="
+
+
+@pytest.mark.parametrize(
+    "html",
+    [render_index(app) for app in APPS] + [render_ist51_page(), render_catalog(), render_glossary()],
+    ids=[app.slug or "root" for app in APPS] + ["ist51", "catalog", "glossary"],
+)
+def test_every_page_counts_its_visit_once_in_its_head(html):
+    assert html.count(VISITS_MARK) == 1, "page does not count its visit exactly once"
+    assert html.index(VISITS_MARK) < html.index("</head>"), "visit counter is not in the head"
+
+
+@pytest.mark.parametrize(
+    "html",
+    [render_index(GD_APP), render_catalog()],
+    ids=["app", "catalog"],
+)
+def test_the_visit_counter_loads_no_third_party_code(html):
+    assert "gc.zgo.at" not in html, "page loads GoatCounter's script instead of one image request"
 
 
 @pytest.mark.parametrize(

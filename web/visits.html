@@ -1,0 +1,11 @@
+<script>
+      // Visit counting through GoatCounter: one image request, with no cookies
+      // and no third-party code. Not counted on localhost or in a browser driven
+      // by automation, so local builds and test runs stay out of the numbers.
+      (function () {
+        if (navigator.webdriver || /^(localhost|127\.|\[::1\])/.test(location.hostname)) return;
+        new Image().src = "https://konkin-nikita.goatcounter.com/count?p=" + encodeURIComponent(location.pathname) +
+          "&t=" + encodeURIComponent(document.title) + "&r=" + encodeURIComponent(document.referrer) +
+          "&rnd=" + Math.random().toString(36).slice(2);
+      })();
+    </script>
